@@ -368,7 +368,8 @@
 <span class="lbl">إجمالي السلّم الكامل</span> <span class="eq">=</span> <span class="res">16.4 GB / ساعة</span>
 
 <span class="cmt">// ═══ 2) المضاعِف مقارنة بالمصدر ═══</span>
-<span class="lbl">المصدر</span> <span class="eq">=</span> <span class="n">3.6 GB</span>   <span class="lbl">النواتج</span> <span class="eq">=</span> <span class="n">16.4 GB</span>
+<span class="lbl">المصدر</span>     <span class="eq">=</span> <span class="n">3.6 GB</span>
+<span class="lbl">النواتج</span>    <span class="eq">=</span> <span class="n">16.4 GB</span>
 <span class="lbl">Multiplier</span> <span class="eq">=</span> <span class="n">16.4</span> / <span class="n">3.6</span> <span class="eq">=</span> <span class="res">4.5×</span>
 
 <span class="cmt">// ═══ 3) بس مش كل فيديو بياخد السلّم الكامل ═══</span>
@@ -1301,16 +1302,48 @@ app.<span class="f">MapPost</span>(<span class="s">"/v1/uploads/{uploadId:guid}/
 });</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">أهم تلات قرارات في الكود ده</span>
-      <strong>1.</strong> <span class="term term--v">Pre-signed URL</span>: العميل بيرفع <strong>على التخزين مباشرة</strong>،
-      فسيرفرك ما بيمرّش عليه ولا بايت واحد من الـ <span class="ltr">2.6 PB</span> اليومية. لو مررناها على السيرفر
-      كنا هنحتاج <span class="ltr">240 Gbps</span> عرض نطاق وآلاف السيرفرات <em>عشان النقل بس</em>.
-      <br><strong>2.</strong> <span class="term">Outbox Pattern</span>: صف الفيديو ورسالة الترميز بيتكتبوا في
-      <em>نفس المعاملة</em>. من غير ده ممكن يتسجّل فيديو ما يتـرمّزش أبدًا (لو الطابور فشل بعد الحفظ)،
-      أو يتـرمّز فيديو مش موجود.
-      <br><strong>3.</strong> الرد <span class="ltr">202 Accepted</span> مش <span class="ltr">201 Created</span> —
-      لأن الفيديو <em>مش جاهز</em> فعليًا. الكود ده بيقول للعميل: «استلمت، وشغّال عليه، اسأل بعدين».
+    <div class="trace">
+      <div class="trace__head">تتبّع ختم رفع واحد: من آخر جزء لحد رسالة الترميز</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Pre-signed URL</span>
+          <div class="trace__body">
+            العميل بيرفع <strong>على التخزين مباشرة</strong>، فسيرفرك ما بيمرّش عليه ولا بايت
+            واحد من الـ <span class="ltr">2.6 PB</span> اليومية.
+            <br><strong>لو مررناها على السيرفر</strong> كنا هنحتاج <span class="ltr">240 Gbps</span>
+            عرض نطاق وآلاف السيرفرات <em>عشان النقل بس</em> — سيرفرات شغلتها الوحيدة إنها
+            تستقبل بايتات وتعيد إرسالها. ده مش تحسين، ده الفرق بين نظام ممكن ونظام مستحيل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Outbox Pattern</span>
+          <div class="trace__body">
+            صف الفيديو ورسالة الترميز بيتكتبوا في <em>نفس المعاملة</em>.
+            <br>من غير ده عندك احتمالين وحشين: يتسجّل فيديو <strong>ما يتـرمّزش أبدًا</strong>
+            (لو الطابور فشل بعد الحفظ) فيفضل عالق في حالة «بيعالج» للأبد،
+            أو يتـرمّز فيديو <strong>مش موجود</strong> في القاعدة أصلاً.
+            الاتنين أعطال صامتة ما بتظهرش في أي لوحة مراقبة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">202 Accepted</span>
+          <div class="trace__body">
+            الرد <span class="ltr">202 Accepted</span> مش <span class="ltr">201 Created</span> —
+            لأن الفيديو <em>مش جاهز</em> فعليًا.
+            <br>الكود ده بيقول للعميل: «استلمت، وشغّال عليه، اسأل بعدين».
+            لو رجّعنا <span class="ltr">201</span> كنا بنكذب على العميل، وأي تطبيق يعتمد
+            على الرد ده هيحاول يشغّل فيديو <strong>لسه ما اتـرمّزش</strong>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        التلات قرارات دول بيرسموا الحدّ بين <strong>اللي المستخدم بيستنّاه</strong>
+        (ثواني) و<strong>اللي بيحصل بعد ما يمشي</strong> (دقايق لساعات).
+      </div>
     </div>
   </div>
 </section>
@@ -1501,7 +1534,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/v1/uploads/{uploadId:guid}/
         <div class="decode__row">
           <span class="decode__tok">Graph</span>
           <div class="decode__exp">
-            <b>رسم بياني</b> من عُقد (مهام) وحواف (اعتماديات).
+            <b>رسم بياني</b> من <span class="term">node</span> (مهام) وحواف (اعتماديات).
             المهام اللي مفيش بينها سهم ⇒ <strong>تقدر تشتغل بالتوازي</strong>.
           </div>
         </div>
@@ -1726,7 +1759,9 @@ app.<span class="f">MapPost</span>(<span class="s">"/v1/uploads/{uploadId:guid}/
       <div class="example__body">
         <div class="math">
 <span class="cmt">// ═══ فيديو ساعة · النسخة 1080p ═══</span>
-<span class="lbl">H.264</span> <span class="eq">=</span> <span class="n">2.03 GB</span>   <span class="lbl">AV1</span> <span class="eq">=</span> <span class="n">1.01 GB</span>   <span class="lbl">الوفر/مشاهدة</span> <span class="eq">=</span> <span class="res">1.02 GB</span>
+<span class="lbl">H.264</span>        <span class="eq">=</span> <span class="n">2.03 GB</span>
+<span class="lbl">AV1</span>          <span class="eq">=</span> <span class="n">1.01 GB</span>
+<span class="lbl">الوفر/مشاهدة</span> <span class="eq">=</span> <span class="res">1.02 GB</span>
 
 <span class="cmt">// ═══ 1) تكلفة الترميز الإضافية ═══</span>
 <span class="lbl">H.264 لدرجة 1080p</span> <span class="eq">=</span> <span class="n">1.5</span> <span class="var">core-hours</span>
@@ -2149,19 +2184,60 @@ seg-00003.m4s
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">أهم أربع أفكار في الكود ده</span>
-      <strong>1. المعرّف المشتق:</strong> <code>JobId.Derive(...)</code> بيحسب المعرّف من
-      (الفيديو + رقم المقطع + الدرجة + إصدار الوصفة). يعني نفس المهمة مستحيل تتولّد بمعرّفين مختلفين،
-      و<code>UpsertRangeAsync</code> بيمنع التكرار حتى لو الحدث وصل مرتين.
-      <br><strong>2. المحاذاة مع الإطارات المفتاحية:</strong> <code>SnapToKeyframe</code> بيحرّك حدود القطع
-      لأقرب إطار مفتاحي. من غير ده، المقطع هيبدأ بإطار «فروق» وما يقدرش يتفكّ لوحده.
-      <br><strong>3. التحديث الشرطي:</strong> <code>Where(State != Done).ExecuteUpdateAsync</code>
-      بيرجّع عدد الصفوف المتأثرة. لو <span class="ltr">0</span> ⇒ الرسالة دي وصلت قبل كده ⇒ نتجاهلها.
-      دي طريقة <span class="term">Idempotency</span> بسطر واحد، ومن غير أي قفل.
-      <br><strong>4. الأولوية المتدرّجة:</strong> درجة <span class="ltr">360p</span> بتروح لطابور
-      <span class="ltr">P1</span> والباقي <span class="ltr">P2</span> — فالفيديو بيبقى قابل للمشاهدة
-      قبل ما باقي الدرجات تخلص أصلاً.
+    <div class="trace">
+      <div class="trace__head">تتبّع مهمة ترميز واحدة: من <span class="ltr">video.uploaded</span> لحد <span class="ltr">video.ready</span></div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">JobId.Derive — Deterministic ID</span>
+          <div class="trace__body">
+            المعرّف بيتحسب من (الفيديو + رقم المقطع + الدرجة + إصدار الوصفة)، مش بيتولّد عشوائي.
+            <br>يعني نفس المهمة <strong>مستحيل تتولّد بمعرّفين مختلفين</strong>، و<code>UpsertRangeAsync</code>
+            بيمنع التكرار حتى لو الحدث وصل مرتين.
+            من غير ده، إعادة تسليم رسالة واحدة معناها <em>2,520 مهمة ترميز مكرّرة</em> —
+            يعني ضعف الفاتورة على فيديو واحد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">SnapToKeyframe</span>
+          <div class="trace__body">
+            <code>SnapToKeyframe</code> بيحرّك حدود القطع لأقرب إطار مفتاحي
+            (<span class="term term--a">Keyframe</span>).
+            <br>من غير ده، المقطع هيبدأ بإطار «فروق» بيوصف <em>التغيير</em> عن إطار سابق
+            مش موجود في المقطع ⇒ <strong>المقطع ما يقدرش يتفكّ لوحده</strong>،
+            وكل فكرة التوزيع على آلاف العمّال بتقع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Conditional UPDATE — Idempotency</span>
+          <div class="trace__body">
+            <code>Where(State != Done).ExecuteUpdateAsync</code> بيرجّع عدد الصفوف المتأثرة.
+            لو <span class="ltr">0</span> ⇒ الرسالة دي وصلت قبل كده ⇒ نتجاهلها.
+            <br>دي طريقة <span class="term">Idempotency</span> بسطر واحد، <strong>ومن غير أي قفل</strong>.
+            البديل (اقرا الحالة ثم قرّر ثم اكتب) فيه فجوة سباق بين القراءة والكتابة —
+            وعلى آلاف العمّال المتوازيين، السباق ده بيحصل يوميًا.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Priority Queue — P1 / P2</span>
+          <div class="trace__body">
+            درجة <span class="ltr">360p</span> بتروح لطابور <span class="ltr">P1</span>
+            والباقي <span class="ltr">P2</span>.
+            <br>فالفيديو بيبقى <strong>قابل للمشاهدة قبل ما باقي الدرجات تخلص أصلاً</strong>.
+            من غير التدرّج ده، صاحب الفيديو بيستنّى السلّم كله (7 درجات) عشان يشوف
+            أول إطار — يعني زمن انتظار أطول بمرّات من غير أي مكسب حقيقي.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        تلات خطوات من الأربعة (<code>Derive</code> · <code>SnapToKeyframe</code> ·
+        <code>Conditional UPDATE</code>) موجودين عشان النظام يفضل صحيح
+        <strong>وهو بيعيد المحاولة</strong> — وده الوضع الطبيعي في أي خط أنابيب موزّع، مش الاستثناء.
+      </div>
     </div>
   </div>
 </section>
@@ -2199,14 +2275,18 @@ seg-00003.m4s
           <div class="solution__body">
             <div class="math">
 <span class="cmt">// ═══ عند 10 ثواني ═══</span>
-<span class="lbl">مقاطع</span> <span class="eq">=</span> <span class="n">360</span>  <span class="lbl">مهام (7 درجات)</span> <span class="eq">=</span> <span class="n">2,520</span>
-<span class="lbl">شغل المقطع</span> <span class="eq">=</span> <span class="n">6.3</span> <span class="var">ثانية</span>  <span class="lbl">تكلفة إدارية/مهمة</span> <span class="eq">=</span> <span class="n">~1.5</span> <span class="var">ثانية</span>
-<span class="lbl">نسبة الهدر</span> <span class="eq">=</span> <span class="n">1.5</span> / <span class="n">7.8</span> <span class="eq">=</span> <span class="res">19%</span>
+<span class="lbl">مقاطع</span>             <span class="eq">=</span> <span class="n">360</span>
+<span class="lbl">مهام (7 درجات)</span>    <span class="eq">=</span> <span class="n">2,520</span>
+<span class="lbl">شغل المقطع</span>        <span class="eq">=</span> <span class="n">6.3</span> <span class="var">ثانية</span>
+<span class="lbl">تكلفة إدارية/مهمة</span> <span class="eq">=</span> <span class="n">~1.5</span> <span class="var">ثانية</span>
+<span class="lbl">نسبة الهدر</span>        <span class="eq">=</span> <span class="n">1.5</span> / <span class="n">7.8</span> <span class="eq">=</span> <span class="res">19%</span>
 
 <span class="cmt">// ═══ عند 2 ثانية ═══</span>
-<span class="lbl">مقاطع</span> <span class="eq">=</span> <span class="n">1,800</span> <span class="lbl">مهام</span> <span class="eq">=</span> <span class="res">12,600</span>
-<span class="lbl">شغل المقطع</span> <span class="eq">=</span> <span class="n">1.26</span> <span class="var">ثانية</span> <span class="lbl">تكلفة إدارية</span> <span class="eq">=</span> <span class="n">~1.5</span> <span class="var">ثانية</span>
-<span class="lbl">نسبة الهدر</span> <span class="eq">=</span> <span class="n">1.5</span> / <span class="n">2.76</span> <span class="eq">=</span> <span class="res">54%</span>
+<span class="lbl">مقاطع</span>             <span class="eq">=</span> <span class="n">1,800</span>
+<span class="lbl">مهام (7 درجات)</span>    <span class="eq">=</span> <span class="res">12,600</span>
+<span class="lbl">شغل المقطع</span>        <span class="eq">=</span> <span class="n">1.26</span> <span class="var">ثانية</span>
+<span class="lbl">تكلفة إدارية/مهمة</span> <span class="eq">=</span> <span class="n">~1.5</span> <span class="var">ثانية</span>
+<span class="lbl">نسبة الهدر</span>        <span class="eq">=</span> <span class="n">1.5</span> / <span class="n">2.76</span> <span class="eq">=</span> <span class="res">54%</span>
 
 <span class="cmt">// ═══ وكمان: كفاءة الضغط ═══</span>
 <span class="lbl">إطار مفتاحي كل</span> <span class="eq">=</span> <span class="n">2</span> <span class="var">ثانية</span> بدل <span class="n">10</span>
@@ -2395,25 +2475,31 @@ seg-00003.m4s
       <div class="example__body">
         <div class="math">
 <span class="cmt">// ═══ الحالة الابتدائية ═══</span>
-<span class="lbl">مدة المقطع</span> <span class="eq">=</span> <span class="n">4s</span>   <span class="lbl">هدف المخزون</span> <span class="eq">=</span> <span class="n">30s</span>   <span class="lbl">حد الأمان</span> <span class="eq">=</span> <span class="n">10s</span>
+<span class="lbl">مدة المقطع</span>     <span class="eq">=</span> <span class="n">4s</span>
+<span class="lbl">هدف المخزون</span>    <span class="eq">=</span> <span class="n">30s</span>
+<span class="lbl">حد الأمان</span>      <span class="eq">=</span> <span class="n">10s</span>
 
 <span class="cmt">// ═══ t=0 — البداية ═══</span>
-<span class="lbl">مخزون</span> <span class="eq">=</span> <span class="n">0s</span> · <span class="lbl">القرار</span> <span class="eq">=</span> <span class="res">ابدأ بـ 480p</span>
+<span class="lbl">مخزون</span>          <span class="eq">=</span> <span class="n">0s</span>
+<span class="lbl">القرار</span>         <span class="eq">=</span> <span class="res">ابدأ بـ 480p</span>
 <span class="cmt">// السبب: أول إطار بسرعة أهم من أول إطار بجودة</span>
 
 <span class="cmt">// ═══ t=12s — الشبكة كويسة ═══</span>
-<span class="lbl">إنتاجية مقاسة</span> <span class="eq">=</span> <span class="n">9 Mbps</span> · <span class="lbl">مخزون</span> <span class="eq">=</span> <span class="n">24s</span>
+<span class="lbl">إنتاجية مقاسة</span>  <span class="eq">=</span> <span class="n">9 Mbps</span>
+<span class="lbl">مخزون</span>          <span class="eq">=</span> <span class="n">24s</span>
 <span class="lbl">أعلى درجة آمنة</span> <span class="eq">=</span> <span class="n">9</span> / <span class="n">1.5</span> <span class="eq">=</span> <span class="n">6 Mbps</span> <span class="eq">→</span> <span class="res">1080p (4.5)</span>
-<span class="lbl">القرار</span> <span class="eq">=</span> <span class="res">اطلع 720p الأول ثم 1080p</span>
+<span class="lbl">القرار</span>         <span class="eq">=</span> <span class="res">اطلع 720p الأول ثم 1080p</span>
 <span class="cmt">// درجة واحدة في المرة — القفز المباشر بيسبب تذبذب</span>
 
 <span class="cmt">// ═══ t=40s — الشبكة انهارت ═══</span>
-<span class="lbl">إنتاجية</span> <span class="eq">=</span> <span class="n">1.4 Mbps</span> · <span class="lbl">مخزون</span> <span class="eq">=</span> <span class="n">7s</span> <span class="cmt">(تحت حد الأمان!)</span>
-<span class="lbl">القرار</span> <span class="eq">=</span> <span class="res">انزل فورًا لـ 360p (0.7) — مش 480p</span>
+<span class="lbl">إنتاجية</span>        <span class="eq">=</span> <span class="n">1.4 Mbps</span>
+<span class="lbl">مخزون</span>          <span class="eq">=</span> <span class="n">7s</span> <span class="cmt">(تحت حد الأمان!)</span>
+<span class="lbl">القرار</span>         <span class="eq">=</span> <span class="res">انزل فورًا لـ 360p (0.7) — مش 480p</span>
 <span class="cmt">// النزول بيبقى عدواني: هدفنا نمنع التوقف مش نحافظ على الجودة</span>
 
 <span class="cmt">// ═══ النتيجة ═══</span>
-<span class="lbl">rebuffer events</span> <span class="eq">=</span> <span class="res">0</span>   <span class="lbl">تبديلات جودة</span> <span class="eq">=</span> <span class="res">3</span>
+<span class="lbl">rebuffer events</span> <span class="eq">=</span> <span class="res">0</span>
+<span class="lbl">تبديلات جودة</span>   <span class="eq">=</span> <span class="res">3</span>
         </div>
         <div class="plain mt">
           <span class="plain__label">القاعدة اللي طلعت من المثال</span>
@@ -3005,14 +3091,47 @@ seg-00003.m4s
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">تلات تفاصيل صغيرة بتفرق جدًا</span>
-      <strong>1.</strong> <code>StringSetAsync(..., When.NotExists)</code> = أمر <code class="ltr">SET NX</code>.
-      عملية واحدة ذرّية بتقول «سجّل لو مش مسجّل» — من غيرها كنا هنحتاج قراءة ثم كتابة وبينهم فرصة سباق.
-      <br><strong>2.</strong> <code>StringGetDeleteAsync</code> = <code class="ltr">GETDEL</code>.
-      بيقرا ويصفّر في نفس اللحظة. لو قرينا ثم مسحنا في خطوتين، الزيادات اللي وصلت بينهم <em>هتضيع</em>.
-      <br><strong>3.</strong> <code>ViewCount + delta</code> بدل <code>ViewCount = newValue</code>.
-      الأولى بتخلّي قاعدة البيانات هي اللي بتجمع، فمفيش «آخر كاتب يكسب» ومفيش فقدان.
+    <div class="trace">
+      <div class="trace__head">تتبّع مشاهدة واحدة: من إشارة المشغّل لحد عمود <span class="ltr">ViewCount</span> في القاعدة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">SET NX — إزالة التكرار</span>
+          <div class="trace__body">
+            <code>StringSetAsync(..., When.NotExists)</code> = أمر <code class="ltr">SET NX</code>:
+            عملية واحدة ذرّية بتقول «سجّل لو مش مسجّل».
+            <br>من غيرها كنا هنحتاج <em>قراءة ثم كتابة</em>، وبينهم فرصة سباق —
+            يعني نفس المشاهدة تتعدّ مرتين لما نفس المستخدم يبعت الإشارة من تبويبين.
+            <strong>الذرّية هنا مش رفاهية، هي اللي بتخلّي الرقم يعني حاجة.</strong>
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">GETDEL — التفريغ الدوري</span>
+          <div class="trace__body">
+            <code>StringGetDeleteAsync</code> = <code class="ltr">GETDEL</code>:
+            بيقرا القيمة ويصفّرها <strong>في نفس اللحظة</strong>.
+            <br>لو قرينا ثم مسحنا في خطوتين، كل الزيادات اللي وصلت بين الخطوتين
+            <em>هتضيع</em> — وعلى فيديو بيتشاف 50 ألف مرة في الثانية، الفجوة دي
+            بتاكل آلاف المشاهدات في كل دورة تفريغ.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Relative UPDATE — ViewCount + delta</span>
+          <div class="trace__body">
+            بنكتب <code>ViewCount + delta</code> مش <code>ViewCount = newValue</code>.
+            <br>الأولى بتخلّي <strong>قاعدة البيانات هي اللي بتجمع</strong>، فمفيش
+            «آخر كاتب يكسب» ومفيش فقدان لو عاملين اتنين فرّغوا في نفس اللحظة.
+            التانية بتفترض إن الكاتب يعرف القيمة النهائية — وده مستحيل في نظام موزّع.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        التلات أوامر دول كلهم <strong>ذرّيين</strong>. كل مرة تستبدل واحد فيهم بـ
+        «اقرا ثم اكتب»، بتفتح نافذة سباق — والنوافذ دي بتتحوّل لأرقام غلط تحت الضغط بس.
+      </div>
     </div>
   </div>
 </section>
@@ -3379,7 +3498,9 @@ seg-00003.m4s
         <ul class="clean sm" style="color:var(--text-dim)">
           <li><strong>هرم مستويين بس:</strong> تعليق رئيسي + ردود. الشجرة اللانهائية بتخلّي القراءة استعلام
             متكرّر وبتلخبط الواجهة. <code class="ltr">parentId</code> واحد وخلاص.</li>
-          <li><strong>التقسيم بالفيديو:</strong> كل تعليقات الفيديو على نفس الشظية ⇒ القراءة استعلام واحد.</li>
+          <li><strong>التقسيم بالفيديو:</strong> كل تعليقات الفيديو على نفس الـ
+            <span class="term">shard</span> (جزء من قاعدة البيانات بيتقسّم عليه الجدول)
+            ⇒ القراءة استعلام واحد.</li>
           <li><strong>تصفّح بالمؤشّر</strong> (<span class="term">Cursor Pagination</span>) مش
             <code class="ltr">OFFSET</code> — لأن التعليقات بتتضاف وانت بتقرا فالصفحات بتتكرّر.</li>
           <li><strong>العدّاد مقسّم</strong> زي عدّاد المشاهدات بالظبط.</li>
@@ -3470,7 +3591,7 @@ seg-00003.m4s
           <tr><td>شبكة توصيل كاملة</td><td>ثلث الحركة تتحوّل لشبكة تانية</td><td class="td-mid">تدهور مؤقت في منطقة</td><td class="td-ok"><strong>Multi-CDN</strong> + تحويل تلقائي</td></tr>
           <tr><td>درع المصدر</td><td>نقاط الحافة تسأل المصدر مباشرة</td><td class="td-mid">حمل المصدر ×200</td><td>أدرعة متعددة + تحديد معدل عند المصدر</td></tr>
           <tr><td>أسطول الترميز</td><td>الفيديوهات الجديدة تتأخّر</td><td class="td-ok">صفر تأثير على المشاهدة</td><td class="td-ok">فصل كامل عن مسار التشغيل</td></tr>
-          <tr><td>قاعدة بيانات الوصف</td><td class="td-bad">لا فهارس ولا صفحات</td><td class="td-bad"><strong>انقطاع عام</strong></td><td class="td-bad">نسخ قراءة + كاش فهارس + شظايا</td></tr>
+          <tr><td>قاعدة بيانات الوصف</td><td class="td-bad">لا فهارس ولا صفحات</td><td class="td-bad"><strong>انقطاع عام</strong></td><td class="td-bad">نسخ قراءة + كاش فهارس + <span class="term">shard</span></td></tr>
           <tr><td>Redis (العدّادات)</td><td>أرقام المشاهدات تتجمّد</td><td class="td-ok">تجميلي بحت</td><td>العدّاد ما يمنعش التشغيل أبدًا</td></tr>
           <tr><td>خدمة التوصيات</td><td>الصفحة الرئيسية ترجع للرائج والاشتراكات</td><td class="td-ok">تجربة أقل تخصيصًا</td><td class="td-ok">احتياطي إجباري في الكود</td></tr>
           <tr><td>محرّك البحث</td><td>البحث بس اللي بيقع</td><td class="td-mid">ميزة واحدة</td><td>فصل + بحث مباشر بالمعرّف</td></tr>
@@ -3509,7 +3630,8 @@ seg-00003.m4s
           <ul class="clean sm mb0 mt">
             <li><strong>المشاهدة:</strong> الـ <span class="ltr">DNS</span> والتوجيه العالمي بيسحبوا المنطقة خلال ثواني.
               الطلبات بتروح للمنطقة اللي بعدها ⇒ زمن أعلى، خدمة مستمرة.</li>
-            <li><strong>الكتابة:</strong> لو المنطقة دي كانت بتستضيف الشظية الأساسية ⇒ ترقية نسخة في منطقة تانية.
+            <li><strong>الكتابة:</strong> لو المنطقة دي كانت بتستضيف الـ <span class="term">shard</span>
+              الأساسية ⇒ ترقية نسخة في منطقة تانية.
               <strong>هنا بس بيحصل انقطاع حقيقي</strong> لثواني أو دقايق.</li>
             <li><strong>الترميز:</strong> المهام اللي كانت شغالة بتتعاد في منطقة تانية —
               وده مجاني عندنا لأن المهام أصلاً قابلة للإعادة.</li>
@@ -3541,7 +3663,8 @@ seg-00003.m4s
             <ul class="pc pc--con sm">
               <li><strong>الدقيقة 0–1 — عدّاد المشاهدات:</strong> أول حاجة تحسّ.
                 <span class="ltr">3,300</span> زيادة/ثانية على نفس الفيديو.
-                <br><em>لكن عندنا 100 شظية ⇒ 33 عملية/ثانية على كل مفتاح. <strong>ما وقعش.</strong></em></li>
+                <br><em>لكن عندنا 100 <span class="term">shard</span> ⇒ 33 عملية/ثانية على كل مفتاح.
+                <strong>ما وقعش.</strong></em></li>
               <li><strong>الدقيقة 1–3 — نقاط الحافة الباردة:</strong> كل نقطة أول ما تشوف طلب بتروح للمصدر.
                 <br><em>الدرع بيمتصهم ⇒ المصدر شايف طلب واحد لكل مقطع. <strong>ما وقعش.</strong></em></li>
               <li><strong>الدقيقة 3–5 — صفحة الفيديو نفسها:</strong> <span class="ltr">3,300</span> استعلام/ثانية
@@ -3603,8 +3726,10 @@ seg-00003.m4s
 <span class="lbl">الإجمالي</span>        <span class="eq">=</span> <span class="res">~$110 مليون / شهر</span>
 
 <span class="cmt">// ═══ النسب — دي اللي بتقولك تشتغل فين ═══</span>
-<span class="lbl">التخزين</span>   <span class="eq">=</span> <span class="res">75%</span>   <span class="lbl">التوصيل</span> <span class="eq">=</span> <span class="res">12%</span>
-<span class="lbl">الترميز</span>   <span class="eq">=</span> <span class="res">1.3%</span>  <span class="lbl">الباقي</span>  <span class="eq">=</span> <span class="res">12%</span>
+<span class="lbl">التخزين</span>   <span class="eq">=</span> <span class="res">75%</span>
+<span class="lbl">التوصيل</span>   <span class="eq">=</span> <span class="res">12%</span>
+<span class="lbl">الترميز</span>   <span class="eq">=</span> <span class="res">1.3%</span>
+<span class="lbl">الباقي</span>    <span class="eq">=</span> <span class="res">12%</span>
 
 <span class="cmt">// ═══ التكلفة لكل ساعة مشاهدة ═══</span>
 <span class="lbl">ساعات/شهر</span> <span class="eq">=</span> <span class="n">30</span> <span class="var">مليار</span>

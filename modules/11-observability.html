@@ -351,14 +351,50 @@
       </table>
     </div>
 
-    <div class="callout callout--key fragment">
-      <div class="callout__icon">🧭</div>
-      <div class="callout__body">
-        <span class="callout__title">الترتيب الطبيعي للتحقيق</span>
-        <strong>Metrics</strong> بتصحّيك وبتقولك «من إمتى وقد إيه» ⟵
-        <strong>Traces</strong> بتوديك للخدمة والعملية المسؤولة ⟵
-        <strong>Logs</strong> بتقولك السبب بالتفصيل الممل.
-        <br>الناس بتبدأ من اللوجات غالبًا — وده أبطأ طريق وأغلى استعلام.
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع تحقيق واحد: الترتيب الطبيعي بين الأعمدة التلاتة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Metrics</span>
+          <div class="trace__body">
+            دي أول حاجة بتلمسها، ومش لأنها الأدق — لأنها <strong>الأرخص والأسرع في الاستعلام</strong>.
+            بتقولك حاجتين بس: <em>من إمتى بدأت المشكلة</em> و<em>قد إيه حجمها</em>.
+            <br>ليه الخطوة دي أولًا؟ لأن من غيرها انت مش عارف هل تستاهل تحقيق أصلاً.
+            حادثة بتضرب <span class="ltr">40%</span> من المستخدمين قرارها «خفّف دلوقتي»،
+            وحادثة بتضرب 3 مستخدمين قرارها «افتح تذكرة». الرقم ده بيحدّد كل اللي بعده —
+            وبيدّيك كمان <strong>لحظة البداية بالدقيقة</strong> اللي هتفلتر بيها كل خطوة جاية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Traces</span>
+          <div class="trace__body">
+            من المقياس بتقفز لتتبّع حقيقي بطيء (عن طريق <span class="term term--v">Exemplar</span>
+            أو فلتر <code>duration</code> في نفس النافذة الزمنية)، والتتبّع بيوريك
+            <strong>فين الوقت راح بالظبط</strong>: أنهي خدمة، وأنهي عملية جوّاها.
+            <br>من غير الخطوة دي هتفضل تخمّن. عندك <span class="ltr">12</span> خدمة،
+            والمقياس بيقولك «الطلب بطيء» بس ما بيقولكش <em>مين</em> السبب —
+            التتبّع هو الحاجة الوحيدة اللي بتحوّل السؤال من «النظام بطيء» لـ«الخدمة الفلانية بطيئة».
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Logs</span>
+          <div class="trace__body">
+            آخر محطة: بتفتح اللوجات <strong>مفلترة بالـ <code>TraceId</code></strong>
+            بتاع الـ Span المسؤول بالتحديد، فتشوف السبب بالتفصيل الممل
+            (رسالة الخطأ، قيمة المتغيّر، رد الاعتمادية).
+            <br>وليه هي آخر خطوة مش أول خطوة؟ لأنها <em>أغلى استعلام عندك</em>:
+            بتفتّش في تيرابايتات نص حر. لما تدخلها ومعاك <code>TraceId</code> وخدمة ونافذة زمنية،
+            الاستعلام بيرجع في ثواني. لما تدخلها من غيرهم، بيرجع في دقايق — لو رجع.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الناس بتبدأ من اللوجات غالبًا — وده أبطأ طريق وأغلى استعلام.
+        الترتيب الصح بيضيّق المساحة في كل خطوة: <strong>من «هل فيه مشكلة» ⟵ «فين» ⟵ «ليه»</strong>.
       </div>
     </div>
   </div>
@@ -920,20 +956,75 @@
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">نقرا الكود سطر سطر</span>
-      <strong>1.</strong> <code>IMeterFactory</code> بيتحقن من الـ DI بدل ما تعمل <code>new Meter(...)</code> ثابت —
-      ده بيخلّي كل اختبار له عدّاداته المعزولة وبيمنع تسريب الـ Meters.
-      <br><strong>2.</strong> اسم المقياس بيتكتب بالنقط <code>orders.checkout.duration</code>
-      عشان يتوافق مع تسمية <span class="term">OpenTelemetry</span>، والمصدّر بيحوّله لـ
-      <code>orders_checkout_duration_seconds</code> لما يروح Prometheus.
-      <br><strong>3.</strong> <code>TagList</code> نوع <em>struct</em> — يعني إضافة الوسوم مش بتعمل تخصيص في الـ Heap،
-      وده مهم جدًا في مسار بيتنفّذ آلاف المرات في الثانية.
-      <br><strong>4.</strong> <code>http.route</code> بناخد فيه <strong>قالب</strong> المسار
-      (<code>/orders/{id}</code>) مش المسار الفعلي (<code>/orders/8842</code>) — الفرق بين
-      وسم فيه 40 قيمة ووسم فيه ملايين.
-      <br><strong>5.</strong> <code>UpDownCounter</code> للحاجات اللي بتزيد وتقلّ (المدفوعات المعلّقة)،
-      وده أدق من Gauge لأنه بيتسجّل وقت الحدث مش وقت العيّنة.
+    <div class="trace">
+      <div class="trace__head">تتبّع الكود قرار قرار: إيه اللي بيحميه كل سطر في تعريف المقاييس؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">IMeterFactory</span>
+          <div class="trace__body">
+            بيتحقن من الـ <span class="term">DI</span> بدل ما تعمل <code>new Meter(...)</code> ثابت
+            على مستوى النوع (<code>static</code>).
+            <br>ليه ده مهم؟ لأن الـ <code>Meter</code> الثابت بيعيش طول عمر العملية،
+            فكل اختبار بيشوف عدّادات الاختبار اللي قبله ⇒ اختبارات بتنجح لوحدها وبتفشل مع بعض.
+            ومع الـ Factory كل نطاق (Scope) له عدّاداته المعزولة، وبيتخلّص منها معاه —
+            <strong>ومن غيره بتتسرّب الـ Meters</strong> وتفضل متراكمة في الذاكرة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Metric Naming</span>
+          <div class="trace__body">
+            اسم المقياس بيتكتب بالنقط <code>orders.checkout.duration</code> عشان يتوافق مع
+            تسمية <span class="term">OpenTelemetry</span>، والمصدّر بيحوّله لوحده لـ
+            <code>orders_checkout_duration_seconds</code> لما يروح
+            <span class="term term--a">Prometheus</span>.
+            <br>الخطوة دي بتبان تافهة لحد ما تحتاج تنقل من أداة لأداة: لو سمّيت بأسلوب
+            <em>مخزن معيّن</em>، كل استعلاماتك ولوحاتك وتنبيهاتك هتتكتب من الأول عند أول تغيير.
+            التسمية المعيارية هي اللي بتخلّي نفس الكود يشتغل مع أي واجهة خلفية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">TagList</span>
+          <div class="trace__body">
+            <code>TagList</code> نوع <em>struct</em> — يعني إضافة الوسوم <strong>مش بتعمل تخصيص
+            في الـ <span class="term">Heap</span></strong>.
+            <br>ليه ده يفرق أصلاً؟ لأن السطر ده بيتنفّذ آلاف المرات في الثانية على مسار الطلب.
+            لو كل نداء بيولّد مصفوفة أو قايمة جديدة، انت بتضيف ضغط دايم على
+            <span class="term">GC</span> — وتقاس بحاجة بتبطّئ نفس الحاجة اللي بتقيسها.
+            القياس لازم يكون تكلفته شبه صفر، وإلا هتقفله أول ما الحمل يعلى.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">http.route</span>
+          <div class="trace__body">
+            بناخد فيه <strong>قالب</strong> المسار (<code>/orders/{id}</code>) مش المسار الفعلي
+            (<code>/orders/8842</code>).
+            <br>ده الفرق بين وسم فيه <span class="ltr">40</span> قيمة ووسم فيه <em>ملايين</em>.
+            من غير الخطوة دي بتولّد سلسلة زمنية جديدة لكل أوردر في النظام،
+            وبعد أسبوعين مخزن المقاييس بيقع أو الفاتورة بتتضاعف —
+            <strong>ودي أشهر طريقة على الإطلاق لقتل نظام مقاييس بسطر واحد</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">UpDownCounter</span>
+          <div class="trace__body">
+            للحاجات اللي بتزيد وتقلّ (المدفوعات المعلّقة، الاتصالات المفتوحة، عمق الطابور).
+            <br>وليه هو أدق من <span class="term">Gauge</span>؟ لأنه بيتسجّل <em>وقت الحدث</em>
+            نفسه، مش وقت أخذ العيّنة. الـ Gauge بيتقري كل 15 ثانية مثلاً —
+            فقفزة عاشت 3 ثواني بين قراءتين <strong>مش هتشوفها خالص</strong>،
+            وهي بالظبط القفزة اللي وقّعت النظام.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل سطر هنا بيحمي من عطل مختلف: تسريب Meters · قفل على أداة واحدة · ضغط GC ·
+        انفجار <span class="term">Cardinality</span> · قفزة اختفت بين عيّنتين.
+      </div>
     </div>
 
     <div class="callout callout--tip fragment">
@@ -1208,7 +1299,8 @@
       <div class="callout__body">
         <span class="callout__title">الحل العملي المستخدم فعليًا: الاتنين مع بعض</span>
         التطبيق بيبعت (<span class="term">Push</span>) بـ OTLP للـ
-        <span class="term term--e">OpenTelemetry Collector</span> اللي شغّال جنبه على نفس العقدة ⇒
+        <span class="term term--e">OpenTelemetry Collector</span> اللي شغّال جنبه على نفس الـ
+        <span class="term">node</span> (الجهاز) ⇒
         مسافة قصيرة جدًا واحتمال فشل ضعيف.
         <br>والـ Collector نفسه بيفتح <code>/metrics</code> عشان
         <span class="term">Prometheus</span> يسحب منه (<span class="term">Pull</span>).
@@ -1731,19 +1823,72 @@ _logger.<span class="f">LogWarning</span>(
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">نقرا الكود</span>
-      <strong>1.</strong> <code>BaseProcessor&lt;LogRecord&gt;</code> نقطة امتداد في
-      <span class="term">OpenTelemetry</span>: <code>OnEnd</code> بيتنادى على كل سجل
-      <em>قبل</em> ما يتبعت للمصدّر — يعني آخر فرصة تعدّل.
-      <br><strong>2.</strong> <code>[GeneratedRegex]</code> بيولّد الـ Regex وقت الترجمة بدل وقت التشغيل ⇒
-      أسرع بمراحل ومفيش تكلفة Compile في كل نداء.
-      <br><strong>3.</strong> بنبني قايمة جديدة بدل ما نعدّل القديمة، لأن <code>Attributes</code>
-      نوعها <code>IReadOnlyList</code>.
-      <br><strong>4.</strong> <code>pan[^4..]</code> — صيغة الـ <span class="term">Range</span> في C#:
-      «آخر 4 حروف».
-      <br><strong>5.</strong> الإثراء في الآخر بيضمن إن كل سجل فيه البيئة واسم الجهاز —
-      حتى لو المطوّر نسي، وحتى لو الكود ده في مكتبة طرف تالت.
+    <div class="trace">
+      <div class="trace__head">تتبّع سجل واحد جوّه معالج الإخفاء: من لحظة كتابته لحد ما يخرج نضيف</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">BaseProcessor&lt;LogRecord&gt;</span>
+          <div class="trace__body">
+            نقطة الامتداد الرسمية في <span class="term">OpenTelemetry</span>:
+            <code>OnEnd</code> بيتنادى على <strong>كل</strong> سجل <em>قبل</em> ما يتبعت للمصدّر.
+            <br>ليه المكان ده بالذات؟ لأنه <strong>آخر نقطة تحت سيطرتك</strong> في المسار.
+            لو حطّيت الإخفاء في طبقة أعلى (في خدمتك بس)، أي لوج جاي من مكتبة طرف تالت
+            أو من إطار العمل نفسه هيعدّي من غير تنضيف — والبيانات الحسّاسة هتوصل المخزن،
+            وساعتها مفيش «تراجع»: هي متخزّنة عند مزوّد خارجي في نسخ احتياطية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">GeneratedRegex</span>
+          <div class="trace__body">
+            <code>[GeneratedRegex]</code> بيولّد كود الـ <span class="term">Regex</span>
+            <strong>وقت الترجمة</strong> بدل وقت التشغيل.
+            <br>من غيره كل نداء بيدفع تكلفة تفسير النمط، والسطر ده بيتنفّذ على كل سجل لوج
+            في النظام — يعني عشرات الآلاف في الثانية. ده بالظبط الفرق بين معالج تكلفته
+            مهملة ومعالج <em>بيبقى هو نفسه سبب البطء</em> اللي بتحقّق فيه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Attributes (IReadOnlyList)</span>
+          <div class="trace__body">
+            بنبني قايمة جديدة بدل ما نعدّل القديمة، لأن <code>Attributes</code> نوعها
+            <code>IReadOnlyList</code> — يعني التعديل في المكان مش مسموح أصلاً.
+            <br>والقيد ده مش إزعاج، ده حماية: نفس السجل ممكن يعدّي على أكتر من معالج،
+            ولو كل واحد عدّل في نفس المصفوفة هتبقى النتيجة معتمدة على <em>ترتيب التسجيل</em> —
+            وهو أسوأ نوع من الأخطاء لأنه بيتغيّر مع كل إعادة ترتيب للإعدادات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Range Operator</span>
+          <div class="trace__body">
+            <code>pan[^4..]</code> — صيغة الـ <span class="term">Range</span> في C#، ومعناها
+            «آخر <span class="ltr">4</span> حروف».
+            <br>وليه بنسيب آخر 4 بالذات ومش بنخفي الرقم كله؟ لأن الأربعة دول هما الحد المسموح
+            في معايير الدفع، وهما الحاجة الوحيدة اللي بتخلّي الدعم يقدر <em>يطابق</em> العملية
+            مع العميل. إخفاء كامل بيبقى آمن لكنه بيقتل قدرتك على التحقيق.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Resource Enrichment</span>
+          <div class="trace__body">
+            الإثراء في الآخر بيضمن إن كل سجل فيه البيئة واسم الجهاز —
+            حتى لو المطوّر نسي، وحتى لو الكود ده في مكتبة طرف تالت.
+            <br>من غير الخطوة دي هتلاقي نفسك الساعة 3 الفجر قدام لوج مكتوب فيه
+            «فشل الاتصال» ومش عارف <strong>من أنهي بيئة ولا أنهي نسخة</strong> —
+            فتقعد تدوّر بدل ما تفلتر. الحقول دي بتتحطّ مرة واحدة في مكان واحد،
+            وبتوفّر ساعات تحقيق في كل حادثة.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        المعالج ده بيشتغل على <strong>كل</strong> سجل من <strong>كل</strong> مصدر —
+        وده اللي بيخلّيه المكان الوحيد اللي تقدر تضمن فيه إن حاجة ما تخرجش أبدًا.
+      </div>
     </div>
 
     <div class="callout callout--warn fragment">
@@ -2176,7 +2321,7 @@ _logger.<span class="f">LogWarning</span>(
             <span class="ltr">16</span> حرف hex.
             <br>ده <b>معرّف الـ Span اللي بيبعت النداء</b>. الخدمة المستقبلة بتعمل Span جديد
             وتحطّ الرقم ده كـ <code>ParentSpanId</code> بتاعه.
-            <br><b>هنا بالظبط بتتبني الشجرة</b>: كل عقدة عارفة أبوها.
+            <br><b>هنا بالظبط بتتبني الشجرة</b>: كل <span class="term">node</span> عارفة أبوها.
             وبيتغيّر مع كل قفزة — عكس الـ trace-id اللي ثابت.
           </div>
         </div>
@@ -2351,7 +2496,7 @@ _logger.<span class="f">LogWarning</span>(
                 بـ <code>ActivityKind.Consumer</code> ومرّرله الـ <code>parentContext</code>.</li>
               <li>استخدم <code>ActivityKind.Producer</code> عند النشر —
                 ده بيخلّي الأداة ترسم الرابط بشكل صحيح.</li>
-              <li>لو الرسالة بتتوزّع على أكتر من مستهلك، استخدم
+              <li>لو الرسالة بتتوزّع على أكتر من <span class="term">consumer</span>، استخدم
                 <span class="term">Span Links</span> بدل علاقة أب/ابن — لأن الأب واحد والأبناء كتير
                 في تتبّعات مختلفة.</li>
             </ul>
@@ -2449,20 +2594,50 @@ _logger.<span class="f">LogWarning</span>(
       </div>
     </div>
 
-    <div class="callout callout--key fragment">
-      <div class="callout__icon">🏗️</div>
-      <div class="callout__body">
-        <span class="callout__title">الشكل العملي المستخدم في الإنتاج</span>
-        <strong>1.</strong> عيّنة أولية عالية عند المصدر (<span class="ltr">10–100%</span>) —
-        عشان الـ Collector يشوف الصورة كاملة.
-        <br><strong>2.</strong> طبقة <span class="term">Collector</span> بتوزّع بـ
-        <code>loadbalancing exporter</code> على أساس الـ <code>TraceId</code> ⇒
-        كل Spans نفس التتبّع بتوصل نفس النسخة (شرط إجباري للـ Tail-based).
-        <br><strong>3.</strong> <code>tail_sampling</code> processor بسياسات مرتّبة:
-        الأخطاء ⇒ احتفظ · البطيء ⇒ احتفظ · العملاء المميّزين ⇒ احتفظ · الباقي ⇒
-        <span class="ltr">1%</span>.
-        <br><strong>النتيجة:</strong> بتخزّن <span class="ltr">~2%</span> من الحجم،
-        وبتحتفظ بـ <span class="ltr">100%</span> من المعلومة اللي بتفرق فعلاً.
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع قرار عيّنة واحد: الشكل العملي المستخدم في الإنتاج</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">OTel SDK</span>
+          <div class="trace__body">
+            عيّنة أولية <strong>عالية</strong> عند المصدر (<span class="ltr">10–100%</span>) —
+            يعني التطبيق بيصدّر أغلب التتبّعات، مش بيصفّي.
+            <br>ليه عالية والهدف أصلاً نقلّل التخزين؟ لأن القرار الذكي هيتاخد بعدين،
+            ولازم اللي هياخده يكون <em>شايف الصورة كاملة</em>.
+            لو صفّيت هنا بـ <span class="ltr">1%</span> عشوائي، الخطأ النادر اللي انت بتدوّر عليه
+            <strong>اترمى قبل ما حد يبصّ عليه</strong> — وما فيش خطوة بعدها تقدر ترجّعه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">OTel Collector · loadbalancing exporter</span>
+          <div class="trace__body">
+            طبقة الـ <span class="term">Collector</span> بتوزّع الـ Spans على النسخ
+            <strong>على أساس الـ <code>TraceId</code></strong>، مش عشوائي ولا بالدور.
+            <br>ده شرط إجباري مش تحسين: قرار الـ <span class="term">Tail-based</span>
+            محتاج <em>كل</em> Spans التتبّع الواحد في مكان واحد عشان يحكم عليه.
+            من غير التوزيع ده، Spans نفس الطلب بتتفرّق على 5 نسخ،
+            وكل نسخة بتشوف جزء ناقص ⇒ <strong>تتبّعات مقطوعة نصّها متخزّن ونصّها اترمى</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">tail_sampling Processor</span>
+          <div class="trace__body">
+            بيستنّى التتبّع يكتمل، وبعدين بيطبّق <strong>سياسات مرتّبة</strong>:
+            الأخطاء ⇒ احتفظ · البطيء ⇒ احتفظ · العملاء المميّزين ⇒ احتفظ · الباقي ⇒
+            <span class="ltr">1%</span>.
+            <br>الترتيب هنا هو كل الحكاية: القرار بيتاخد <em>بعد</em> ما تعرف نتيجة الطلب،
+            مش قبلها. وده الفرق الجوهري عن الـ <span class="term">Head-based</span>
+            اللي بيقرر وهو لسه ماشافش أي حاجة — فبيرمي بالظبط الحالات النادرة اللي محتاجها.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        بتخزّن <span class="ltr">~2%</span> من الحجم، وبتحتفظ بـ <span class="ltr">100%</span>
+        من المعلومة اللي بتفرق فعلاً.
       </div>
     </div>
   </div>
@@ -2538,22 +2713,76 @@ _logger.<span class="f">LogWarning</span>(
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">نقرا الكود سطر سطر</span>
-      <strong>1.</strong> <code>using var act = ...</code> — الـ <code>Dispose</code> هو اللي بينهي الـ Span
-      ويحسب مدته. لو نسيت الـ <code>using</code>، الـ Span هيفضل مفتوح ومش هيتصدّر أبدًا.
-      <br><strong>2.</strong> <code>act?</code> بعلامة الاستفهام في كل مكان — لأن
-      <code>StartActivity</code> بترجّع <code>null</code> لو <em>مفيش حد بيسمع</em>
-      (يعني التتبّع مقفول أو الطلب مش في العيّنة). ده تصميم مقصود: <strong>صفر تكلفة لما التتبّع مقفول</strong>.
-      <br><strong>3.</strong> <code>ActivityKind</code> بتحدّد الدور:
-      <code>Server</code> (بستقبل) · <code>Client</code> (بنادي) · <code>Internal</code> (شغل داخلي) ·
-      <code>Producer/Consumer</code> (طوابير). الأدوات بتستخدمها في الرسم وفي حساب زمن الخدمة.
-      <br><strong>4.</strong> <code>AddEvent</code> بيسجّل لحظة جوّه الـ Span من غير ما تعمل Span جديد —
-      مناسب للحاجات اللي مالهاش مدة معتبرة («الكاش ضرب»، «اتفعّلت خطة بديلة»).
-      <br><strong>5.</strong> فرّقنا بين نوعين من الفشل: <code>PaymentRejected</code> فشل
-      <em>متوقّع في مسار العمل</em> فسجّلناه بكود واضح من غير Stack Trace،
-      وأي استثناء تاني <em>عطل حقيقي</em> فسجّلناه كامل.
-      <br>الفرق ده مهم عشان ما تغرقش الـ Error Budget بحاجات هي أصلاً سلوك طبيعي.
+    <div class="trace">
+      <div class="trace__head">تتبّع Span واحد جوّه الكود: من <code>StartActivity</code> لحد ما يتقفل</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">ActivitySource.StartActivity</span>
+          <div class="trace__body">
+            <code>using var act = ...</code> — الـ <code>Dispose</code> هو اللي
+            <strong>بينهي الـ Span ويحسب مدته</strong>، مش أي نداء صريح.
+            <br>لو نسيت الـ <code>using</code>، الـ Span هيفضل مفتوح ومش هيتصدّر أبدًا —
+            ومش هتاخد بالك بسهولة، لأن مفيش استثناء ولا لوج. هتلاقي في الأداة تتبّعات
+            <em>ناقصة عمليات</em> وتفتكر إن الوقت راح في مكان تاني، وتحقّق في الاتجاه الغلط.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Null Activity</span>
+          <div class="trace__body">
+            <code>act?</code> بعلامة الاستفهام في كل مكان — لأن <code>StartActivity</code>
+            بترجّع <code>null</code> لو <em>مفيش حد بيسمع</em>
+            (التتبّع مقفول أو الطلب مش في العيّنة).
+            <br>ده تصميم مقصود مش إهمال: <strong>صفر تكلفة لما التتبّع مقفول</strong>.
+            ومن غير علامة الاستفهام دي، أول ما تقفل التتبّع في بيئة معيّنة
+            هيبدأ الكود يرمي <code>NullReferenceException</code> —
+            يعني <em>أداة القياس نفسها بقت سبب الأعطال</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">ActivityKind</span>
+          <div class="trace__body">
+            بتحدّد دور الـ Span: <code>Server</code> (بستقبل) · <code>Client</code> (بنادي) ·
+            <code>Internal</code> (شغل داخلي) · <code>Producer/Consumer</code> (طوابير).
+            <br>ليه مش تفصيلة شكلية؟ لأن الأدوات بتبني عليها الرسم وحساب
+            <em>زمن الخدمة</em> مقابل <em>زمن الانتظار</em>. لو وسمت نداء خارجي بـ
+            <code>Internal</code>، خريطة الاعتماديات هتطلع غلط والوقت اللي ضاع في الشبكة
+            هيتحسب على خدمتك — <strong>فتقعد تحسّن كود مش هو المشكلة</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">AddEvent</span>
+          <div class="trace__body">
+            بيسجّل <strong>لحظة</strong> جوّه الـ Span من غير ما تعمل Span جديد —
+            مناسب للحاجات اللي مالهاش مدة معتبرة («الكاش ضرب»، «اتفعّلت خطة بديلة»).
+            <br>البديل إنك تعمل Span مستقل لكل حدث صغير، وده بيضخّم عدد الـ Spans
+            بتاع كل طلب أضعاف ⇒ تكلفة تخزين أعلى وشلال بقى صعب تقراه.
+            الحدث بيدّيك المعلومة من غير ما يدفع تمن Span كامل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">ActivityStatusCode</span>
+          <div class="trace__body">
+            فرّقنا بين نوعين من الفشل: <code>PaymentRejected</code> فشل
+            <em>متوقّع في مسار العمل</em> فسجّلناه بكود واضح من غير
+            <span class="term">Stack Trace</span>، وأي استثناء تاني <em>عطل حقيقي</em>
+            فسجّلناه كامل.
+            <br>الفرق ده مهم عشان ما تغرقش الـ <span class="term term--a">Error Budget</span>
+            بحاجات هي أصلاً سلوك طبيعي. كارت مرفوض من البنك مش عطل في نظامك —
+            ولو حسبته كده، هتصرف ميزانية خطأ شهر كامل على <strong>نجاح النظام في شغله</strong>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الـ Span بيتقفل بالـ <code>Dispose</code>، بيتلغى بالـ <code>null</code>،
+        وبيتفسّر بالـ <code>Kind</code> والـ <code>Status</code> —
+        الأربعة دول هما اللي بيحوّلوا الكود من «بيسجّل حاجة» لـ«بيسجّل حاجة تنفع في التحقيق».
+      </div>
     </div>
 
     <div class="callout callout--warn fragment">
@@ -2590,7 +2819,7 @@ _logger.<span class="f">LogWarning</span>(
       </div>
       <div class="flow__vert">↓ OTLP (gRPC :4317 / HTTP :4318)</div>
       <div class="flow__tier">
-        <div class="node node--c"><span class="node__ico">📥</span>Collector — Agent<span class="node__sub">على كل عقدة · تجميع محلي</span></div>
+        <div class="node node--c"><span class="node__ico">📥</span>Collector — Agent<span class="node__sub">على كل node · تجميع محلي</span></div>
       </div>
       <div class="flow__vert">↓ OTLP</div>
       <div class="flow__tier">
@@ -3068,7 +3297,8 @@ builder.Services.<span class="f">AddOpenTelemetry</span>()
         </ul>
         <p class="card__body sm mb0">
           <strong>وجهة النظر:</strong> من عين <em>المستخدم</em>.
-          <br><strong>يُطبّق على:</strong> خدمات HTTP · نقاط النهاية · مستهلكي الطوابير · دوال بدون خادم.
+          <br><strong>يُطبّق على:</strong> خدمات HTTP · نقاط النهاية ·
+          <span class="term">Queue Consumers</span> · دوال بدون خادم.
           <br><span class="mute xs">لاحظ: RED = الإشارات الذهبية ناقص الـ Saturation.</span>
         </p>
       </div>
@@ -3095,8 +3325,8 @@ builder.Services.<span class="f">AddOpenTelemetry</span>()
           <tr><td>لوحة خدمة الأوردرات</td><td class="td-ok">RED</td><td>خدمة بتستقبل طلبات ⇒ نقيس من عين المستخدم</td></tr>
           <tr><td>سيرفر قاعدة البيانات</td><td class="td-ok">USE + RED</td><td>مورد <em>وفي نفس الوقت</em> خدمة بتستقبل استعلامات</td></tr>
           <tr><td>الـ <span class="ltr">Connection Pool</span></td><td class="td-ok">USE</td><td>سعة محدودة ⇒ يهمّني الاستخدام والانتظار</td></tr>
-          <tr><td>مستهلك رسائل Kafka</td><td class="td-ok">RED + تأخّر الطابور</td><td>الرسالة = طلب · والتأخّر = تشبّع</td></tr>
-          <tr><td>عقدة Kubernetes</td><td class="td-ok">USE</td><td>مورد خام</td></tr>
+          <tr><td><span class="term">Kafka Consumer</span></td><td class="td-ok">RED + تأخّر الطابور</td><td>الرسالة = طلب · والتأخّر = تشبّع</td></tr>
+          <tr><td><span class="term">Kubernetes Node</span></td><td class="td-ok">USE</td><td>مورد خام</td></tr>
           <tr><td>التنبيه اللي بيصحّي حد</td><td class="td-ok">RED (أعراض)</td><td>يهمّني إن المستخدم بيتألم — مش إن مورد مشغول</td></tr>
           <tr><td>لوحة التشخيص</td><td class="td-ok">USE (أسباب)</td><td>هنا بس بتدوّر على «ليه»</td></tr>
         </tbody>
@@ -3359,7 +3589,8 @@ builder.Services.<span class="f">AddOpenTelemetry</span>()
       <div class="callout__body">
         <span class="callout__title">ليه ده أحسن من «نسبة الأخطاء أكبر من 1% لمدة 5 دقايق»؟</span>
         <strong>حالة 1 — العتبة الثابتة بتصرخ من غير داعي:</strong>
-        قفزة <span class="ltr">2%</span> أخطاء لمدة <span class="ltr">4</span> دقايق بسبب إعادة تشغيل عقدة.
+        قفزة <span class="ltr">2%</span> أخطاء لمدة <span class="ltr">4</span> دقايق بسبب إعادة تشغيل
+        <span class="term">node</span>.
         استهلاكها من الميزانية = <span class="ltr">4/43,200 × 20 = 0.18%</span>.
         العتبة الثابتة صحّت حد الساعة 3 الفجر عشان <strong>سُبع واحد بالمية</strong> من الميزانية.
         <br><br><strong>حالة 2 — العتبة الثابتة بتسكت والكارثة بتحصل:</strong>
@@ -4294,7 +4525,8 @@ app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/startup"</sp
           <br>• <strong>Span واحد مسيطر</strong> ⇒ عرفت الخدمة ⟵ كمّل عندها.
           <br>• <strong>الوقت متوزّع على كتير</strong> ⇒ غالبًا مشكلة مشتركة (شبكة · GC · مورد مشترك).
           <br>• <strong>فجوات بين الـ Spans</strong> (وقت مش محسوب لحد) ⇒ <strong>الوقت في الانتظار</strong>:
-          طابور الخيوط، انتظار على Connection Pool، توقف GC، أو تأخير في وسيط رسائل.
+          طابور الخيوط، انتظار على Connection Pool، توقف GC، أو تأخير في
+          <span class="term">Message Broker</span>.
           دي أهم إشارة والناس بتفوّتها.</p>
       </li>
       <li style="--accent:var(--amber)">
@@ -4376,8 +4608,10 @@ app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/startup"</sp
     <div class="math">
 <span class="cmt">// ═══ الافتراضات ═══</span>
 <span class="lbl">فاتورة البنية التحتية</span> <span class="eq">=</span> <span class="n">$200,000</span> / <span class="cmt">شهر</span>
-<span class="lbl">RPS</span> <span class="eq">=</span> <span class="n">10,000</span>   <span class="lbl">spans/طلب</span> <span class="eq">=</span> <span class="n">20</span> (<span class="n">500B</span>)
-<span class="lbl">سطور لوج/طلب</span> <span class="eq">=</span> <span class="n">8</span> (<span class="n">400B</span>)   <span class="lbl">سلاسل نشطة</span> <span class="eq">=</span> <span class="n">500,000</span>
+<span class="lbl">RPS</span>                    <span class="eq">=</span> <span class="n">10,000</span>
+<span class="lbl">spans / طلب</span>            <span class="eq">=</span> <span class="n">20</span>      <span class="cmt">// 500 بايت للـ span</span>
+<span class="lbl">سطور لوج / طلب</span>         <span class="eq">=</span> <span class="n">8</span>       <span class="cmt">// 400 بايت للسطر</span>
+<span class="lbl">سلاسل نشطة</span>             <span class="eq">=</span> <span class="n">500,000</span>
 
 <span class="cmt">// ═══ لو سجّلنا كل حاجة بدون ضبط ═══</span>
 <span class="lbl">اللوجات</span>  <span class="eq">=</span> <span class="n">10K</span>×<span class="n">8</span>×<span class="n">400B</span> <span class="eq">=</span> <span class="n">32 MB/s</span> <span class="eq">→</span> <span class="n">83 TB</span>/<span class="cmt">شهر</span> × <span class="n">$0.50</span> <span class="eq">=</span> <span class="res">$41,450</span>
@@ -4577,24 +4811,110 @@ app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/startup"</sp
       </div>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">نتبّع رحلة إشارة واحدة من أولها لآخرها</span>
-      <strong>1.</strong> طلب بيدخل <code>orders-api</code> ⇒ الـ SDK بيقرا الـ
-      <code>traceparent</code>، بيبدأ Span، وبيسجّل في الـ Histogram.
-      <br><strong>2.</strong> أي <code>_logger.LogWarning</code> جوّه الطلب بياخد الـ
-      <code>TraceId</code> تلقائيًا.
-      <br><strong>3.</strong> كل <span class="ltr">5</span> ثواني الـ SDK بيبعت دفعة عبر OTLP
-      للـ Agent اللي على نفس العقدة — <em>مسافة قصيرة، فشل شبه مستحيل</em>.
-      <br><strong>4.</strong> الـ Agent بيشيل حقول الـ PII، بيضيف
-      <code>k8s.namespace</code> و<code>node.name</code>، وبيجمّع في دفعات أكبر.
-      <br><strong>5.</strong> الـ Gateway بيستنّى كل Spans التتبّع (وصلته كلها لأن التوزيع بالـ TraceId)،
-      وبعدين بياخد قرار العيّنة: فيه خطأ؟ ⇒ احتفظ بيه كامل.
-      <br><strong>6.</strong> نفس الإشارة بتتوزّع لأكتر من وجهة: المقاييس لـ Prometheus،
-      التتبّعات لـ Tempo، اللوجات لـ Loki.
-      <br><strong>7.</strong> Alertmanager بيقيّم قواعد معدّل الحرق كل 30 ثانية ⇒
-      لو <span class="ltr">14.4×</span> على ساعة <strong>و</strong> على 5 دقايق ⇒ صفّارة.
-      <br><strong>8.</strong> الصفّارة بتوصل بلينك مباشر للوحة الخدمة وللـ Runbook —
-      والشخص في الوردية بيبدأ من الخطوة 0 في مسار التحقيق.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع إشارة واحدة من أولها لآخرها: من سطر كود لحد تليفون بيرنّ الساعة 3 الفجر</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">OTel SDK</span>
+          <div class="trace__body">
+            طلب بيدخل <code>orders-api</code> ⇒ الـ SDK بيقرا الـ <code>traceparent</code>
+            من الهيدر، بيبدأ Span جديد تحته، وبيسجّل المدة في الـ
+            <span class="term">Histogram</span>.
+            <br>الخطوة دي هي اللي بتربط طلبك بالسلسلة اللي جاية من الخدمة اللي قبلك.
+            لو ما قريتش الهيدر ده، هتبدأ تتبّع <em>جديد</em> بدل ما تكمّل القديم —
+            وهتلاقي في الأداة تتبّعات يتيمة كل واحد فيه خدمة واحدة بس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Log Correlation</span>
+          <div class="trace__body">
+            أي <code>_logger.LogWarning</code> جوّه الطلب بياخد الـ <code>TraceId</code>
+            <strong>تلقائيًا</strong> من السياق الحالي — من غير ما المطوّر يعمل حاجة.
+            <br>ده السطر اللي بيحوّل اللوجات من كومة نص لـ«لوجات الطلب ده بالتحديد».
+            من غيره، لما تلاقي Span بطيء هتفضل تدوّر في اللوجات بالوقت والتخمين
+            عبر <span class="ltr">12</span> خدمة — وده أطول جزء في أي تحقيق.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">OTLP Exporter</span>
+          <div class="trace__body">
+            كل <span class="ltr">5</span> ثواني الـ SDK بيبعت <strong>دفعة</strong> عبر
+            <span class="term">OTLP</span> للـ Agent اللي على نفس الـ
+            <span class="term">node</span> (الجهاز اللي التطبيق شغّال عليه) —
+            <em>مسافة قصيرة، فشل شبه مستحيل</em>.
+            <br>ليه لأقرب نقطة مش للمخزن مباشرة؟ لأن التصدير المباشر لخدمة بعيدة معناه
+            إن أي تباطؤ أو انقطاع في الشبكة بيرتدّ على <strong>تطبيقك انت</strong>:
+            طوابير بتمتلي وذاكرة بتتاكل. الـ Agent المحلي بيمتصّ ده كله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">OTel Collector · Agent</span>
+          <div class="trace__body">
+            بيشيل حقول الـ <span class="term">PII</span>، بيضيف <code>k8s.namespace</code>
+            و<code>node.name</code>، وبيجمّع في دفعات أكبر قبل ما يبعت لبرّه.
+            <br>ليه التنضيف هنا مش في التطبيق؟ عشان يبقى في <strong>مكان واحد</strong>
+            لكل الخدمات: قاعدة أمنية واحدة بتتطبّق على 40 خدمة من غير ما تعدّل كود 40 مرة —
+            ومن غير ما تعتمد على إن كل فريق فاكر يعملها.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">OTel Collector · Gateway</span>
+          <div class="trace__body">
+            بيستنّى كل Spans التتبّع (وصلته كلها لأن التوزيع بالـ <code>TraceId</code>)،
+            وبعدين بياخد قرار العيّنة: فيه خطأ؟ ⇒ احتفظ بيه كامل.
+            <br>ده المكان الوحيد في المسار كله اللي بيشوف <em>الطلب كامل</em>.
+            من غير الطبقة دي، قرار العيّنة لازم يتاخد عند المصدر —
+            وساعتها بتتخلص من التتبّعات <strong>قبل</strong> ما تعرف إذا كانت مهمة ولا لأ.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Prometheus · Tempo · Loki</span>
+          <div class="trace__body">
+            نفس الإشارة بتتوزّع لأكتر من وجهة: المقاييس لـ
+            <span class="term term--a">Prometheus</span>، التتبّعات لـ
+            <span class="term term--r">Tempo</span>، اللوجات لـ
+            <span class="term term--e">Loki</span>.
+            <br>وليه مخازن منفصلة أصلاً؟ لأن لكل إشارة نمط وصول ومدة احتفاظ مختلفة تمامًا:
+            المقاييس صغيرة وبتتخزّن 13 شهر، والتتبّعات ضخمة وعمرها 7 أيام.
+            لو حطّيتهم في مخزن واحد، هتدفع سعر أغلى إشارة على كل حاجة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Alertmanager</span>
+          <div class="trace__body">
+            بيقيّم قواعد <strong>معدّل الحرق</strong> كل <span class="ltr">30</span> ثانية ⇒
+            لو <span class="ltr">14.4×</span> على ساعة <strong>و</strong> على
+            <span class="ltr">5</span> دقايق ⇒ صفّارة.
+            <br>الشرط المزدوج ده هو اللي بيمنع الإنذارات الكاذبة: النافذة الطويلة بتتأكد إن
+            المشكلة <em>حقيقية</em>، والقصيرة بتتأكد إنها <em>لسه مستمرة دلوقتي</em>.
+            بشرط واحد بس هتصحّي الناس على قفزة عدّت من ساعة، أو تتأخّر على حادثة بتتصاعد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">On-Call · Runbook</span>
+          <div class="trace__body">
+            الصفّارة بتوصل بلينك مباشر للوحة الخدمة وللـ <span class="term">Runbook</span> —
+            والشخص في الوردية بيبدأ من الخطوة 0 في مسار التحقيق.
+            <br>اللينكات دي مش رفاهية: الساعة 3 الفجر محدش هيدوّر في ويكي ولا هيفتكر
+            اسم اللوحة. <strong>صفّارة من غير رابط = دقايق ضايعة في كل حادثة</strong>،
+            وهي بالظبط الدقايق اللي بتفرق في الـ <span class="term term--a">MTTR</span>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الرحلة كلها بتاخد أقل من دقيقة، ومفيش فيها خطوة واحدة بتشوف الصورة كاملة غير الـ Gateway.
+        <br>وأي حلقة مكسورة في السلسلة دي بتظهر بنفس الشكل بالظبط: <strong>«الأداة مش شايفة المشكلة»</strong> —
+        فابدأ دايمًا بتحديد <em>أنهي حلقة</em> قبل ما تتّهم الأداة.
+      </div>
     </div>
 
     <div class="checkpoint fragment">

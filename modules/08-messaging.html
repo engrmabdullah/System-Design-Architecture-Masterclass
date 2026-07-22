@@ -19,7 +19,7 @@
     <h1 class="hero__title slide__title">الرسائل والمعمارية المدفوعة بالأحداث</h1>
     <p class="hero__sub">
       لحد دلوقتي كل الخدمات بتكلّم بعضها وهي واقفة مستنية الرد.
-      في الموديول ده هنكسر الانتظار ده — هنحطّ <strong>وسيط</strong> بين المُرسِل والمستقبِل،
+      في الموديول ده هنكسر الانتظار ده — هنحطّ <strong><span class="term">broker</span></strong> بين المُرسِل والمستقبِل،
       ونشوف إيه اللي بنكسبه وإيه التمن الحقيقي اللي بندفعه.
     </p>
     <div class="hero__meta">
@@ -79,7 +79,7 @@
       ارتباط في <strong>الزمن</strong>، لازم كل حاجة تكون شغّالة في نفس اللحظة.
     </p>
 
-    <h4 class="mt">✅ بعد: نشر حدث على وسيط <span class="term term--e">Asynchronous</span></h4>
+    <h4 class="mt">✅ بعد: نشر حدث على <span class="term">broker</span> <span class="term term--e">Asynchronous</span></h4>
     <div class="flow flow--col">
       <div class="flow__tier">
         <div class="node node--c"><span class="node__ico">🛒</span>Order API<span class="node__sub">40ms</span></div>
@@ -100,7 +100,7 @@
 <span class="lbl">Availability</span>        <span class="eq">=</span> <span class="n">0.999</span> <span class="eq">×</span> <span class="n">0.9995</span> <span class="eq">=</span> <span class="res">99.85%</span> <span class="cmt">// الأوردر + الوسيط بس</span>
     </div>
     <p class="sm">
-      دلوقتي الـ <span class="term">Order API</span> بيكتب الحدث في الوسيط ويرجّع الرد فورًا.
+      دلوقتي الـ <span class="term">Order API</span> بيكتب الحدث في الـ <span class="term">broker</span> ويرجّع الرد فورًا.
       لو خدمة الإيميل واقعة، الرسالة بتفضل مستنية في الطابور وتتنفّذ لما ترجع —
       <strong>الشراء نجح والمستخدم ما حسّش بحاجة</strong>.
     </p>
@@ -108,13 +108,13 @@
     <div class="grid g4 fragment mt">
       <div class="card card--c"><span class="card__num">01</span><div class="card__icon">🔗</div>
         <h4 class="card__title">Decoupling</h4>
-        <p class="card__body sm">المُرسِل ما بيعرفش مين هيستقبل ولا كام واحد. تضيف مستهلك جديد من غير ما تلمس كود المُرسِل.</p></div>
+        <p class="card__body sm">المُرسِل ما بيعرفش مين هيستقبل ولا كام واحد. تضيف <span class="term">consumer</span> جديد من غير ما تلمس كود المُرسِل.</p></div>
       <div class="card card--a"><span class="card__num">02</span><div class="card__icon">🌊</div>
         <h4 class="card__title">Load Leveling</h4>
-        <p class="card__body sm">الطابور بيمتص الذروة ويسلّم الشغل للمستهلك بالسرعة اللي يقدر عليها.</p></div>
+        <p class="card__body sm">الطابور بيمتص الذروة ويسلّم الشغل للـ <span class="term">consumer</span> بالسرعة اللي يقدر عليها.</p></div>
       <div class="card card--e"><span class="card__num">03</span><div class="card__icon">🛡️</div>
         <h4 class="card__title">Resilience</h4>
-        <p class="card__body sm">وقوع مستهلك = تأخير مؤقت مش فشل. الرسايل محفوظة لحد ما يرجع.</p></div>
+        <p class="card__body sm">وقوع <span class="term">consumer</span> = تأخير مؤقت مش فشل. الرسايل محفوظة لحد ما يرجع.</p></div>
       <div class="card card--v"><span class="card__num">04</span><div class="card__icon">📈</div>
         <h4 class="card__title">Independent Scaling</h4>
         <p class="card__body sm">خدمة الإيميل بطيئة؟ شغّل <span class="ltr">10</span> نسخ منها لوحدها من غير ما تلمس الباقي.</p></div>
@@ -215,7 +215,7 @@
           <span class="decode__tok">μ</span>
           <div class="decode__exp">
             حرف <b>ميو</b> اليوناني. في نظرية الطوابير بيرمز لـ <span class="term">Service Rate</span> =
-            <b>معدّل الخدمة</b>: كام رسالة المستهلك يقدر يخلّصها في الثانية.
+            <b>معدّل الخدمة</b>: كام رسالة الـ <span class="term">consumer</span> يقدر يخلّصها في الثانية.
           </div>
         </div>
         <div class="decode__row">
@@ -228,7 +228,7 @@
         <div class="decode__row">
           <span class="decode__tok">μ − λ</span>
           <div class="decode__exp">
-            <b>السرعة الصافية لتفريغ الطابور</b>. المستهلك بيخلّص <span class="ltr">800</span>،
+            <b>السرعة الصافية لتفريغ الطابور</b>. الـ <span class="term">consumer</span> بيخلّص <span class="ltr">800</span>،
             وفي نفس الوقت بيدخل <span class="ltr">500</span> جداد ⇒ صافي التفريغ
             <span class="ltr">300</span> رسالة في الثانية بس.
             <br><strong>لو الرقم ده صفر أو سالب ⇒ الطابور ما بيفضاش أبدًا.</strong>
@@ -259,7 +259,7 @@
         <p>
           المعطيات: في اليوم العادي بيدخل <span class="ltr">200</span> أوردر في الدقيقة.
           كل أوردر بيولّد <span class="ltr">4</span> رسايل (فاتورة، مخزون، إيميل، تحليلات).
-          كل مستهلك بيعالج <span class="ltr">25</span> رسالة في الثانية.
+          كل <span class="term">consumer</span> بيعالج <span class="ltr">25</span> رسالة في الثانية.
         </p>
         <div class="math">
 <span class="cmt">// ═══ الخطوة 1: نحوّل كل حاجة للثانية ═══</span>
@@ -285,10 +285,10 @@
         </div>
         <div class="plain mt">
           <span class="plain__label">إيه اللي الأرقام دي بتقوله؟</span>
-          مستهلك واحد ⇒ العميل هيستنى إيميل الفاتورة <strong>6 ساعات</strong> — كارثة تجارية.
-          <br><span class="ltr">8</span> مستهلكين ⇒ تجربة فورية بس بتدفع تكلفة <span class="ltr">8</span> نسخ طول السنة
+          <span class="term">consumer</span> واحد ⇒ العميل هيستنى إيميل الفاتورة <strong>6 ساعات</strong> — كارثة تجارية.
+          <br><span class="ltr">8</span> <span class="term">consumers</span> ⇒ تجربة فورية بس بتدفع تكلفة <span class="ltr">8</span> نسخ طول السنة
           عشان نص ساعة في السنة.
-          <br><span class="ltr">4</span> مستهلكين ⇒ <strong>أقصى تأخير 21 دقيقة</strong> بنص التكلفة.
+          <br><span class="ltr">4</span> <span class="term">consumers</span> ⇒ <strong>أقصى تأخير 21 دقيقة</strong> بنص التكلفة.
           <br><br><strong>القرار الحقيقي:</strong> شغّل <span class="ltr">2</span> طول السنة
           واعمل <span class="term term--e">Auto-scaling</span> على عمق الطابور يوصل لـ <span class="ltr">8</span> وقت الذروة.
           <em>الرقم اللي بتقيسه عشان توسّع مش الـ CPU — هو <strong>عمق الطابور</strong>.</em>
@@ -302,7 +302,7 @@
         <p>
           خدمة إشعارات بتستقبل <span class="ltr">300</span> رسالة/ثانية في العادي.
           حصل حدث رياضي رفع المعدّل لـ <span class="ltr">2,400</span> رسالة/ثانية لمدة <span class="ltr">90</span> ثانية.
-          طاقة المستهلكين الحالية <span class="ltr">600</span> رسالة/ثانية.
+          طاقة الـ <span class="term">consumers</span> الحالية <span class="ltr">600</span> رسالة/ثانية.
           <br>احسب: أقصى عمق للطابور · الوقت اللازم للتفريغ · وأقصى تأخير هيشوفه آخر مستخدم.
         </p>
         <details class="solution">
@@ -343,7 +343,7 @@
   <div class="slide__head">
     <span class="eyebrow">المفهوم 02</span>
     <h2 class="slide__title">النموذج الأول: <span class="term">Message Queue</span></h2>
-    <p class="slide__sub">الرسالة بتتاخد <strong>مرة واحدة</strong> بواسطة مستهلك واحد — وبعدين تختفي.</p>
+    <p class="slide__sub">الرسالة بتتاخد <strong>مرة واحدة</strong> بواسطة <span class="term">consumer</span> واحد — وبعدين تختفي.</p>
     <div class="rule"></div>
   </div>
 
@@ -356,12 +356,67 @@
       <div class="node node--e"><span class="node__ico">⚙️</span>Consumer A<span class="node__sub">أخد msg1</span></div>
       <div class="node node--e node--ghost"><span class="node__ico">⚙️</span>Consumer B<span class="node__sub">أخد msg2</span></div>
     </div>
-    <p class="sm">
-      المسار خطوة بخطوة: (1) المُنتِج بيبعت الرسالة للطابور، والوسيط بيحفظها على القرص ويرد بتأكيد.
-      (2) أول مستهلك فاضي بياخد <span class="ltr">msg1</span> وتتقفل عن الباقي.
-      (3) لما يخلّص بيبعت <span class="term term--e">Ack</span> والوسيط بيمسح الرسالة نهائيًا.
-      (4) لو المستهلك وقع قبل الـ Ack، الرسالة بترجع للطابور وحد تاني بياخدها.
-    </p>
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة واحدة: من <code>msg1</code> لحد ما تختفي من الطابور</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Producer</span>
+          <div class="trace__body">
+            الـ <span class="term">producer</span> (الطرف اللي بيبعت الرسالة) بيبعت
+            <code>msg1</code> للطابور، والـ <span class="term">broker</span>
+            (السيرفر اللي بيستقبل الرسايل ويخزّنها) بيحفظها على القرص ويرد بتأكيد.
+            <br>الحفظ على القرص <em>قبل</em> التأكيد هو كل الفرق: من غيره الرسالة تبقى في
+            ذاكرة الـ broker بس، وأول إعادة تشغيل <strong>بتضيّعها وانت فاكر إنها وصلت</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Queue</span>
+          <div class="trace__body">
+            الرسالة قاعدة في الطابور مستنية أول <span class="term">consumer</span>
+            (الطرف اللي بيقرا الرسالة ويشتغل عليها) يفضى.
+            <br>الفترة دي هي <strong>المخزن المؤقت اللي بيفصل سرعة الإنتاج عن سرعة المعالجة</strong> —
+            من غيرها أي ذروة في الطلبات بتتحوّل فورًا لأخطاء عند المستخدم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Consumer</span>
+          <div class="trace__body">
+            أول <span class="term">consumer</span> فاضي بياخد <code>msg1</code>،
+            و<strong>تتقفل عن الباقي</strong> طول ما هو شغّال عليها.
+            <br>القفل ده هو اللي بيمنع اتنين يعالجوا نفس الطلب في نفس الوقت.
+            من غيره مفيش أي فايدة من زيادة عدد النسخ — كل نسخة هتكرّر شغل التانية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Ack</span>
+          <div class="trace__body">
+            لما يخلّص بيبعت <span class="term term--e">Ack</span> والـ broker بيمسح الرسالة نهائيًا.
+            <br>لاحظ إن الـ Ack بيتبعت <strong>بعد</strong> الشغل مش قبله.
+            لو بعتّه الأول (وده الافتراضي في كذا مكتبة!) بتكون حوّلت الضمان لـ
+            <em>at-most-once</em> وأي وقوع بيضيّع الرسالة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Redelivery</span>
+          <div class="trace__body">
+            لو الـ consumer وقع قبل الـ Ack، الرسالة بترجع للطابور وحد تاني بياخدها.
+            <br>وده بالظبط سبب إن المعالجة لازم تكون <strong>Idempotent</strong>:
+            الرسالة ممكن تكون اتنفّذت بالكامل والـ Ack هو اللي ضاع — والـ broker
+            مالوش طريقة يفرّق.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الطابور ما بيضمنش «مرة واحدة» — بيضمن <strong>«مش أقل من مرة»</strong>.
+        الفرق ده هو اللي بيحدّد شكل كودك في باقي الموديول.
+      </div>
+    </div>
 
     <div class="termcard termcard--a">
       <div class="termcard__head">
@@ -372,7 +427,7 @@
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
           مخزن رسايل بيضمن إن كل رسالة <strong>تتعالج بنجاح مرة واحدة</strong> بواسطة
-          <strong>مستهلك واحد</strong> من مجموعة المستهلكين.
+          <strong><span class="term">consumer</span> واحد</strong> من مجموعة الـ <span class="term">consumers</span>.
           الرسالة بتُحذف بعد التأكيد — الطابور <em>مش سجل تاريخي</em>، هو <strong>قائمة شغل</strong>.
         </div>
         <div class="tblock tblock--analogy">
@@ -390,8 +445,8 @@
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          الناس بتفتكر إن الطابور بيضمن الترتيب. <strong>مش صحيح لما يكون فيه أكتر من مستهلك</strong>:
-          لو <span class="ltr">msg1</span> راحت لمستهلك بطيء و<span class="ltr">msg2</span> لمستهلك سريع،
+          الناس بتفتكر إن الطابور بيضمن الترتيب. <strong>مش صحيح لما يكون فيه أكتر من <span class="term">consumer</span></strong>:
+          لو <span class="ltr">msg1</span> راحت ل<span class="term">consumer</span> بطيء و<span class="ltr">msg2</span> ل<span class="term">consumer</span> سريع،
           <span class="ltr">msg2</span> هتخلّص الأول.
         </div>
         <div class="tblock tblock--win">
@@ -430,7 +485,7 @@
     </div>
     <p class="sm">
       رحلة رسالة واحدة: الناشر بيبعت <code>order.created</code> للـ Topic مرة واحدة.
-      الوسيط بيعمل <strong>4 نسخ</strong> ويحطّ نسخة في صندوق كل مشترك.
+      الـ <span class="term">broker</span> بيعمل <strong>4 نسخ</strong> ويحطّ نسخة في صندوق كل مشترك.
       لو خدمة الولاء واقعة، نسختها بتفضل مستنية في صندوقها — والباقي اشتغلوا عادي.
       لو ضفت مشترك خامس بكرة، <strong>الناشر مش هيتغيّر ولا سطر</strong>.
     </p>
@@ -530,9 +585,9 @@
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          استخدام Kafka كأنه طابور مهام: تخلّي كل مستهلك في <span class="term term--e">Consumer Group</span>
+          استخدام Kafka كأنه طابور مهام: تخلّي كل <span class="term">consumer</span> في <span class="term term--e">Consumer Group</span>
           مختلفة عشان «الكل يشتغل». النتيجة إن كل واحد بينفّذ نفس الشغل ⇒ <strong>تكرار مقصود بالغلط</strong>.
-          <br>وكمان: عدد المستهلكين المفيد <strong>محدود بعدد الـ Partitions</strong> — مش بعدد النسخ اللي تشغّلها.
+          <br>وكمان: عدد الـ <span class="term">consumers</span> المفيد <strong>محدود بعدد الـ Partitions</strong> — مش بعدد النسخ اللي تشغّلها.
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تستخدمه</span>
@@ -566,12 +621,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>مين بياخد الرسالة</td><td>مستهلك <strong>واحد</strong> بس</td><td><strong>كل</strong> المشتركين</td><td>كل <span class="term">Consumer Group</span> بتقرا الكل</td></tr>
+          <tr><td>مين بياخد الرسالة</td><td><span class="term">consumer</span> <strong>واحد</strong> بس</td><td><strong>كل</strong> المشتركين</td><td>كل <span class="term">Consumer Group</span> بتقرا الكل</td></tr>
           <tr><td>بعد القراءة</td><td class="td-bad">تُحذف نهائيًا</td><td class="td-bad">تُحذف من صندوق المشترك</td><td class="td-ok">تفضل موجودة لحد انتهاء المدة</td></tr>
-          <tr><td>مين شايل المؤشّر</td><td>الوسيط (Broker)</td><td>الوسيط</td><td class="td-ok"><strong>المستهلك</strong> (Offset)</td></tr>
+          <tr><td>مين شايل الـ <span class="term">offset</span></td><td>الـ <span class="term">broker</span></td><td>الـ <span class="term">broker</span></td><td class="td-ok"><strong>الـ <span class="term">consumer</span></strong></td></tr>
           <tr><td>إعادة القراءة <span class="term">Replay</span></td><td class="td-bad">مستحيل</td><td class="td-bad">مستحيل</td><td class="td-ok">أساسية ومجانية</td></tr>
-          <tr><td>الترتيب</td><td class="td-mid">داخل الطابور بمستهلك واحد</td><td class="td-mid">لكل اشتراك</td><td class="td-ok">مضمون <strong>داخل الـ Partition</strong></td></tr>
-          <tr><td>عدد المستهلكين المتوازيين</td><td class="td-ok">مفتوح — زوّد براحتك</td><td class="td-ok">مفتوح لكل اشتراك</td><td class="td-mid">≤ عدد الـ Partitions</td></tr>
+          <tr><td>الترتيب</td><td class="td-mid">داخل الطابور ب<span class="term">consumer</span> واحد</td><td class="td-mid">لكل اشتراك</td><td class="td-ok">مضمون <strong>داخل الـ Partition</strong></td></tr>
+          <tr><td>عدد الـ <span class="term">consumers</span> المتوازيين</td><td class="td-ok">مفتوح — زوّد براحتك</td><td class="td-ok">مفتوح لكل اشتراك</td><td class="td-mid">≤ عدد الـ Partitions</td></tr>
           <tr><td>الإنتاجية النموذجية</td><td class="ltr">10K – 50K msg/s</td><td class="ltr">10K – 50K msg/s</td><td class="td-ok ltr">100K – 1M+ msg/s</td></tr>
           <tr><td>رسالة واحدة تفشل</td><td class="td-ok">تروح <span class="term">DLQ</span> والباقي يكمّل</td><td class="td-ok">DLQ لكل اشتراك</td><td class="td-bad">بتوقّف الـ Partition كلها</td></tr>
           <tr><td>الأدوات</td><td class="ltr">SQS · ASB Queue · RabbitMQ</td><td class="ltr">SNS · ASB Topic · Fanout</td><td class="ltr">Kafka · Event Hubs · Kinesis</td></tr>
@@ -620,9 +675,9 @@
           <div class="solution__body">
             <ul class="pc pc--pro sm">
               <li><strong>1 ⇒ Message Queue.</strong> ده <em>أمر</em> لازم ينفّذ مرة واحدة بالظبط.
-                لو اتنفّذ مرتين العميل يخسر فلوس. مستهلك واحد + <span class="term">DLQ</span> لو فشل.</li>
+                لو اتنفّذ مرتين العميل يخسر فلوس. <span class="term">consumer</span> واحد + <span class="term">DLQ</span> لو فشل.</li>
               <li><strong>2 ⇒ Pub/Sub.</strong> حدث واحد، تلات مهتمين مختلفين تمامًا.
-                لو استخدمت Queue واحد هيتنفّذ عند واحد بس، ولو عملت 3 طوابير هتضطر تعدّل المُنتِج
+                لو استخدمت Queue واحد هيتنفّذ عند واحد بس، ولو عملت 3 طوابير هتضطر تعدّل الـ <span class="term">producer</span>
                 كل ما تضيف مهتم جديد.</li>
               <li><strong>3 ⇒ Streaming Log.</strong> محتاج <span class="term term--e">Replay</span> لتاريخ كامل.
                 ده اللي الطابور والـ Pub/Sub <em>عمرهم ما يقدروا عليه</em> لأن الرسايل بتتمسح بعد القراءة.</li>
@@ -656,7 +711,7 @@
       <div class="card card--c">
         <div class="card__icon">🎯</div>
         <h3 class="card__title"><span class="term">Point-to-Point</span></h3>
-        <p class="card__body sm">رسالة واحدة ⟵ مستهلك واحد بالظبط ينفّذها.
+        <p class="card__body sm">رسالة واحدة ⟵ <span class="term">consumer</span> واحد بالظبط ينفّذها.
           <br>لو فيه <span class="ltr">5</span> نسخ شغالة، واحدة بس هتاخدها والباقي هيشوفوا رسايل تانية.</p>
       </div>
       <div class="vs__mid">VS</div>
@@ -676,7 +731,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          نمط توصيل بيضمن إن الرسالة تتسلّم لـ <strong>مستهلك واحد فقط</strong> من مجموعة المستهلكين
+          نمط توصيل بيضمن إن الرسالة تتسلّم لـ <strong><span class="term">consumer</span> واحد فقط</strong> من مجموعة الـ <span class="term">consumers</span>
           اللي على نفس الطابور. زيادة عدد النسخ هنا = <strong>زيادة سرعة</strong>، مش زيادة تكرار.
         </div>
         <div class="tblock tblock--analogy">
@@ -757,12 +812,12 @@
     <div class="termcard">
       <div class="termcard__head">
         <span class="termcard__en">Producer</span>
-        <span class="termcard__ar">المُنتِج</span>
+        <span class="termcard__ar">اللي بيبعت الرسايل</span>
       </div>
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          الطرف اللي <strong>بيكتب</strong> الرسالة في الوسيط. مسؤوليته تنتهي عند استلام تأكيد الكتابة —
+          الطرف اللي <strong>بيكتب</strong> الرسالة في الـ <span class="term">broker</span>. مسؤوليته تنتهي عند استلام تأكيد الكتابة —
           هو <em>ما بيعرفش</em> مين هيقرا ولا إمتى ولا إذا كان نجح.
         </div>
         <div class="tblock tblock--analogy">
@@ -784,8 +839,8 @@
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">القاعدة العملية</span>
-          خلّي المُنتِج <strong>واحد ومشترك</strong> (Singleton) في التطبيق كله.
-          إنشاء مُنتِج جديد لكل رسالة = فتح اتصالات TCP جديدة = كارثة أداء.
+          خلّي الـ <span class="term">producer</span> <strong>واحد ومشترك</strong> (Singleton) في التطبيق كله.
+          إنشاء <span class="term">producer</span> جديد لكل رسالة = فتح اتصالات TCP جديدة = كارثة أداء.
         </div>
       </div>
     </div>
@@ -793,14 +848,14 @@
     <div class="termcard termcard--e fragment">
       <div class="termcard__head">
         <span class="termcard__en">Consumer</span>
-        <span class="termcard__ar">المُستهلِك</span>
+        <span class="termcard__ar">اللي بيستقبل الرسايل ويعالجها</span>
       </div>
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
           الطرف اللي <strong>بيقرا</strong> الرسايل وينفّذ عليها منطق شغل، وبعدين بيأكّد
-          (<span class="term term--e">Ack</span>) إنه خلّص. التأكيد ده هو اللي بيقول للوسيط
-          «تقدر تشيلها / تقدّم المؤشّر».
+          (<span class="term term--e">Ack</span>) إنه خلّص. التأكيد ده هو اللي بيقول للـ <span class="term">broker</span>
+          «تقدر تشيلها / تقدّم الـ <span class="term">offset</span>».
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🍳</span>
@@ -836,8 +891,8 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          السيرفر اللي في النص: بيستقبل من المنتجين، <strong>بيخزّن على قرص</strong>،
-          بيوجّه للمستهلكين، وبيتابع مين قرا إيه.
+          السيرفر اللي في النص: بيستقبل من الـ <span class="term">producers</span>، <strong>بيخزّن على قرص</strong>،
+          بيوجّه للـ <span class="term">consumers</span>، وبيتابع مين قرا إيه.
           هو <strong>مصدر الحقيقة المؤقّت</strong> للرسايل الطايرة في النظام.
         </div>
         <div class="tblock tblock--analogy">
@@ -849,19 +904,19 @@
           <span class="tblock__label">أمثلة</span>
           <span class="term term--v">RabbitMQ Node</span> ·
           <span class="term term--v">Kafka Broker</span> (سيرفر في الـ Cluster) ·
-          <span class="term term--v">Azure Service Bus Namespace</span> (وسيط مُدار).
+          <span class="term term--v">Azure Service Bus Namespace</span> (<span class="term">broker</span> مُدار).
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          الوسيط بقى <span class="term term--r">Single Point of Failure</span> جديد في نظامك.
+          الـ <span class="term">broker</span> بقى <span class="term term--r">Single Point of Failure</span> جديد في نظامك.
           لو وقع، كل الخدمات اللي بتعتمد عليه بتقف.
-          <br>عشان كده الوسيط <strong>دايمًا</strong> بيتشغّل كمجموعة (<span class="ltr">3</span> عُقد على الأقل)
+          <br>عشان كده الـ <span class="term">broker</span> <strong>دايمًا</strong> بيتشغّل كمجموعة (<span class="ltr">3</span> عُقد على الأقل)
           مع نسخ متماثلة للرسايل.
         </div>
         <div class="tblock tblock--win">
-          <span class="tblock__label">اللي تسأله عن أي وسيط</span>
+          <span class="tblock__label">اللي تسأله عن أي <span class="term">broker</span></span>
           هل بيحفظ على القرص قبل ما يقولّي «تم»؟ · كام نسخة بيعمل؟ ·
-          إيه اللي بيحصل لما القرص يمتلي؟ · بيستحمل قد إيه لو المستهلك اختفى أسبوع؟
+          إيه اللي بيحصل لما القرص يمتلي؟ · بيستحمل قد إيه لو الـ <span class="term">consumer</span> اختفى أسبوع؟
         </div>
       </div>
     </div>
@@ -886,8 +941,8 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          اسم منطقي بيجمع رسايل من <strong>نفس النوع</strong>. المنتجين بيكتبوا على اسمه،
-          والمستهلكين بيشتركوا في اسمه — من غير ما أي طرف يعرف التاني.
+          اسم منطقي بيجمع رسايل من <strong>نفس النوع</strong>. الـ <span class="term">producers</span> بيكتبوا على اسمه،
+          والـ <span class="term">consumers</span> بيشتركوا في اسمه — من غير ما أي طرف يعرف التاني.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 📺</span>
@@ -904,13 +959,13 @@
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
           <strong>Topic واحد لكل حاجة</strong> اسمه <code>events</code>.
-          النتيجة: كل مستهلك بيقرا كل الرسايل ويرمي 95% منها، وبتدفع شبكة ومعالجة على الفاضي،
+          النتيجة: كل <span class="term">consumer</span> بيقرا كل الرسايل ويرمي 95% منها، وبتدفع شبكة ومعالجة على الفاضي،
           وما تقدرش تعمل صلاحيات ولا مدة احتفاظ مختلفة لكل نوع.
-          <br>والفخ العكسي: <strong>Topic لكل عميل</strong> ⇒ آلاف الـ Topics تقتل الوسيط.
+          <br>والفخ العكسي: <strong>Topic لكل عميل</strong> ⇒ آلاف الـ Topics تقتل الـ <span class="term">broker</span>.
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">القاعدة</span>
-          Topic لكل <strong>نوع حدث</strong> له مستهلكين مختلفين أو سياسة احتفاظ مختلفة.
+          Topic لكل <strong>نوع حدث</strong> له <span class="term">consumers</span> مختلفين أو سياسة احتفاظ مختلفة.
           لو النوعين دايمًا بيتقروا مع بعض ⇒ خليهم Topic واحد.
         </div>
       </div>
@@ -950,7 +1005,7 @@
         <div class="tblock tblock--win">
           <span class="tblock__label">إزاي تختار العدد</span>
           العدد ده هو سقف التوازي بتاعك للأبد تقريبًا — فابدأ بسخاء معقول.
-          احسبه من الإنتاجية المستهدفة مقسومة على طاقة المستهلك الواحد، وضاعفه للنمو.
+          احسبه من الإنتاجية المستهدفة مقسومة على طاقة الـ <span class="term">consumer</span> الواحد، وضاعفه للنمو.
         </div>
       </div>
     </div>
@@ -964,8 +1019,8 @@
     </div>
     <p class="sm">
       ضربنا في <span class="ltr">2</span> لأن زيادة الأقسام بعدين مؤلمة (بتكسر الترتيب)،
-      لكن <em>تقليل</em> عدد المستهلكين سهل جدًا. يعني بندفع تكلفة صغيرة دلوقتي عشان نتجنّب هجرة مؤلمة بعدين.
-      <br>وفي نفس الوقت ما تبالغش: كل Partition ليها تكلفة على الوسيط (ملفات مفتوحة، ذاكرة، وقت إعادة توزيع).
+      لكن <em>تقليل</em> عدد الـ <span class="term">consumers</span> سهل جدًا. يعني بندفع تكلفة صغيرة دلوقتي عشان نتجنّب هجرة مؤلمة بعدين.
+      <br>وفي نفس الوقت ما تبالغش: كل Partition ليها تكلفة على الـ <span class="term">broker</span> (ملفات مفتوحة، ذاكرة، وقت إعادة توزيع).
     </p>
   </div>
 </section>
@@ -987,7 +1042,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          مجموعة نسخ بتشتغل تحت <strong>اسم واحد</strong>، والوسيط بيوزّع الـ Partitions عليهم
+          مجموعة نسخ بتشتغل تحت <strong>اسم واحد</strong>، والـ <span class="term">broker</span> بيوزّع الـ Partitions عليهم
           بحيث <strong>كل Partition لنسخة واحدة بس</strong>. المجموعة كلها ليها
           <strong>مؤشّر قراءة واحد</strong>.
           <br>مجموعات مختلفة = قراءات مستقلة تمامًا لنفس البيانات.
@@ -1021,13 +1076,13 @@
     <div class="termcard termcard--a fragment">
       <div class="termcard__head">
         <span class="termcard__en">Offset</span>
-        <span class="termcard__ar">الإزاحة / المؤشّر</span>
+        <span class="termcard__ar">رقم آخر رسالة اتقرت</span>
       </div>
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
           رقم تسلسلي متزايد لكل رسالة <strong>داخل الـ Partition</strong>.
-          الوسيط بيحتفظ لكل (مجموعة + Partition) برقم بيقول «آخر رسالة اتأكّد استلامها».
+          الـ <span class="term">broker</span> بيحتفظ لكل (مجموعة + Partition) برقم بيقول «آخر رسالة اتأكّد استلامها».
           الـ Offset مش وقت — هو <strong>موضع</strong>.
         </div>
         <div class="tblock tblock--analogy">
@@ -1182,7 +1237,7 @@
                 دلوقتي الـ 6 أقسام بتتوزّع على النسخ وكل رسالة بتتعالج مرة واحدة.</li>
               <li><strong>الإصلاح 2:</strong> نزّل النسخ لـ <span class="ltr">6</span>
                 أو زوّد الأقسام لـ <span class="ltr">12</span> (لو الترتيب يسمح).</li>
-              <li><strong>الإصلاح 3 (الأهم):</strong> خلّي المستهلك
+              <li><strong>الإصلاح 3 (الأهم):</strong> خلّي الـ <span class="term">consumer</span>
                 <span class="term term--e">Idempotent</span> — لأن الفوترة المكررة مصيبة،
                 ومش صح إن الحماية الوحيدة منها تكون «الإعدادات مظبوطة».</li>
             </ul>
@@ -1200,9 +1255,9 @@
     <div class="checkpoint fragment">
       <div class="checkpoint__title">قبل ما تنتقل للجزء الجاي، تأكد إنك تقدر تجاوب على ده</div>
       <ul>
-        <li>إيه الفرق الجوهري بين <span class="term">Message Queue</span> و<span class="term">Streaming Log</span> في «مين شايل المؤشّر»؟</li>
+        <li>إيه الفرق الجوهري بين <span class="term">Message Queue</span> و<span class="term">Streaming Log</span> في «مين شايل الـ <span class="term">offset</span>»؟</li>
         <li>ليه <span class="term term--v">Fan-out</span> بيضاعف الحمل على النظام بصمت؟</li>
-        <li>إيه اللي بيحدّد أقصى عدد مستهلكين متوازيين في Kafka؟</li>
+        <li>إيه اللي بيحدّد أقصى عدد <span class="term">consumers</span> متوازيين في Kafka؟</li>
         <li>ليه زيادة عدد الـ <span class="term">Partitions</span> بتكسر الترتيب؟</li>
         <li>إيه الترتيب الصحيح: Ack قبل المعالجة ولا بعدها؟ وليه؟</li>
         <li>إيه المعلومات اللي لازم تتخزّن مع أي رسالة بتدخل الـ <span class="term term--r">DLQ</span>؟</li>
@@ -1270,7 +1325,7 @@
         <div class="decode__row">
           <span class="decode__tok">Once</span>
           <div class="decode__exp">
-            <b>مرة واحدة</b>. الوحدة اللي بنعدّها هي: كام مرة الرسالة اتسلّمت للمستهلك ونفّذ عليها شغل.
+            <b>مرة واحدة</b>. الوحدة اللي بنعدّها هي: كام مرة الرسالة اتسلّمت للـ <span class="term">consumer</span> ونفّذ عليها شغل.
           </div>
         </div>
         <div class="decode__row">
@@ -1292,7 +1347,7 @@
           <span class="decode__tok">Exactly</span>
           <div class="decode__exp">
             <b>بالظبط</b> — <span class="ltr">1</span> ولا حاجة تانية.
-            وده بيتطلّب اتفاق ذرّي بين الشبكة والمستهلك وقاعدة البيانات في نفس اللحظة —
+            وده بيتطلّب اتفاق ذرّي بين الشبكة والـ <span class="term">consumer</span> وقاعدة البيانات في نفس اللحظة —
             وهو اللي هنثبت إنه <em>مستحيل على مستوى التسليم</em> في السلايد الجاية.
           </div>
         </div>
@@ -1308,7 +1363,7 @@
       <div class="callout__icon">🔑</div>
       <div class="callout__body">
         <span class="callout__title">القاعدة اللي هتشتغل بيها طول عمرك</span>
-        <strong>اختار At-Least-Once دايمًا، وخلّي المستهلك Idempotent.</strong>
+        <strong>اختار At-Least-Once دايمًا، وخلّي الـ <span class="term">consumer</span> Idempotent.</strong>
         <br>ده الحل الوحيد اللي بيشتغل في كل الأنظمة الموزّعة الحقيقية،
         وهو اللي كل الشركات الكبيرة بتعمله فعليًا — حتى اللي بتقول إنها بتعمل «Exactly-Once».
       </div>
@@ -1333,7 +1388,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          المستهلك بيأكّد الاستلام <strong>قبل</strong> ما ينفّذ الشغل (أو الوسيط بيمسح الرسالة أول ما يبعتها).
+          الـ <span class="term">consumer</span> بيأكّد الاستلام <strong>قبل</strong> ما ينفّذ الشغل (أو الـ <span class="term">broker</span> بيمسح الرسالة أول ما يبعتها).
           لو وقع في النص، الرسالة راحت للأبد ومحدش هيعرف.
         </div>
         <div class="tblock tblock--analogy">
@@ -1369,8 +1424,8 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          المستهلك بيأكّد <strong>بعد</strong> نجاح الشغل. لو وقع قبل التأكيد،
-          الوسيط بيعتبرها ما اتعالجتش ويسلّمها تاني — لنفس النسخة أو لغيرها.
+          الـ <span class="term">consumer</span> بيأكّد <strong>بعد</strong> نجاح الشغل. لو وقع قبل التأكيد،
+          الـ <span class="term">broker</span> بيعتبرها ما اتعالجتش ويسلّمها تاني — لنفس النسخة أو لغيرها.
           <br>النتيجة: <strong>الفقدان مستحيل، والتكرار حتمي في يوم من الأيام</strong>.
         </div>
         <div class="tblock tblock--analogy">
@@ -1398,7 +1453,7 @@
           <span class="tblock__label">إمتى تستخدمه</span>
           <strong>في كل حاجة تانية.</strong> ده الافتراضي الصح لأي شغل له قيمة:
           أوردرات، مدفوعات، مخزون، إشعارات مهمة، تحديث بيانات.
-          <br>وبتدفع تمنه بإنك تعمل المستهلك <span class="term term--e">Idempotent</span>.
+          <br>وبتدفع تمنه بإنك تعمل الـ <span class="term">consumer</span> <span class="term term--e">Idempotent</span>.
         </div>
       </div>
     </div>
@@ -1423,7 +1478,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق — وفيه فرق حاسم</span>
-          <strong>Exactly-Once Delivery</strong> = الرسالة توصل للمستهلك مرة واحدة بالظبط
+          <strong>Exactly-Once Delivery</strong> = الرسالة توصل للـ <span class="term">consumer</span> مرة واحدة بالظبط
           ⇒ <span class="term term--r">مستحيل</span> في أي شبكة ممكن تفقد رسايل.
           <br><strong>Exactly-Once Processing</strong> = الرسالة ممكن توصل <em>عشر مرات</em>،
           لكن <strong>أثرها على حالة النظام يحصل مرة واحدة</strong>
@@ -1442,12 +1497,12 @@
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">إزاي المشكلة بتطلع في نظامك بالظبط ⚠️</span>
-          المستهلك خلّص الشغل وبعت <span class="term">Ack</span> — وقبل ما الـ Ack يوصل الشبكة قطعت.
-          <br>دلوقتي الوسيط قدّامه اختيارين، <strong>وبس</strong>:
+          الـ <span class="term">consumer</span> خلّص الشغل وبعت <span class="term">Ack</span> — وقبل ما الـ Ack يوصل الشبكة قطعت.
+          <br>دلوقتي الـ <span class="term">broker</span> قدّامه اختيارين، <strong>وبس</strong>:
           <br>• <strong>يبعتها تاني</strong> ⇒ ممكن تتنفّذ مرتين = At-Least-Once.
           <br>• <strong>ما يبعتهاش</strong> ⇒ ممكن تكون ما اتنفّذتش خالص = At-Most-Once.
-          <br><em>مفيش اختيار تالت. الوسيط ما يقدرش يعرف الفرق بين «المستهلك مات قبل الشغل»
-          و«المستهلك خلّص الشغل ومات قبل التأكيد».</em>
+          <br><em>مفيش اختيار تالت. الـ <span class="term">broker</span> ما يقدرش يعرف الفرق بين «الـ <span class="term">consumer</span> مات قبل الشغل»
+          و«الـ <span class="term">consumer</span> خلّص الشغل ومات قبل التأكيد».</em>
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إيه اللي Kafka بتقصده بـ Exactly-Once إذن؟</span>
@@ -1467,13 +1522,13 @@
         <p>عايزين نخصم <span class="ltr">250</span> جنيه من محفظة عميل، والرسالة ممكن توصل أكتر من مرة.</p>
         <ol class="steps">
           <li style="--accent:var(--cyan)">
-            <h4>1. المُنتِج بيحطّ مُعرّف فريد للرسالة</h4>
+            <h4>1. الـ <span class="term">producer</span> بيحطّ مُعرّف فريد للرسالة</h4>
             <p>عند إنشاء الحدث (مش عند الإرسال) بنولّد <span class="term">MessageId</span> =
-            <code>GUID</code> ثابت. لو المُنتِج أعاد الإرسال، <strong>نفس الـ Id</strong> بيتبعت —
+            <code>GUID</code> ثابت. لو الـ <span class="term">producer</span> أعاد الإرسال، <strong>نفس الـ Id</strong> بيتبعت —
             وده الشرط اللي بيخلّي أي فحص تكرار مفيد أصلاً.</p>
           </li>
           <li style="--accent:var(--violet)">
-            <h4>2. المستهلك بيفتح معاملة واحدة</h4>
+            <h4>2. الـ <span class="term">consumer</span> بيفتح معاملة واحدة</h4>
             <p>في نفس الـ <span class="term term--v">Transaction</span>:
             (أ) يحاول يدخّل الـ MessageId في جدول <code>ProcessedMessages</code>،
             (ب) يخصم الفلوس من المحفظة.</p>
@@ -1515,7 +1570,7 @@
 <section class="slide" data-title="Idempotent Consumer">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 11</span>
-    <h2 class="slide__title">Idempotent Consumer — المستهلك اللي التكرار ما بيأثّرش فيه</h2>
+    <h2 class="slide__title">Idempotent Consumer — الـ <span class="term">consumer</span> اللي التكرار ما بيأثّرش فيه</h2>
     <p class="slide__sub">لو فيه فكرة واحدة تطلع بيها من الموديول ده، خليها دي.</p>
     <div class="rule"></div>
   </div>
@@ -1529,7 +1584,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          مستهلك تنفيذه لنفس الرسالة <span class="ltr">N</span> مرة بيدّي <strong>نفس حالة النظام</strong>
+          <span class="term">consumer</span> تنفيذه لنفس الرسالة <span class="ltr">N</span> مرة بيدّي <strong>نفس حالة النظام</strong>
           اللي بيديها تنفيذه مرة واحدة. رياضيًا:
           <code>f(f(x)) = f(x)</code>.
         </div>
@@ -1559,11 +1614,11 @@
         <div class="tblock tblock--win">
           <span class="tblock__label">إيه اللي يبقى مفتاح إزالة التكرار؟</span>
           <strong>الأفضل:</strong> <span class="term term--e">Idempotency Key</span> بيولّده
-          <em>المُنتِج</em> مرة واحدة ويفضل ثابت في كل إعادات الإرسال.
+          <em>الـ <span class="term">producer</span></em> مرة واحدة ويفضل ثابت في كل إعادات الإرسال.
           <br><strong>البديل الممتاز:</strong> مفتاح طبيعي من البيانات نفسها —
           <code>(OrderId, "payment-captured")</code>.
           <br><strong>ممنوع:</strong> تجزئة نص الرسالة كله (أي تغيير في الطابع الزمني = مفتاح جديد)،
-          أو الوقت، أو أي حاجة الوسيط بيولّدها لأنها بتتغيّر مع كل تسليم.
+          أو الوقت، أو أي حاجة الـ <span class="term">broker</span> بيولّدها لأنها بتتغيّر مع كل تسليم.
         </div>
       </div>
     </div>
@@ -1594,8 +1649,8 @@
 <section class="slide" data-title="كود: مستهلك Idempotent">
   <div class="slide__head">
     <span class="eyebrow">كود 01</span>
-    <h2 class="slide__title">مستهلك <span class="term term--e">Idempotent</span> بجدول إزالة تكرار</h2>
-    <p class="slide__sub">ده القالب اللي هتنسخه في كل مستهلك بيلمس فلوس أو مخزون.</p>
+    <h2 class="slide__title"><span class="term">consumer</span> <span class="term term--e">Idempotent</span> بجدول إزالة تكرار</h2>
+    <p class="slide__sub">ده القالب اللي هتنسخه في كل <span class="term">consumer</span> بيلمس فلوس أو مخزون.</p>
     <div class="rule"></div>
   </div>
 
@@ -1605,7 +1660,7 @@
 <pre><code><span class="c">// ═══ 1) جدول إزالة التكرار — سطر واحد لكل (رسالة × مستهلك) ═══</span>
 <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">ProcessedMessage</span>
 {
-    <span class="k">public</span> <span class="t">Guid</span> MessageId    { <span class="k">get</span>; <span class="k">init</span>; }   <span class="c">// بيولّده المُنتِج مرة واحدة</span>
+    <span class="k">public</span> <span class="t">Guid</span> MessageId    { <span class="k">get</span>; <span class="k">init</span>; }   <span class="c">// بيولّده الـ producer مرة واحدة</span>
     <span class="k">public</span> <span class="k">string</span> ConsumerName { <span class="k">get</span>; <span class="k">init</span>; } <span class="p">=</span> <span class="s">""</span>;  <span class="c">// نفس الرسالة ممكن يستهلكها أكتر من خدمة</span>
     <span class="k">public</span> <span class="t">DateTime</span> ProcessedAtUtc { <span class="k">get</span>; <span class="k">init</span>; }
 }
@@ -1670,22 +1725,76 @@
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">الكود ده بيعمل إيه سطر سطر؟</span>
-      <strong>1.</strong> المفتاح مركّب من <code>(MessageId, ConsumerName)</code> — عشان لو نفس الحدث
-      استهلكته خدمتين، كل واحدة عندها سجلها ومش هتمنع التانية.
-      <br><strong>2.</strong> بنعمل <code>Add</code> على طول <strong>من غير</strong>
-      <code>AnyAsync</code> قبلها. ليه؟ لأن أي فحص قبل الإدخال فيه فجوة زمنية —
-      نسختين ممكن يفوتوا منها في نفس اللحظة. قاعدة البيانات بتفحص <em>ذرّيًا</em> وقت الإدخال.
-      <br><strong>3.</strong> نقص الرصيد بيرمي استثناء حقيقي ⇒ ده خطأ أعمال المفروض يتعاد أو يروح
-      <span class="term term--r">DLQ</span>، مش يتبلع.
-      <br><strong>4.</strong> <code>SaveChangesAsync</code> بيبعت الإدخال والتعديل في نفس المعاملة ⇒
-      <strong>إما الاتنين وإما ولا واحد</strong>. دي كل الحكاية.
-      <br><strong>5.</strong> فلتر الاستثناء <code>when (IsDuplicateKey(ex))</code> بيميّز
-      «مكررة» عن أي فشل تاني — عشان ما نبلعش أخطاء حقيقية بالغلط.
-      <br><strong>6.</strong> بنرجع <code>return</code> عادي مش استثناء ⇒ الوسيط بياخد
-      <span class="term term--e">Ack</span> وبيشيل الرسالة. لو رمينا استثناء، الرسالة هتتعاد
-      للأبد وهتنتهي في الـ DLQ من غير سبب حقيقي.
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة مكررة: نفس الحدث وصل تاني — إزاي الكود بيمتصّه؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Composite Key</span>
+          <div class="trace__body">
+            المفتاح مركّب من <code>(MessageId, ConsumerName)</code>.
+            <br>ليه مش <code>MessageId</code> لوحده؟ عشان لو نفس الحدث استهلكته خدمتين،
+            كل واحدة عندها سجلها ومش هتمنع التانية. من غير الجزء التاني،
+            <strong>أول consumer بيسجّل الحدث بيحجب الرسالة عن باقي المشتركين</strong> —
+            وده بق صامت مرعب في نظام Pub/Sub.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Insert-First</span>
+          <div class="trace__body">
+            بنعمل <code>Add</code> على طول <strong>من غير</strong> <code>AnyAsync</code> قبلها.
+            <br>ليه؟ لأن أي فحص قبل الإدخال فيه فجوة زمنية — نسختين ممكن يفوتوا منها في نفس
+            اللحظة ويلاقوا الاتنين «مفيش». قاعدة البيانات بتفحص <em>ذرّيًا</em> وقت الإدخال،
+            وده الضمان الوحيد اللي بيصمد تحت التزامن.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Business Rule</span>
+          <div class="trace__body">
+            نقص الرصيد بيرمي استثناء حقيقي ⇒ ده خطأ أعمال المفروض يتعاد أو يروح
+            <span class="term term--r">DLQ</span>، مش يتبلع.
+            <br>الخلط بين «رسالة مكررة» و«عملية مرفوضة» هو أشهر غلطة هنا:
+            الأولى نجاح، والتانية <strong>فشل لازم يوصل لبني آدم</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Single Transaction</span>
+          <div class="trace__body">
+            <code>SaveChangesAsync</code> بيبعت الإدخال والتعديل في نفس المعاملة ⇒
+            <strong>إما الاتنين وإما ولا واحد</strong>. دي كل الحكاية.
+            <br>لو سجّلت الرسالة في معاملة والخصم في معاملة تانية، أي وقوع بينهم بيسيبك في
+            أسوأ حالتين: خصم من غير سجل (هيتكرر)، أو سجل من غير خصم (ضاع للأبد).
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Duplicate Filter</span>
+          <div class="trace__body">
+            فلتر الاستثناء <code>when (IsDuplicateKey(ex))</code> بيميّز «مكررة» عن أي فشل تاني.
+            <br>من غير الفلتر ده، الـ <code>catch</code> هيبلع كمان أعطال الشبكة وأخطاء القيود
+            التانية ⇒ <strong>رسايل بتتأكّد وهي فشلت فعلاً</strong>، وده أخطر من ضياعها
+            لأنه بيحصل في صمت تام.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Ack</span>
+          <div class="trace__body">
+            بنرجع <code>return</code> عادي مش استثناء ⇒ الـ <span class="term">broker</span>
+            بياخد <span class="term term--e">Ack</span> وبيشيل الرسالة.
+            <br>لو رمينا استثناء على رسالة مكررة، الرسالة هتتعاد للأبد وهتنتهي في الـ DLQ
+            <strong>من غير سبب حقيقي</strong> — وهتقضّي ساعة تدوّر على عطل مش موجود.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        المكرر <strong>مش خطأ</strong> — هو الحالة الطبيعية في أي نظام at-least-once.
+        كودك لازم يعامله كنجاح صامت، مش كاستثناء.
+      </div>
     </div>
 
     <div class="callout callout--tip">
@@ -1694,7 +1803,7 @@
         <span class="callout__title">التنظيف — لازم تعمله وإلا الجدول هيقتلك</span>
         جدول بـ <span class="ltr">1M</span> رسالة/يوم بيوصل <span class="ltr">365M</span> صف في سنة.
         <br>شغّل مهمة يومية تمسح أي سطر أقدم من <strong>ضِعف أطول مدة ممكنة لإعادة التسليم</strong>
-        (لو الاحتفاظ في الوسيط 7 أيام ⇒ امسح بعد 14 يوم).
+        (لو الاحتفاظ في الـ <span class="term">broker</span> 7 أيام ⇒ امسح بعد 14 يوم).
         <br><span class="ltr">DELETE TOP (5000) FROM ProcessedMessages WHERE ProcessedAtUtc &lt; @cut</span>
         في حلقة — مش <code>DELETE</code> واحد، عشان ما تقفلش الجدول.
       </div>
@@ -1735,7 +1844,7 @@
           <span class="tblock__label">ليه الترتيب العام ما بيتوسّعش أبدًا ⚠️</span>
           عشان تضمن ترتيب عام، لازم:
           <br>• Partition واحدة (أو طابور واحد) ⇒ كل الحمل على سيرفر واحد.
-          <br>• مستهلك واحد بـ <span class="term term--r">Prefetch = 1</span> ⇒ صفر توازي.
+          <br>• <span class="term">consumer</span> واحد بـ <span class="term term--r">Prefetch = 1</span> ⇒ صفر توازي.
           <br>• لو رسالة فشلت، لازم <strong>كل اللي وراها يقف</strong> — وإلا كسرت الترتيب.
           <br><strong>يعني اشتريت الترتيب بتمن: التوازي، الإنتاجية، والصمود. التلاتة مع بعض.</strong>
         </div>
@@ -1789,7 +1898,7 @@
           نظام بنكي بينشر أحداث: <code>MoneyDeposited</code> · <code>MoneyWithdrawn</code> ·
           <code>AccountFrozen</code>.
           <br>المتطلبات: <span class="ltr">40,000</span> حدث/ثانية · مستحيل يتم سحب بعد التجميد
-          يتعالج قبل التجميد · طاقة المستهلك <span class="ltr">1,500</span> حدث/ثانية.
+          يتعالج قبل التجميد · طاقة الـ <span class="term">consumer</span> <span class="ltr">1,500</span> حدث/ثانية.
           <br>1) إيه مفتاح التقسيم؟ 2) كام Partition؟ 3) إيه اللي لسه ممكن يغلط؟
         </p>
         <details class="solution">
@@ -1819,14 +1928,14 @@
                 الترتيب اتكسر <em>جوّه القسم نفسه</em>.
                 <br>العلاج: عند الفشل <strong>وقّف القسم</strong> (في Kafka: <code>Pause</code> ثم
                 <code>Seek</code> لنفس الـ Offset) بدل ما تسيبه يكمّل.</li>
-              <li><strong>التوازي جوّه المستهلك:</strong> لو المستهلك بياخد الدفعة ويعالجها بـ
+              <li><strong>التوازي جوّه الـ <span class="term">consumer</span>:</strong> لو الـ <span class="term">consumer</span> بياخد الدفعة ويعالجها بـ
                 <code>Parallel.ForEachAsync</code>، الترتيب بيتكسر جوّه العملية نفسها
                 بالرغم من إن Kafka سلّمته مرتّب.</li>
             </ul>
             <div class="plain mt">
               <span class="plain__label">الدرس</span>
               <strong>الترتيب مش خانة بتعلّم عليها في الإعدادات — هو خاصية بتحافظ عليها في كل خطوة
-              من المنتج للمستهلك.</strong> أي حلقة في السلسلة تكسره يبقى اتكسر.
+              من الـ <span class="term">producer</span> للـ <span class="term">consumer</span>.</strong> أي حلقة في السلسلة تكسره يبقى اتكسر.
               وعشان كده أقوى تصميم هو اللي <em>ما بيعتمدش على الترتيب أصلاً</em>: خلّي كل حدث
               يحمل حالة كافية أو رقم نسخة، وارفض القديم لو وصل متأخر.
             </div>
@@ -1854,7 +1963,7 @@
   <div class="divider" style="--accent:var(--amber)">
     <div class="divider__num">03</div>
     <h2 class="divider__title">التدفّق والفشل <span class="term term--a" style="font-size:.5em">Flow &amp; Failure</span></h2>
-    <p class="divider__sub">إيه اللي بيحصل لما المستهلك يبقى أبطأ من المنتج؟ وإزاي رسالة واحدة تقدر توقّف نظام كامل؟</p>
+    <p class="divider__sub">إيه اللي بيحصل لما الـ <span class="term">consumer</span> يبقى أبطأ من الـ <span class="term">producer</span>؟ وإزاي رسالة واحدة تقدر توقّف نظام كامل؟</p>
   </div>
 </section>
 
@@ -1862,7 +1971,7 @@
 <section class="slide" data-title="Backpressure">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 13</span>
-    <h2 class="slide__title">Backpressure — لما المستهلك يقول «كفاية بقى»</h2>
+    <h2 class="slide__title">Backpressure — لما الـ <span class="term">consumer</span> يقول «كفاية بقى»</h2>
     <div class="rule"></div>
   </div>
 
@@ -1891,7 +2000,7 @@
           <span class="tblock__label">التلات مستويات في .NET</span>
           <strong>1) جوّه العملية:</strong> <code>Channel.CreateBounded&lt;T&gt;(capacity)</code>
           — الكاتب بيستنى لما تمتلي.
-          <br><strong>2) مع الوسيط:</strong> <code>PrefetchCount</code> في RabbitMQ ·
+          <br><strong>2) مع الـ <span class="term">broker</span>:</strong> <code>PrefetchCount</code> في RabbitMQ ·
           <code>MaxConcurrentCalls</code> في Azure Service Bus ·
           <code>MaxPollRecords</code> في Kafka.
           <br><strong>3) الحدود الصلبة:</strong> حجم أقصى للطابور مع سياسة رفض واضحة
@@ -2071,7 +2180,7 @@
       <div class="decode__sum">
         النظام متأخّر دقيقتين والتأخير بيزيد. لو سِبته ساعة، التأخّر هيبقى
         <b>182,000 + (45 × 3,600) = 344,000</b> رسالة ≈ <b>4 دقايق</b>، وهكذا للأبد.
-        <br>الحل الوحيد: <b>ترفع μ</b> (مستهلكين أكتر / كود أسرع) أو <b>تقلّل λ</b> (تخفيف الحمل).
+        <br>الحل الوحيد: <b>ترفع μ</b> (<span class="term">consumers</span> أكتر / كود أسرع) أو <b>تقلّل λ</b> (تخفيف الحمل).
         زيادة حجم الطابور <b>مش حل</b> — هي بس بتأجّل الانفجار.
       </div>
     </div>
@@ -2083,7 +2192,7 @@
   <div class="slide__head">
     <span class="eyebrow">المفهوم 15 — قانون تستخدمه أسبوعيًا</span>
     <h2 class="slide__title">Little's Law — <span class="ltr">L = λ × W</span></h2>
-    <p class="slide__sub">تلات حروف بيحدّدوا كام مستهلك تحتاج، وإمتى نظامك هينفجر.</p>
+    <p class="slide__sub">تلات حروف بيحدّدوا كام <span class="term">consumer</span> تحتاج، وإمتى نظامك هينفجر.</p>
     <div class="rule"></div>
   </div>
 
@@ -2159,7 +2268,7 @@
     </div>
 
     <div class="example">
-      <div class="example__head">مثال محلول 03: كام نسخة مستهلك أحتاج بالظبط؟</div>
+      <div class="example__head">مثال محلول 03: كام نسخة <span class="term">consumer</span> أحتاج بالظبط؟</div>
       <div class="example__body">
         <p>
           نظام معالجة إشعارات: <span class="ltr">4,000</span> رسالة/ثانية في الذروة.
@@ -2297,7 +2406,7 @@
           <span class="tblock__label">التعريف الدقيق</span>
           رسالة بتفشل <strong>في كل مرة</strong> يتم تسليمها، مهما أعدت المحاولة،
           لأن سبب الفشل جوّاها هي مش في الظروف.
-          <br>ولأنها بتفشل، الوسيط بيرجّعها للطابور، فتتسلّم تاني، فتفشل تاني... <strong>حلقة لا نهائية</strong>.
+          <br>ولأنها بتفشل، الـ <span class="term">broker</span> بيرجّعها للطابور، فتتسلّم تاني، فتفشل تاني... <strong>حلقة لا نهائية</strong>.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🚗</span>
@@ -2315,7 +2424,7 @@
           <span class="tblock__label">فخ شائع ⚠️ — الفخ القاتل في Kafka</span>
           في <span class="term">Message Queue</span> الرسالة السامّة بتتشال للـ DLQ والباقي بيكمّل.
           <br>في <span class="term term--e">Kafka</span> <strong>الوضع أخطر بكتير</strong>:
-          الـ Offset ما بيتقدّمش، يعني المستهلك بيفضل يقرا <em>نفس</em> الرسالة للأبد،
+          الـ Offset ما بيتقدّمش، يعني الـ <span class="term">consumer</span> بيفضل يقرا <em>نفس</em> الرسالة للأبد،
           و<strong>الـ Partition كلها بتقف</strong>.
           <br>رسالة واحدة تالفة ممكن توقّف <span class="ltr">1/48</span> من نظامك لأجل غير مسمّى —
           والباقي شغّال فما حدش بياخد باله.
@@ -2359,10 +2468,10 @@
         <h4>1. Immediate Retry — إعادة فورية جوّه العملية</h4>
         <p><span class="ltr">3</span> محاولات بفاصل <span class="ltr">100–300ms</span>.
         بتحلّ <strong>الأعطال اللحظية</strong>: تزاحم على صف في قاعدة البيانات،
-        انقطاع شبكة لجزء من الثانية. الرسالة <em>ما بترجعش للوسيط أصلاً</em> فده أسرع وأرخص.</p>
+        انقطاع شبكة لجزء من الثانية. الرسالة <em>ما بترجعش للـ <span class="term">broker</span> أصلاً</em> فده أسرع وأرخص.</p>
       </li>
       <li style="--accent:var(--amber)">
-        <h4>2. Delayed Redelivery — إعادة مؤجّلة عبر الوسيط</h4>
+        <h4>2. Delayed Redelivery — إعادة مؤجّلة عبر الـ <span class="term">broker</span></h4>
         <p>الرسالة بترجع للطابور بتأخير متزايد
         (<span class="term term--a">Exponential Backoff</span>) —
         <span class="ltr">1m</span> ثم <span class="ltr">5m</span> ثم <span class="ltr">15m</span>.
@@ -2380,7 +2489,7 @@
         <h4>4. Replay — الإصلاح وإعادة الضخّ</h4>
         <p>بعد ما تصلّح السبب (نشرت إصلاح، أو رجّعت السجل المحذوف)، بترجّع الرسايل
         من الـ DLQ للطابور الأصلي.
-        <br>⚠️ <strong>شرطين ملزمين:</strong> (أ) المستهلك يبقى
+        <br>⚠️ <strong>شرطين ملزمين:</strong> (أ) الـ <span class="term">consumer</span> يبقى
         <span class="term term--e">Idempotent</span> لأن بعضها ممكن يكون اتنفّذ جزئيًا،
         (ب) ترجّعها <strong>على دفعات</strong> (مثلاً 500 كل مرة) — لأن ضخّ
         <span class="ltr">50,000</span> رسالة مرة واحدة على نظام لسه بيقوم بيوقّعه تاني.</p>
@@ -2477,7 +2586,7 @@
     <div class="plain">
       <span class="plain__label">الإعداد ده بيعمل إيه؟</span>
       <strong>1.</strong> <code>PrefetchCount = 32</code> و<code>ConcurrentMessageLimit = 8</code>:
-      الوسيط بيبعت <span class="ltr">32</span> رسالة مقدمًا (عشان الشبكة ما تبقاش عنق الزجاجة)
+      الـ <span class="term">broker</span> بيبعت <span class="ltr">32</span> رسالة مقدمًا (عشان الشبكة ما تبقاش عنق الزجاجة)
       بس بنشتغل على <span class="ltr">8</span> بس في نفس الوقت. النسبة <span class="ltr">3–4×</span>
       بين الاتنين هي القاعدة العملية.
       <br><strong>2.</strong> <code>Exponential</code> بيباعد بين المحاولات تدريجيًا بدل ما يقصف
@@ -2486,7 +2595,7 @@
       رصيد غير كافٍ أو <span class="ltr">JSON</span> تالف <em>مش هيتصلّحوا بإعادة المحاولة أبدًا</em>.
       من غير السطرين دول بتضيّع <span class="ltr">21</span> دقيقة إعادات على رسالة مصيرها الـ DLQ من أول ثانية.
       <br><strong>4.</strong> <code>UseScheduledRedelivery</code> بيفرق عن الإعادة الفورية في حاجة جوهرية:
-      الرسالة <strong>بتسيب الذاكرة</strong> وترجع للوسيط بجدول زمني ⇒ باقي الطابور بيكمّل بسرعته
+      الرسالة <strong>بتسيب الذاكرة</strong> وترجع للـ <span class="term">broker</span> بجدول زمني ⇒ باقي الطابور بيكمّل بسرعته
       الطبيعية بدل ما يستنى.
       <br><strong>5.</strong> قاطع الدائرة بيوقف الاستهلاك مؤقتًا لما نسبة الفشل تعدّي
       <span class="ltr">30%</span> — <em>بيحمي الخدمة التانية من إننا نخلّص عليها وهي بتحاول تقوم</em>.
@@ -2498,7 +2607,7 @@
       <div class="exercise__head">تمرين 6 — صمّم سياسة الإعادة<span class="exercise__level">صعب</span></div>
       <div class="exercise__body">
         <p>
-          مستهلك بينادي بوابة دفع. الأخطاء اللي بتحصل:
+          <span class="term">consumer</span> بينادي بوابة دفع. الأخطاء اللي بتحصل:
         </p>
         <ol class="sm" style="color:var(--text-dim)">
           <li><span class="ltr">HttpRequestException</span> — البوابة مش راضية ترد (انقطاع شبكة).</li>
@@ -2690,13 +2799,68 @@
         <div class="node node--r"><span class="node__ico">🐌</span>Broker 3 — Follower<span class="node__sub">خارج ISR ✗ متأخر</span></div>
       </div>
     </div>
-    <p class="sm">
-      رحلة رسالة: (1) المنتج بيحسب القسم من المفتاح. (2) بيبعت للـ
-      <span class="term term--e">Leader</span> بتاع القسم ده — <strong>القراءة والكتابة كلها
-      على القائد</strong>. (3) الأتباع بيسحبوا منه باستمرار. (4) التابع اللي بيلحق بيبقى
-      داخل الـ <span class="term term--e">ISR</span>، واللي بيتأخّر بيتشال منها.
-      (5) لو القائد وقع، Kafka بيختار قائد جديد <strong>من داخل الـ ISR بس</strong>.
-    </p>
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة واحدة: من الـ producer لحد ما تبقى محميّة على 3 نسخ</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Producer · Partitioner</span>
+          <div class="trace__body">
+            الـ <span class="term">producer</span> بيحسب الـ partition من المفتاح:
+            <code>hash(customer-42) % 3 = 1</code>.
+            <br>الحساب ده بيحصل <strong>على العميل مش على السيرفر</strong> — وده اللي بيخلّي
+            نفس المفتاح يروح لنفس الـ partition دايمًا ⇒ <em>ترتيب مضمون لكل عميل</em>.
+            من غير مفتاح، الرسايل بتتوزّع بالتساوي والترتيب بيضيع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Partition Leader</span>
+          <div class="trace__body">
+            بيبعت للـ <span class="term term--e">Leader</span> بتاع الـ partition ده —
+            <strong>القراءة والكتابة كلها على القائد</strong>.
+            <br>ليه مش على أي نسخة؟ عشان نقطة كتابة واحدة معناها
+            <strong>ترتيب واحد لا خلاف عليه</strong>. النسخ التانية موجودة للمتانة، مش لتوزيع الحمل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Follower Replicas</span>
+          <div class="trace__body">
+            الأتباع بيسحبوا من القائد باستمرار (<span class="ltr">pull</span> مش
+            <span class="ltr">push</span>).
+            <br>السحب بيخلّي التابع البطيء <strong>يأذي نفسه بس</strong> — لو كان القائد هو اللي
+            بيدفع، تابع واحد متأخّر كان هيبطّئ القائد وبالتالي كل الكتابات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">ISR</span>
+          <div class="trace__body">
+            التابع اللي بيلحق بيفضل داخل الـ <span class="term term--e">ISR</span>،
+            واللي بيتأخّر بيتشال منها تلقائيًا.
+            <br>الـ ISR هي <strong>تعريف «النسخة اللي نثق فيها»</strong>.
+            من غيرها كنت هتضطر تستنى أبطأ نسخة في كل كتابة — أو تقبل تفقد بيانات
+            عشان نسخة متأخّرة بقت قائد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Leader Election</span>
+          <div class="trace__body">
+            لو القائد وقع، Kafka بيختار قائد جديد <strong>من داخل الـ ISR بس</strong>.
+            <br>وده السبب الوحيد إن الوقوع ما بيضيّعش رسايل اتأكّدت.
+            لو فعّلت <code>unclean.leader.election=true</code> بتسمح لنسخة برّه الـ ISR إنها
+            تبقى قائد ⇒ <em>بتفضّل التوافر على الصحّة</em>، وبتفقد كل الرسايل اللي هي ما شافتهاش.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل ضمانات Kafka بتتلخّص في جملة واحدة:
+        <strong>الكتابة مضمونة بقد ما الـ ISR مضبوطة</strong>. راقب حجمها زي ما بتراقب الـ lag.
+      </div>
+    </div>
 
     <div class="termcard termcard--e">
       <div class="termcard__head">
@@ -2753,19 +2917,19 @@
   <div class="slide__head">
     <span class="eyebrow">نقف ونفكّك 🔍</span>
     <h2 class="slide__title">الإعداد <code>acks</code> — تلات قيم بتغيّر معنى «تم الحفظ»</h2>
-    <p class="slide__sub">ده أهم سطر إعدادات في المُنتِج كله، وأكتر سطر بيتساب على الافتراضي من غير فهم.</p>
+    <p class="slide__sub">ده أهم سطر إعدادات في الـ <span class="term">producer</span> كله، وأكتر سطر بيتساب على الافتراضي من غير فهم.</p>
     <div class="rule"></div>
   </div>
 
   <div class="slide__body">
     <div class="decode">
       <div class="decode__raw">acks=0 | acks=1 | acks=all (-1)</div>
-      <div class="decode__hint">كلمة <code>acks</code> اختصار <span class="term">acknowledgements</span> — «التأكيدات». السؤال: <b>مين لازم يأكّد قبل ما المنتج يعتبر الرسالة اتبعتت؟</b></div>
+      <div class="decode__hint">كلمة <code>acks</code> اختصار <span class="term">acknowledgements</span> — «التأكيدات». السؤال: <b>مين لازم يأكّد قبل ما الـ <span class="term">producer</span> يعتبر الرسالة اتبعتت؟</b></div>
       <div class="decode__rows">
         <div class="decode__row">
           <span class="decode__tok">acks=0</span>
           <div class="decode__exp">
-            <b>ما تستناش حد.</b> المنتج بيرمي الرسالة على الشبكة ويكمّل من غير ما يتأكد إنها وصلت أصلاً.
+            <b>ما تستناش حد.</b> الـ <span class="term">producer</span> بيرمي الرسالة على الشبكة ويكمّل من غير ما يتأكد إنها وصلت أصلاً.
             <br>لو البروكر واقع أو الشبكة قطعت ⇒ <strong>الرسالة راحت وانت مش هتعرف</strong>.
             <br><span class="mute sm">ده At-Most-Once على مستوى الإنتاج.</span>
           </div>
@@ -2776,7 +2940,7 @@
             <b>استنى القائد بس.</b> الـ <span class="term term--e">Leader</span> بيكتب في ملفه
             ويرد «تمام» من غير ما يستنى الأتباع.
             <br>الخطر: لو القائد وقع في اللحظة دي قبل ما التابعين يسحبوا ⇒
-            <strong>الرسالة اتأكّدت للمنتج لكنها ضاعت فعليًا</strong>. وده أخطر نوع فقدان
+            <strong>الرسالة اتأكّدت للـ <span class="term">producer</span> لكنها ضاعت فعليًا</strong>. وده أخطر نوع فقدان
             لأنه <em>صامت ومُؤكَّد كذبًا</em>.
           </div>
         </div>
@@ -2848,7 +3012,7 @@
     <div class="callout callout--key">
       <div class="callout__icon">🔐</div>
       <div class="callout__body">
-        <span class="callout__title">التركيبة الكاملة للمنتج الآمن</span>
+        <span class="callout__title">التركيبة الكاملة للـ <span class="term">producer</span> الآمن</span>
         <div class="math sm mb0">
 <span class="lbl">acks</span>                                <span class="eq">=</span> <span class="res">all</span>
 <span class="lbl">enable.idempotence</span>                  <span class="eq">=</span> <span class="res">true</span>   <span class="cmt">// يمنع تكرار من إعادة المحاولة</span>
@@ -2857,7 +3021,7 @@
 <span class="lbl">delivery.timeout.ms</span>                 <span class="eq">=</span> <span class="res">120000</span> <span class="cmt">// السقف الحقيقي بدل عدد المحاولات</span>
         </div>
         <span class="sm">
-          <code>enable.idempotence=true</code> بيخلّي المنتج يحطّ رقم تسلسلي مع كل رسالة،
+          <code>enable.idempotence=true</code> بيخلّي الـ <span class="term">producer</span> يحطّ رقم تسلسلي مع كل رسالة،
           فلو أعاد الإرسال بسبب انقطاع، البروكر بيتعرّف على التكرار ويرميه.
           <br>ولاحظ: من غير <code>idempotence</code>، لو خلّيت
           <code>max.in.flight &gt; 1</code> مع إعادة محاولة، الرسايل ممكن تتكتب
@@ -2873,7 +3037,7 @@
   <div class="slide__head">
     <span class="eyebrow">المفهوم 20</span>
     <h2 class="slide__title">Rebalancing — وعاصفة إعادة التوزيع</h2>
-    <p class="slide__sub">أشهر سبب لتوقف مستهلكي Kafka بشكل غامض — وأسهل مشكلة تتجنّبها لو فهمتها.</p>
+    <p class="slide__sub">أشهر سبب لتوقف <span class="term">consumers</span> الـ Kafka بشكل غامض — وأسهل مشكلة تتجنّبها لو فهمتها.</p>
     <div class="rule"></div>
   </div>
 
@@ -2889,7 +3053,7 @@
           العملية اللي بيعيد فيها Kafka توزيع الـ <span class="term term--e">Partitions</span>
           على أعضاء المجموعة. بتحصل لما: عضو يدخل · عضو يخرج أو يقع · عضو يتأخّر عن
           نبضة الحياة · يتغيّر عدد الأقسام.
-          <br>خلال إعادة التوزيع (في الوضع الافتراضي القديم) <strong>كل المستهلكين بيقفوا</strong> —
+          <br>خلال إعادة التوزيع (في الوضع الافتراضي القديم) <strong>كل الـ <span class="term">consumers</span> بيقفوا</strong> —
           ودي اللي اسمها <span class="term term--r">Stop-the-World Rebalance</span>.
         </div>
         <div class="tblock tblock--analogy">
@@ -2902,11 +3066,11 @@
         <div class="tblock tblock--trap">
           <span class="tblock__label">عاصفة إعادة التوزيع ⚠️ <span class="term term--r">Rebalance Storm</span></span>
           حلقة مفرغة بتحصل كده بالظبط:
-          <br><strong>1.</strong> المعالجة بطيئة فالمستهلك بيتأخّر عن نداء <code>Poll</code> التالي.
+          <br><strong>1.</strong> المعالجة بطيئة فالـ <span class="term">consumer</span> بيتأخّر عن نداء <code>Poll</code> التالي.
           <br><strong>2.</strong> يعدّي <code>max.poll.interval.ms</code> (الافتراضي
           <span class="ltr">5</span> دقايق) ⇒ Kafka بيعتبره <strong>ميت</strong> ويشيله.
           <br><strong>3.</strong> إعادة توزيع ⇒ الكل بيقف ⇒ التأخّر بيزيد.
-          <br><strong>4.</strong> المستهلك «الميت» بيرجع يقول أنا هنا ⇒ <strong>إعادة توزيع تانية</strong>.
+          <br><strong>4.</strong> الـ <span class="term">consumer</span> «الميت» بيرجع يقول أنا هنا ⇒ <strong>إعادة توزيع تانية</strong>.
           <br><strong>5.</strong> والدايرة بتلف: النظام بيقضّي وقته في التوزيع مش في الشغل،
           و<strong>الإنتاجية بتقرب من صفر</strong> رغم إن كل السيرفرات شغّالة وصحّتها كويسة.
         </div>
@@ -2937,7 +3101,7 @@
         <ul class="pc pc--con sm mb0">
           <li>كل الأعضاء بيسيبوا <strong>كل</strong> أقسامهم.</li>
           <li>توقف كامل <span class="ltr">3–30</span> ثانية لكل إعادة توزيع.</li>
-          <li>مع <span class="ltr">50</span> مستهلك بيبقى مؤلم جدًا.</li>
+          <li>مع <span class="ltr">50</span> <span class="term">consumer</span> بيبقى مؤلم جدًا.</li>
         </ul>
       </div>
       <div class="card card--e">
@@ -2945,7 +3109,7 @@
         <ul class="pc pc--pro sm mb0">
           <li>الأقسام اللي مش محتاجة تتحرّك <strong>بتفضل مكانها</strong>.</li>
           <li>التوقف بيبقى على الأقسام المتأثرة بس.</li>
-          <li>وبيحاول يرجّع نفس القسم لنفس المستهلك (Sticky) ⇒ الكاش المحلي بيفضل مفيد.</li>
+          <li>وبيحاول يرجّع نفس القسم لنفس الـ <span class="term">consumer</span> (Sticky) ⇒ الكاش المحلي بيفضل مفيد.</li>
         </ul>
       </div>
     </div>
@@ -3059,7 +3223,7 @@
   <div class="slide__body">
     <div class="code">
       <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>KafkaProducer.cs</span><span class="code__lang">C# / .NET 9 · Confluent.Kafka</span></div>
-<pre><code><span class="c">// ═══ المُنتِج: Singleton واحد لكل التطبيق ═══</span>
+<pre><code><span class="c">// ═══ الـ Producer: Singleton واحد لكل التطبيق ═══</span>
 <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">OrderEventProducer</span> <span class="p">:</span> <span class="t">IAsyncDisposable</span>
 {
     <span class="k">private</span> <span class="k">readonly</span> <span class="t">IProducer</span>&lt;<span class="k">string</span>, <span class="k">string</span>&gt; _p;
@@ -3168,23 +3332,78 @@
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">أهم 6 نقاط في الكودين</span>
-      <strong>1.</strong> <code>Key = CustomerId</code> هو السطر اللي بيضمن الترتيب.
-      لو سيبته <code>null</code>، أحداث نفس العميل هتتوزّع عشوائيًا على كل الأقسام
-      و<strong>ترتيبها هيبقى غير مضمون خالص</strong>.
-      <br><strong>2.</strong> <code>LingerMs = 10</code> بيقول للمنتج «استنى 10 مللي ثانية
-      تجمّع رسايل أكتر في نفس الدفعة». الرسالة بتتأخّر <span class="ltr">10ms</span>
-      والإنتاجية بتزيد <strong>10 أضعاف</strong> — مقايضة ممتازة في كل الحالات تقريبًا.
-      <br><strong>3.</strong> <code>Flush</code> عند الإغلاق إجباري. من غيره، أي رسايل لسه في
-      المخزن المؤقت المحلي <strong>بتضيع عند إعادة النشر</strong>.
-      <br><strong>4.</strong> <code>EnableAutoCommit = false</code> + <code>Commit(res)</code>
-      بعد <code>HandleAsync</code> — ده هو تطبيق قاعدة «اقرا ← نفّذ ← أكّد» حرفيًا.
-      <br><strong>5.</strong> في حالة <code>JsonException</code> بنعمل <code>Commit</code>
-      <em>بعد</em> ما نبعتها للـ DLQ. <strong>ده أهم سطر في المستهلك كله</strong>:
-      من غيره الرسالة السامّة هتوقّف القسم للأبد.
-      <br><strong>6.</strong> في العطل العابر بنعمل <code>Seek</code> لنفس الموضع بدل ما نكمّل ⇒
-      <strong>الترتيب محفوظ</strong> لأن مفيش رسالة بعدها هتتعالج قبلها.
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة واحدة عبر الكودين: من <code>Produce</code> لحد <code>Commit</code></div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Producer · Key</span>
+          <div class="trace__body">
+            <code>Key = CustomerId</code> هو السطر اللي بيضمن الترتيب.
+            <br>لو سيبته <code>null</code>، أحداث نفس العميل هتتوزّع عشوائيًا على كل الـ partitions
+            و<strong>ترتيبها هيبقى غير مضمون خالص</strong> — يعني ممكن يتعالج «تم الإلغاء»
+            قبل «تم الإنشاء» لنفس الأوردر.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Producer · LingerMs</span>
+          <div class="trace__body">
+            <code>LingerMs = 10</code> بيقول للـ <span class="term">producer</span>
+            «استنى <span class="ltr">10</span> مللي ثانية تجمّع رسايل أكتر في نفس الدفعة».
+            <br>الرسالة بتتأخّر <span class="ltr">10ms</span> والإنتاجية بتزيد
+            <strong>10 أضعاف</strong> — لأن التكلفة الحقيقية في عدد الرحلات على الشبكة،
+            مش في حجم البيانات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Producer · Flush</span>
+          <div class="trace__body">
+            <code>Flush</code> عند الإغلاق إجباري.
+            <br>لأن الـ <code>LingerMs</code> اللي فوق معناه إن فيه رسايل <em>مقبوضة عندك</em>
+            لسه ما اتبعتتش. من غير <code>Flush</code>، أي رسايل في المخزن المؤقت المحلي
+            <strong>بتضيع عند إعادة النشر</strong> — والنشر بيحصل كل يوم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Consumer · Manual Commit</span>
+          <div class="trace__body">
+            <code>EnableAutoCommit = false</code> + <code>Commit(res)</code> بعد
+            <code>HandleAsync</code> — ده هو تطبيق قاعدة
+            <strong>«اقرا ← نفّذ ← أكّد»</strong> حرفيًا.
+            <br>مع التأكيد التلقائي، الـ <span class="term">offset</span> بيتحرّك بالوقت مش
+            بالنجاح ⇒ تقع في نص المعالجة وترجع تلاقي Kafka فاكر إنك خلّصت.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Dead Letter Queue</span>
+          <div class="trace__body">
+            في حالة <code>JsonException</code> بنعمل <code>Commit</code> <em>بعد</em>
+            ما نبعتها للـ DLQ. <strong>ده أهم سطر في الـ consumer كله.</strong>
+            <br>رسالة تالفة عمرها ما هتتصلّح بإعادة المحاولة. من غير السطر ده
+            هتفضل تتعاد للأبد و<strong>توقّف الـ partition كله</strong> —
+            كل العملاء اللي مفاتيحهم على نفس الـ partition بيتجمّدوا معاها.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Consumer · Seek</span>
+          <div class="trace__body">
+            في العطل العابر بنعمل <code>Seek</code> لنفس الـ offset بدل ما نكمّل.
+            <br>كده <strong>الترتيب محفوظ</strong> لأن مفيش رسالة بعدها هتتعالج قبلها.
+            لو كمّلت وسيبتها للـ retry بعدين، بتكون كسرت الترتيب اللي دفعت
+            ثمنه في الخطوة الأولى بالمفتاح.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل سطر فوق بيجاوب على سؤال واحد: <strong>إيه اللي يحصل لو النسخة دي ماتت
+        في اللحظة دي بالظبط؟</strong> ده هو المعيار الوحيد لمراجعة كود رسايل.
+      </div>
     </div>
   </div>
 </section>
@@ -3256,7 +3475,7 @@
           منصة إنترنت أشياء: <span class="ltr">400,000</span> عدّاد كهرباء بيبعتوا قراءة كل
           <span class="ltr">30</span> ثانية، حجم القراءة <span class="ltr">300</span> بايت.
           الاحتفاظ <span class="ltr">30</span> يوم · <span class="ltr">RF=3</span> ·
-          مستهلك واحد بيعالج <span class="ltr">3,000</span> قراءة/ثانية ·
+          <span class="term">consumer</span> واحد بيعالج <span class="ltr">3,000</span> قراءة/ثانية ·
           فيه <span class="ltr">3</span> مجموعات قراءة.
           <br>احسب: المعدّل · التخزين · عدد الأقسام · وهل الضغط <span class="term term--v">Compaction</span> مناسب هنا؟
         </p>
@@ -3323,7 +3542,7 @@
 <section class="slide slide--center" data-title="الجزء 5: RabbitMQ والسحابة" data-divider>
   <div class="divider" style="--accent:var(--violet)">
     <div class="divider__num">05</div>
-    <h2 class="divider__title">RabbitMQ والوسطاء المُدارين <span class="term term--v" style="font-size:.5em">Brokers</span></h2>
+    <h2 class="divider__title">RabbitMQ والـ <span class="term">brokers</span> المُدارين <span class="term term--v" style="font-size:.5em">Brokers</span></h2>
     <p class="divider__sub">توجيه ذكي، تحكّم دقيق، وقرار واضح: إمتى RabbitMQ أحسن من Kafka والعكس.</p>
   </div>
 </section>
@@ -3333,7 +3552,7 @@
   <div class="slide__head">
     <span class="eyebrow">المفهوم 22</span>
     <h2 class="slide__title">معمارية <span class="term term--v">RabbitMQ</span>: التبادل هو العقل</h2>
-    <p class="slide__sub">في RabbitMQ المُنتِج <strong>ما بيبعتش لطابور أبدًا</strong> — بيبعت لتبادل، والتبادل هو اللي بيقرّر.</p>
+    <p class="slide__sub">في RabbitMQ الـ <span class="term">producer</span> <strong>ما بيبعتش لطابور أبدًا</strong> — بيبعت لتبادل، والتبادل هو اللي بيقرّر.</p>
     <div class="rule"></div>
   </div>
 
@@ -3353,14 +3572,66 @@
         <div class="node node--r node--ghost"><span class="node__ico">📥</span>Q: us-orders<span class="node__sub">order.us.* ✗ مش مطابق</span></div>
       </div>
     </div>
-    <p class="sm">
-      رحلة رسالة: (1) المنتج بينشر بمفتاح توجيه <code>order.eu.created</code>.
-      (2) التبادل بيقارن المفتاح ده بكل الـ <span class="term term--v">Bindings</span>.
-      (3) <code>order.eu.*</code> مطابق ✓ و<code>order.#</code> مطابق ✓ فبيتعمل
-      <strong>نسختين</strong>. (4) <code>order.us.*</code> مش مطابق فما بياخدش حاجة.
-      (5) لو مفيش أي طابور مطابق ⇒ <strong>الرسالة بتتلاشى في صمت</strong> ما لم تعمل
-      <span class="term term--r">Alternate Exchange</span>.
-    </p>
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة واحدة: <code>order.eu.created</code> من النشر لحد الطوابير</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Producer · Routing Key</span>
+          <div class="trace__body">
+            الـ <span class="term">producer</span> بينشر بمفتاح توجيه
+            <code>order.eu.created</code> — <strong>على الـ Exchange مش على طابور</strong>.
+            <br>الفرق ده هو جوهر RabbitMQ: الناشر <em>ما يعرفش</em> مين هيستقبل.
+            من غيره كل مستقبل جديد كان هيحتاج تعديل في كود الناشر.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Exchange</span>
+          <div class="trace__body">
+            الـ Exchange بيقارن المفتاح ده بكل الـ <span class="term term--v">Bindings</span>
+            المسجّلة عنده.
+            <br>الـ Exchange <strong>ما بيخزّنش حاجة</strong> — هو موجّه بحت.
+            لو مفيش طوابير مربوطة، الرسالة عمرها ما هتلاقي مكان تقعد فيه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Bindings · Match</span>
+          <div class="trace__body">
+            <code>order.eu.*</code> مطابق ✓ و<code>order.#</code> مطابق ✓ فبيتعمل
+            <strong>نسختين</strong> من نفس الرسالة.
+            <br>لاحظ إن دي <em>نسخ مستقلة</em>: كل طابور بيستهلك بسرعته وفشل واحد ما يأثّرش
+            على التاني. ده اللي بيخلّي إضافة مشترك جديد <strong>صفر مخاطرة</strong> على القدامى.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Queues</span>
+          <div class="trace__body">
+            <code>order.us.*</code> مش مطابق فالطابور ده ما بياخدش حاجة.
+            <br>ودي الحاجة اللي بتخلّي التوجيه بالموضوع أقوى من الإذاعة للكل:
+            <strong>الفلترة بتحصل عند الـ Exchange</strong> مش جوّه كود الـ <span class="term">consumer</span>،
+            فما بتدفعش تخزين ولا شبكة لرسايل هتترمي.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Alternate Exchange</span>
+          <div class="trace__body">
+            لو مفيش أي طابور مطابق ⇒ <strong>الرسالة بتتلاشى في صمت</strong>.
+            <br>مفيش خطأ، مفيش لوج، مفيش أي إشارة. عشان كده لازم تعمل
+            <span class="term term--r">Alternate Exchange</span> يمسك اللي ما اتوجّهش —
+            هو <em>شبكة الأمان الوحيدة</em> ضد غلطة إملائية في مفتاح التوجيه.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        في RabbitMQ الرسالة بتضيع بهدوء لما ما تطابقش —
+        <strong>فأول حاجة تعملها في أي Exchange إنتاجي هي Alternate Exchange + تنبيه عليه.</strong>
+      </div>
+    </div>
 
     <div class="tablewrap">
       <table>
@@ -3441,8 +3712,8 @@
         <h4 class="card__title">🔗 Binding — الرباط</h4>
         <p class="card__body sm">
           العلاقة بين التبادل والطابور + النمط.
-          <strong>الطابور هو اللي بيعلن اهتمامه</strong>، مش المنتج هو اللي بيقرّر.
-          <br>وده بالظبط مصدر المرونة: تضيف طابور بنمط جديد ⇒ <em>المنتج ما بيعرفش ولا بيتغيّر</em>.
+          <strong>الطابور هو اللي بيعلن اهتمامه</strong>، مش الـ <span class="term">producer</span> هو اللي بيقرّر.
+          <br>وده بالظبط مصدر المرونة: تضيف طابور بنمط جديد ⇒ <em>الـ <span class="term">producer</span> ما بيعرفش ولا بيتغيّر</em>.
         </p>
       </div>
       <div class="card card--a">
@@ -3451,7 +3722,7 @@
           <code>BasicQos(prefetchCount: 20)</code> = «ما تبعتليش أكتر من
           <span class="ltr">20</span> رسالة غير مؤكَّدة».
           <br><strong>ده الـ <span class="term term--a">Backpressure</span> بتاع RabbitMQ.</strong>
-          <br>القيمة الافتراضية <span class="ltr">0</span> = <em>بلا حدود</em> ⇒ مستهلك واحد
+          <br>القيمة الافتراضية <span class="ltr">0</span> = <em>بلا حدود</em> ⇒ <span class="term">consumer</span> واحد
           بيسحب الطابور كله لذاكرته والباقي بيقعدوا فاضيين.
         </p>
       </div>
@@ -3470,7 +3741,7 @@
         <p class="card__body sm">
           نظير <code>acks=all</code> في Kafka.
           <br>من غيره <code>BasicPublish</code> بترجع فورًا <strong>من غير أي ضمان</strong>
-          إن الوسيط استلم — وممكن تخسر رسايل من غير ما تعرف.
+          إن الـ <span class="term">broker</span> استلم — وممكن تخسر رسايل من غير ما تعرف.
           <br>فعّله دايمًا في أي مسار مهم.
         </p>
       </div>
@@ -3501,7 +3772,7 @@
           <tr><td>تأجيل رسالة لوقت محدّد</td><td class="td-ok">إضافة delayed-message</td><td class="td-bad">تبنيه بنفسك</td><td class="td-ok">RabbitMQ</td></tr>
           <tr><td>الاحتفاظ الطويل</td><td class="td-bad">الطابور مش مخزن</td><td class="td-ok">أسابيع/شهور على القرص</td><td class="td-ok">Kafka</td></tr>
           <tr><td>ترتيب بمفتاح مع توازي عالي</td><td class="td-mid">يحتاج Consistent-Hash</td><td class="td-ok">مدمج (Partitions)</td><td class="td-ok">Kafka</td></tr>
-          <tr><td>مستهلكين أكتر من الأقسام</td><td class="td-ok">مفيش حد</td><td class="td-bad">الزيادة بتقعد فاضية</td><td class="td-ok">RabbitMQ</td></tr>
+          <tr><td><span class="term">consumers</span> أكتر من الأقسام</td><td class="td-ok">مفيش حد</td><td class="td-bad">الزيادة بتقعد فاضية</td><td class="td-ok">RabbitMQ</td></tr>
           <tr><td>سهولة التشغيل</td><td class="td-ok">بسيط نسبيًا</td><td class="td-mid">أثقل (تنسيق، أقسام، توزيع)</td><td class="td-ok">RabbitMQ</td></tr>
           <tr><td>تغذية تحليلات/بحيرة بيانات</td><td class="td-bad">مش مصمّم لده</td><td class="td-ok">الاستخدام الأصلي</td><td class="td-ok">Kafka</td></tr>
         </tbody>
@@ -3516,7 +3787,7 @@
           <li>الشغل <strong>مهام</strong> (Tasks) والوجهة مهمة: توجيه أمر لخدمة بعينها.</li>
           <li>عايز أولويات، تأجيل، أو <span class="term">RPC</span> بنمط طلب/رد.</li>
           <li>محتاج زمن استجابة تحت المللي ثانية.</li>
-          <li>عدد المستهلكين المتغيّر أهم من الإنتاجية الخام.</li>
+          <li>عدد الـ <span class="term">consumers</span> المتغيّر أهم من الإنتاجية الخام.</li>
           <li>ما تحتاجش تاريخ — لما تتنفّذ المهمة تخلص.</li>
         </ul>
       </div>
@@ -3544,9 +3815,9 @@
     </div>
 
     <div class="exercise fragment">
-      <div class="exercise__head">تمرين 8 — اختار الوسيط<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__head">تمرين 8 — اختار الـ <span class="term">broker</span><span class="exercise__level">متوسط</span></div>
       <div class="exercise__body">
-        <p>لكل حالة اختار الوسيط واكتب السبب في سطر:</p>
+        <p>لكل حالة اختار الـ <span class="term">broker</span> واكتب السبب في سطر:</p>
         <ol class="sm" style="color:var(--text-dim)">
           <li>توزيع طلبات طباعة على <span class="ltr">50</span> طابعة، والطلب العاجل يسبق العادي.</li>
           <li><span class="ltr">200,000</span> حدث/ثانية من تطبيق موبايل لفريق البيانات + التوصيات + الاحتيال.</li>
@@ -3559,15 +3830,15 @@
           <div class="solution__body">
             <ul class="pc pc--pro sm">
               <li><strong>1 ⇒ RabbitMQ.</strong> مهام + <strong>أولويات</strong> —
-                والأولويات غير موجودة في Kafka خالص. وكمان عدد المستهلكين (50) مرن.</li>
-              <li><strong>2 ⇒ Kafka.</strong> الحجم لوحده بيحسمها، وكمان تلات مستهلكين
+                والأولويات غير موجودة في Kafka خالص. وكمان عدد الـ <span class="term">consumers</span> (50) مرن.</li>
+              <li><strong>2 ⇒ Kafka.</strong> الحجم لوحده بيحسمها، وكمان تلات <span class="term">consumers</span>
                 <em>مستقلين</em> لنفس التدفق = ثلاث Consumer Groups.</li>
               <li><strong>3 ⇒ Kafka.</strong> <span class="term term--e">Replay</span> —
                 ما فيش حل تاني. في RabbitMQ الأوردرات دي <em>اختفت</em> بعد ما اتعالجت.</li>
               <li><strong>4 ⇒ RabbitMQ.</strong> زمن استجابة تحت المللي ثانية + مهمة لوجهة واحدة.
                 الـ <span class="ltr">Batching</span> في Kafka بيضيف تأخير مش محتاجينه هنا.</li>
               <li><strong>5 ⇒ Kafka</strong> (مع <span class="term term--v">Compaction</span>).
-                تلات مستهلكين مستقلين + قيمة في «آخر حالة لكل منتج» + إمكانية إعادة بناء
+                تلات <span class="term">consumers</span> مستقلين + قيمة في «آخر حالة لكل منتج» + إمكانية إعادة بناء
                 المؤشّر من الصفر لو اتلف.</li>
             </ul>
             <div class="plain mt">
@@ -3588,7 +3859,7 @@
 <section class="slide" data-title="Azure Service Bus و AWS SQS+SNS">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 23 و 24</span>
-    <h2 class="slide__title">الوسطاء المُدارين: <span class="term term--v">Azure Service Bus</span> و<span class="term term--a">AWS SQS + SNS</span></h2>
+    <h2 class="slide__title">الـ <span class="term">brokers</span> المُدارين: <span class="term term--v">Azure Service Bus</span> و<span class="term term--a">AWS SQS + SNS</span></h2>
     <p class="slide__sub">نفس المفاهيم بأسماء مختلفة — بس فيه تفصيلتين لازم تعرفهم كويس: FIFO ومهلة الاختفاء.</p>
     <div class="rule"></div>
   </div>
@@ -3602,7 +3873,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          وسيط رسايل مُدار بيدعم <strong>Queues</strong> (نقطة لنقطة) و<strong>Topics + Subscriptions</strong>
+          <span class="term">message broker</span> مُدار بيدعم <strong>Queues</strong> (نقطة لنقطة) و<strong>Topics + Subscriptions</strong>
           (نشر واشتراك) في نفس المنتج، مع معاملات ومعالجة مؤجّلة و
           <span class="term term--v">DLQ</span> مدمجة لكل كيان.
         </div>
@@ -3610,17 +3881,17 @@
           <span class="tblock__label">مميزات مش موجودة في غيره</span>
           <strong>Sessions</strong> — ترتيب مضمون لكل <code>SessionId</code> (نظير مفتاح التقسيم).
           <br><strong>Scheduled Messages</strong> — ابعت رسالة تظهر بعد 3 أيام. مدمجة تمامًا.
-          <br><strong>Duplicate Detection</strong> — الوسيط نفسه بيرمي أي رسالة بنفس
+          <br><strong>Duplicate Detection</strong> — الـ <span class="term">broker</span> نفسه بيرمي أي رسالة بنفس
           <code>MessageId</code> خلال نافذة زمنية تحدّدها (لحد 7 أيام).
           <br><strong>Auto-forwarding</strong> — سلسلة كيانات من غير كود.
           <br><strong>SQL Filters</strong> على الاشتراكات: <code>tier = 'vip' AND amount &gt; 1000</code>.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          <strong>Duplicate Detection مش بديل عن المستهلك الـ Idempotent.</strong>
+          <strong>Duplicate Detection مش بديل عن الـ <span class="term">consumer</span> الـ Idempotent.</strong>
           هو بيحمي من تكرار <em>الإرسال</em> جوّه نافذة محدودة،
-          لكنه ما بيحميش من إعادة <em>التسليم</em> لما المستهلك يقع بعد الشغل وقبل التأكيد.
-          <br>وكمان بيستهلك مساحة وبيبطّئ الوسيط — فعّله بس لما تحتاجه فعلاً.
+          لكنه ما بيحميش من إعادة <em>التسليم</em> لما الـ <span class="term">consumer</span> يقع بعد الشغل وقبل التأكيد.
+          <br>وكمان بيستهلك مساحة وبيبطّئ الـ <span class="term">broker</span> — فعّله بس لما تحتاجه فعلاً.
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تختاره</span>
@@ -3655,12 +3926,12 @@
           <span class="tblock__label">فخ شائع ⚠️</span>
           ربط <span class="ltr">SNS</span> مباشرة بـ <span class="ltr">Lambda</span> أو
           <span class="ltr">HTTP</span> من غير <span class="ltr">SQS</span> في النص.
-          <br>لو المستهلك واقع أو بطيء ⇒ <strong>فقدان بعد استنفاد محاولات SNS</strong>.
+          <br>لو الـ <span class="term">consumer</span> واقع أو بطيء ⇒ <strong>فقدان بعد استنفاد محاولات SNS</strong>.
           الطابور في النص هو اللي بيدّيك الصمود والـ <span class="term term--a">Load Leveling</span>.
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">القاعدة</span>
-          <strong>حطّ SQS دايمًا بين SNS وبين أي مستهلك.</strong> ده يمكن أشهر نمط في AWS
+          <strong>حطّ SQS دايمًا بين SNS وبين أي <span class="term">consumer</span>.</strong> ده يمكن أشهر نمط في AWS
           وهو اللي بيحوّل نظام هشّ لنظام صامد.
         </div>
       </div>
@@ -3694,8 +3965,8 @@
         <div class="decode__row">
           <span class="decode__tok">VisibilityTimeout</span>
           <div class="decode__exp">
-            <b>مهلة الاختفاء</b>. لما مستهلك يسحب رسالة، هي <em>ما بتتمسحش</em> —
-            بتبقى <b>مخفية</b> عن باقي المستهلكين لمدة محدّدة.
+            <b>مهلة الاختفاء</b>. لما <span class="term">consumer</span> يسحب رسالة، هي <em>ما بتتمسحش</em> —
+            بتبقى <b>مخفية</b> عن باقي الـ <span class="term">consumers</span> لمدة محدّدة.
             <br>لو أكّد خلال المهلة ⇒ تتمسح. لو ما أكّدش ⇒ <strong>تظهر تاني</strong>
             وحد تاني بياخدها.
             <br><span class="mute sm">في Azure الاسم <code>LockDuration</code>، وفي RabbitMQ الاتصال نفسه هو الحارس.</span>
@@ -3706,14 +3977,14 @@
           <div class="decode__exp">
             المهلة الافتراضية. <strong>هنا الفخ الأكبر:</strong> لو معالجتك بتاخد
             <span class="ltr">45</span> ثانية، الرسالة هتظهر تاني عند الثانية 30
-            و<b>مستهلك تاني هيبدأ يعالجها بالتوازي</b> — والأول لسه شغّال!
+            و<b><span class="term">consumer</span> تاني هيبدأ يعالجها بالتوازي</b> — والأول لسه شغّال!
             <br>النتيجة: تنفيذ مزدوج، وشكوى «الرسايل بتتكرر» من غير سبب واضح في اللوجات.
           </div>
         </div>
         <div class="decode__row">
           <span class="decode__tok">MaxReceiveCount = 5</span>
           <div class="decode__exp">
-            <b>أقصى عدد مرات تسليم</b>. الوسيط بيعدّ كام مرة الرسالة ظهرت.
+            <b>أقصى عدد مرات تسليم</b>. الـ <span class="term">broker</span> بيعدّ كام مرة الرسالة ظهرت.
             عند المحاولة السادسة ⇒ بتتحوّل تلقائيًا للـ <span class="term term--r">DLQ</span>
             بدل ما تفضل تلف للأبد.
           </div>
@@ -3895,16 +4166,16 @@
         <div class="tblock tblock--win">
           <span class="tblock__label">✅ المكسب</span>
           حدث صغير جدًا · مفيش تسريب لبنية بياناتك الداخلية ·
-          المستهلك دايمًا بيقرا <strong>أحدث</strong> نسخة ·
+          الـ <span class="term">consumer</span> دايمًا بيقرا <strong>أحدث</strong> نسخة ·
           تغيير شكل البيانات ما بيكسرش أحد.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">❌ التمن</span>
-          كل مستهلك بينادي المصدر ⇒ <strong>ارتباط زمني رجع تاني</strong>:
-          لو المصدر واقع، المستهلكين واقفين.
-          <br>و<span class="ltr">6</span> مستهلكين = <span class="ltr">6</span> نداءات لكل حدث ⇒
+          كل <span class="term">consumer</span> بينادي المصدر ⇒ <strong>ارتباط زمني رجع تاني</strong>:
+          لو المصدر واقع، الـ <span class="term">consumers</span> واقفين.
+          <br>و<span class="ltr">6</span> <span class="term">consumers</span> = <span class="ltr">6</span> نداءات لكل حدث ⇒
           الخدمة المصدر بتتحوّل لعنق زجاجة.
-          <br>وأخطر حاجة: <strong>سباق القراءة</strong> — المستهلك ممكن يقرا حالة
+          <br>وأخطر حاجة: <strong>سباق القراءة</strong> — الـ <span class="term">consumer</span> ممكن يقرا حالة
           <em>أحدث</em> من الحدث اللي وصله، فيشوف أوردر «ملغي» وهو بيعالج حدث «اتعمل».
         </div>
       </div>
@@ -3918,8 +4189,8 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          الحدث بيحمل <strong>كل البيانات اللي المستهلك يحتاجها</strong> عشان يشتغل من غير
-          ما ينادي حد. المستهلك بيبني نسخته المحلية من التدفق.
+          الحدث بيحمل <strong>كل البيانات اللي الـ <span class="term">consumer</span> يحتاجها</strong> عشان يشتغل من غير
+          ما ينادي حد. الـ <span class="term">consumer</span> بيبني نسخته المحلية من التدفق.
           <div class="math sm mt">
 <span class="cmt">{ "type":"OrderPlaced", "orderId":"8f3a", "customer":{...},</span>
 <span class="cmt">  "lines":[...], "total":1250, "currency":"EGP", "version":3 }</span>
@@ -3932,15 +4203,15 @@
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">✅ المكسب</span>
-          <strong>فك ارتباط زمني كامل</strong> — المستهلك يشتغل والمصدر واقع ·
+          <strong>فك ارتباط زمني كامل</strong> — الـ <span class="term">consumer</span> يشتغل والمصدر واقع ·
           صفر نداءات إضافية · إعادة القراءة بتدّي نفس النتيجة بالظبط لأن البيانات جوّه الحدث.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">❌ التمن</span>
-          حجم الحدث أكبر <span class="ltr">5–50×</span> · تكرار البيانات في كل مستهلك ·
-          <strong>تغيير المخطّط بيبقى مؤلم</strong> لأن كل المستهلكين بيعتمدوا على شكله ·
+          حجم الحدث أكبر <span class="ltr">5–50×</span> · تكرار البيانات في كل <span class="term">consumer</span> ·
+          <strong>تغيير المخطّط بيبقى مؤلم</strong> لأن كل الـ <span class="term">consumers</span> بيعتمدوا على شكله ·
           والبيانات ممكن تبقى <em>قديمة</em> وقت المعالجة.
-          <br>⚠️ لازم تحطّ <code>version</code> في الحدث والمستهلك يرفض أي نسخة أقدم من اللي عنده،
+          <br>⚠️ لازم تحطّ <code>version</code> في الحدث والـ <span class="term">consumer</span> يرفض أي نسخة أقدم من اللي عنده،
           وإلا رسالة متأخرة هتدهس حالة أحدث.
         </div>
       </div>
@@ -3988,11 +4259,11 @@
       <div class="callout__icon">🎯</div>
       <div class="callout__body">
         <span class="callout__title">النمط الهجين — وهو اللي بيتعمل فعليًا</span>
-        حدث <strong>متوسط السمك</strong>: المُعرّفات + الحقول اللي 90% من المستهلكين محتاجينها
+        حدث <strong>متوسط السمك</strong>: المُعرّفات + الحقول اللي 90% من الـ <span class="term">consumers</span> محتاجينها
         + <code>version</code> + رابط للتفاصيل الكاملة.
         <br>مثال: <code>OrderPlaced</code> فيه <code>orderId, customerId, total, currency,
         itemCount, version</code> — من غير تفاصيل كل صنف.
-        <br><em>المستهلك اللي محتاج التفاصيل بينادي، والباقي (وهم الأغلبية) بيشتغلوا من غير نداء.</em>
+        <br><em>الـ <span class="term">consumer</span> اللي محتاج التفاصيل بينادي، والباقي (وهم الأغلبية) بيشتغلوا من غير نداء.</em>
       </div>
     </div>
   </div>
@@ -4022,7 +4293,7 @@
         <span class="card__num">02</span>
         <h3 class="card__title"><span class="term term--e">Event</span> — حدث</h3>
         <p class="card__body sm">
-          <strong>«حصل كذا»</strong> · صيغة الماضي · <strong>صفر أو أكتر</strong> مستهلكين ·
+          <strong>«حصل كذا»</strong> · صيغة الماضي · <strong>صفر أو أكتر</strong> <span class="term">consumers</span> ·
           <strong>ما ينفعش يترفض</strong> — هو حقيقة حصلت خلاص.
           <br><code>StockReserved</code> · <code>PaymentCaptured</code> · <code>OrderCancelled</code>
         </p>
@@ -4067,7 +4338,7 @@
           <li><code>GetUserCommand</code> — قراءة مالهاش أثر ⇒ ده <span class="term">Query</span>
             مش أمر.</li>
           <li><code>ProcessOrder</code> — <strong>غامض</strong>: «تعالج» يعني إيه بالظبط؟
-            تدفع؟ تحجز؟ تشحن؟ الاسم الغامض بيخفي مسؤوليات متعددة في مستهلك واحد.</li>
+            تدفع؟ تحجز؟ تشحن؟ الاسم الغامض بيخفي مسؤوليات متعددة في <span class="term">consumer</span> واحد.</li>
         </ul>
       </div>
       <div class="card card--e">
@@ -4117,7 +4388,7 @@
                 <strong>تعديل في خدمة الأوردر</strong>. ده مونوليث موزّع مش أحداث.</li>
               <li><strong>نشر أوامر على Topic خطر.</strong> لو حصل واتضاف مشترك تاني بالغلط،
                 العميل هياخد إيميلين والمخزون هيتخصم مرتين.</li>
-              <li><strong>Topic واحد اسمه <code>events</code></strong> ⇒ كل مستهلك بيقرا كل حاجة
+              <li><strong>Topic واحد اسمه <code>events</code></strong> ⇒ كل <span class="term">consumer</span> بيقرا كل حاجة
                 ويرمي 90%، ومفيش صلاحيات ولا احتفاظ مختلف لكل نوع.</li>
             </ul>
             <p><strong>التصميم البديل</strong></p>
@@ -4161,7 +4432,7 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          قواعد تغيير شكل الرسالة بحيث المنتجين والمستهلكين بنسخ مختلفة يفضلوا شغّالين مع بعض
+          قواعد تغيير شكل الرسالة بحيث الـ <span class="term">producers</span> والـ <span class="term">consumers</span> بنسخ مختلفة يفضلوا شغّالين مع بعض
           <strong>من غير نشر متزامن إجباري</strong>.
         </div>
         <div class="tblock tblock--analogy">
@@ -4173,7 +4444,7 @@
         <div class="tblock tblock--win">
           <span class="tblock__label">التوافق الخلفي <span class="term term--e">Backward</span></span>
           <strong>الكود الجديد يقدر يقرا البيانات القديمة.</strong> ده اللي بيسمحلك تنشر
-          المستهلك <em>قبل</em> المنتج، وتقرا رسايل محفوظة من شهر.
+          الـ <span class="term">consumer</span> <em>قبل</em> الـ <span class="term">producer</span>، وتقرا رسايل محفوظة من شهر.
           <br>✅ مسموح: <strong>تضيف حقل اختياري بقيمة افتراضية</strong> · تمسح حقل اختياري.
           <br>❌ ممنوع: تضيف حقل <em>إجباري</em> من غير افتراضي · تمسح حقل إجباري ·
           تغيّر نوع حقل.
@@ -4181,10 +4452,10 @@
         <div class="tblock tblock--net">
           <span class="tblock__label">التوافق الأمامي <span class="term term--v">Forward</span></span>
           <strong>الكود القديم يقدر يقرا البيانات الجديدة</strong> (بيتجاهل اللي ما يعرفوش).
-          ده اللي بيسمحلك تنشر المنتج <em>قبل</em> كل المستهلكين.
+          ده اللي بيسمحلك تنشر الـ <span class="term">producer</span> <em>قبل</em> كل الـ <span class="term">consumers</span>.
           <br>✅ مسموح: تضيف حقل جديد (القديم بيتجاهله) · تمسح حقل اختياري.
           <br><strong>Full Compatibility</strong> = الاتنين مع بعض، وده اللي المفروض تستهدفه
-          في أي Topic ليه أكتر من مستهلك.
+          في أي Topic ليه أكتر من <span class="term">consumer</span>.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️ — التغييرات الكاسرة الصامتة</span>
@@ -4209,7 +4480,7 @@
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
           خدمة مركزية بتخزّن كل نسخ المخطّطات وبترفض تسجيل نسخة <strong>مش متوافقة</strong>
-          مع القاعدة المُعلَنة للـ Topic. المنتج بيبعت <span class="ltr">Schema ID</span>
+          مع القاعدة المُعلَنة للـ Topic. الـ <span class="term">producer</span> بيبعت <span class="ltr">Schema ID</span>
           (4 بايت) مع الرسالة بدل المخطّط كله.
         </div>
         <div class="tblock tblock--win">
@@ -4273,7 +4544,7 @@
         <div class="callout__icon">1️⃣</div>
         <div class="callout__body sm">
           <span class="callout__title">السيناريو الأول — أوردر بلا حدث</span>
-          الـ <code>SaveChanges</code> نجح، وبعدين النشر فشل (الوسيط واقع / الشبكة قطعت /
+          الـ <code>SaveChanges</code> نجح، وبعدين النشر فشل (الـ <span class="term">broker</span> واقع / الشبكة قطعت /
           الخدمة اتقتلت في النص).
           <br><strong>النتيجة:</strong> الأوردر موجود في قاعدة البيانات، والمخزون ما اتخصمش،
           والإيميل ما اتبعتش، والعميل شايف «تم».
@@ -4299,8 +4570,8 @@
         <strong>«أعمل try/catch وأعيد المحاولة»</strong> — لو العملية نفسها ماتت (نفاد ذاكرة،
         إعادة تشغيل الحاوية، قطع كهربا) مفيش كود هيشتغل أصلاً.
         <br><strong>«أستخدم معاملة موزّعة (<span class="term term--r">2PC</span>)»</strong> —
-        معظم الوسطاء ما بيدعموهاش، وبتقفل الموارد، وبتخلّي التوافر أسوأ من كل مكوّن على حدة.
-        <br><strong>«أنشر جوّه <span class="ltr">SaveChanges</span>»</strong> — الوسيط بره
+        معظم الـ <span class="term">brokers</span> ما بيدعموهاش، وبتقفل الموارد، وبتخلّي التوافر أسوأ من كل مكوّن على حدة.
+        <br><strong>«أنشر جوّه <span class="ltr">SaveChanges</span>»</strong> — الـ <span class="term">broker</span> بره
         نطاق معاملة قاعدة البيانات، فالـ <span class="ltr">Rollback</span> ما بيلغيش الرسالة المنشورة.
       </div>
     </div>
@@ -4337,7 +4608,7 @@
           <strong>الـ Outbox بيدّي At-Least-Once مش Exactly-Once.</strong>
           لو المُرحِّل نشر ومات قبل ما يعلّم السطر ⇒ هينشره تاني بعد إعادة التشغيل.
           <br>عشان كده <strong>لازم</strong> تحطّ <code>MessageId</code> ثابت في السطر
-          وتخلّي المستهلك <span class="term term--e">Idempotent</span>.
+          وتخلّي الـ <span class="term">consumer</span> <span class="term term--e">Idempotent</span>.
           <br>وفخ تاني: نسختين من المُرحِّل بيقروا نفس الأسطر ⇒ استخدم
           <code>UPDLOCK, READPAST</code> أو قفل موزّع.
         </div>
@@ -4469,34 +4740,97 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">الكود ده بيعمل إيه؟</span>
-      <strong>1.</strong> <code>Guid.CreateVersion7()</code> (جديد في .NET 9) بيولّد مُعرّف
-      <strong>مرتّب زمنيًا</strong> ⇒ الإدخال في الفهرس بيبقى تسلسلي بدل عشوائي،
-      وده بيقلّل تفتّت الصفحات في <span class="ltr">SQL Server</span> بشكل ملحوظ.
-      <br><strong>2.</strong> الفهرس المُصفّى <code>WHERE ProcessedAtUtc IS NULL</code>
-      بيغطّي الأسطر غير المنشورة بس. لو عندك <span class="ltr">50</span> مليون سطر تاريخي
-      والفهرس ده فيه <span class="ltr">200</span> سطر ⇒ <strong>الاستعلام بيفضل سريع للأبد</strong>.
-      <br><strong>3.</strong> <code>PeriodicTimer</code> أدق من <code>Task.Delay</code> في حلقة:
-      الفاصل بيتحسب من بداية كل دورة مش من نهايتها، فما بيحصلش <span class="term">Drift</span> تراكمي.
-      <br><strong>4.</strong> الحلقة الداخلية <code>while (await PumpAsync(ct) == BatchSize)</code>
-      معناها: لو الدفعة رجعت مليانة يبقى فيه أكتر مستني ⇒ كمّل فورًا. بكده تلحق الذروة
-      من غير ما تنزّل الفاصل الزمني لكل الأوقات.
-      <br><strong>5.</strong> <code>UPDLOCK, READPAST</code> هو السطر اللي بيخلّي أكتر من نسخة
-      من المُرحِّل تشتغل بأمان: كل نسخة بتحجز الأسطر اللي شافتها، والتانية <em>بتعدّي عليها</em>
-      بدل ما تستنى. من غيرهم إما تكرار وإما توقّف تام.
-      <br><strong>6.</strong> النشر بيحصل <strong>قبل</strong> التعليم — يعني في أسوأ حالة
-      (موت بعد النشر وقبل الـ Commit) الحدث هيتنشر مرتين.
-      <strong>وده مقبول لأننا اخترنا At-Least-Once بوعي</strong> والمستهلك Idempotent.
-      <br><strong>7.</strong> الـ <code>catch</code> العام <em>ما بيرميش</em>: لو الحلقة ماتت،
-      الصندوق هيفضل يتكدّس في صمت. الخدمة الخلفية لازم تكون <strong>عصية على الموت</strong>.
+    <div class="trace">
+      <div class="trace__head">تتبّع حدث واحد جوّه الـ Outbox Relay: من الصف لحد النشر</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Guid v7 · Primary Key</span>
+          <div class="trace__body">
+            <code>Guid.CreateVersion7()</code> (جديد في .NET 9) بيولّد مُعرّف
+            <strong>مرتّب زمنيًا</strong> ⇒ الإدخال في الفهرس بيبقى تسلسلي بدل عشوائي.
+            <br>وده بيقلّل تفتّت الصفحات في <span class="ltr">SQL Server</span> بشكل ملحوظ.
+            مع <code>Guid.NewGuid()</code> العشوائي، جدول بيتكتب فيه بكثافة زي ده
+            <strong>بيولّد انقسام صفحات في كل إدخال تقريبًا</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Filtered Index</span>
+          <div class="trace__body">
+            الفهرس المُصفّى <code>WHERE ProcessedAtUtc IS NULL</code> بيغطّي الأسطر
+            غير المنشورة بس.
+            <br>لو عندك <span class="ltr">50</span> مليون سطر تاريخي والفهرس ده فيه
+            <span class="ltr">200</span> سطر ⇒ <strong>الاستعلام بيفضل سريع للأبد</strong>.
+            من غيره أداء النشر بيتدهور تدريجيًا مع كل شهر بيعدّي — وده أسوأ نوع عطل
+            لأنه ما بيظهرش في الاختبار.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">PeriodicTimer</span>
+          <div class="trace__body">
+            أدق من <code>Task.Delay</code> في حلقة: الفاصل بيتحسب من بداية كل دورة
+            مش من نهايتها، فما بيحصلش <span class="term">Drift</span> تراكمي.
+            <br>الفرق بيبان بعد ساعات تشغيل: نبضة كل ثانية بتتحوّل لنبضة كل
+            <span class="ltr">3</span> ثواني من غير ما حد ياخد باله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Catch-Up Loop</span>
+          <div class="trace__body">
+            <code>while (await PumpAsync(ct) == BatchSize)</code> معناها:
+            لو الدفعة رجعت مليانة يبقى فيه أكتر مستني ⇒ كمّل فورًا.
+            <br>بكده تلحق الذروة <strong>من غير ما تنزّل الفاصل الزمني لكل الأوقات</strong> —
+            يعني ما بتضربش على قاعدة البيانات كل <span class="ltr">100ms</span> وهي فاضية
+            بالليل عشان تلحق ذروة نص ساعة في اليوم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">UPDLOCK · READPAST</span>
+          <div class="trace__body">
+            هو السطر اللي بيخلّي أكتر من نسخة من المُرحِّل تشتغل بأمان: كل نسخة بتحجز
+            الأسطر اللي شافتها، والتانية <em>بتعدّي عليها</em> بدل ما تستنى.
+            <br>من غيرهم إما تكرار (النسختين شافوا نفس الصف) وإما توقّف تام
+            (النسخة التانية واقفة على القفل) — <strong>مفيش حل وسط</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Publish-Before-Mark</span>
+          <div class="trace__body">
+            النشر بيحصل <strong>قبل</strong> التعليم — يعني في أسوأ حالة
+            (موت بعد النشر وقبل الـ Commit) الحدث هيتنشر مرتين.
+            <br><strong>وده مقبول لأننا اخترنا At-Least-Once بوعي</strong> والـ
+            <span class="term">consumer</span> عنده Inbox.
+            العكس (تعليم قبل نشر) بيضيّع الحدث نهائيًا — وضياع حدث ما لهوش علاج.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Error Boundary</span>
+          <div class="trace__body">
+            الـ <code>catch</code> العام <em>ما بيرميش</em>.
+            <br>لو الحلقة ماتت، الصندوق هيفضل يتكدّس في صمت وفحص الصحّة هيفضل أخضر.
+            الخدمة الخلفية لازم تكون <strong>عصية على الموت</strong> —
+            ولازم تنشر مقياس «عمر أقدم صف غير منشور» عشان تكتشف الصمت ده بدري.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        المُرحِّل بسيط بشكل مخادع: كل تعقيده موجود عشان يجاوب على
+        <strong>«إيه اللي يحصل لو مات دلوقتي؟»</strong> في كل سطر.
+      </div>
     </div>
 
     <div class="example">
       <div class="example__head">مثال محلول 05: كام حدث بيضيع في اليوم من غير Outbox؟</div>
       <div class="example__body">
         <p>
-          نظام بـ <span class="ltr">3</span> مليون أوردر/يوم. الوسيط توافره
+          نظام بـ <span class="ltr">3</span> مليون أوردر/يوم. الـ <span class="term">broker</span> توافره
           <span class="ltr">99.95%</span>، ونسخ الخدمة بتتعاد كل يوم (نشر + توسّع تلقائي)
           بمعدّل <span class="ltr">40</span> إعادة تشغيل يوميًا، وكل واحدة بتقطع في المتوسط
           <span class="ltr">2</span> عملية كانت في نص الطريق بين الحفظ والنشر.
@@ -4522,7 +4856,7 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
           <span class="plain__label">اللي لازم تلاحظه</span>
           <strong>1,580 أوردر في اليوم</strong> — دول مش أرقام نظرية، دول عملاء دفعوا
           وما وصلهمش إيميل وما اتخصمش مخزونهم.
-          <br>ولاحظ إن <span class="ltr">95%</span> من الفقدان جاي من <em>توافر الوسيط</em>
+          <br>ولاحظ إن <span class="ltr">95%</span> من الفقدان جاي من <em>توافر الـ <span class="term">broker</span></em>
           مش من إعادة التشغيل. يعني حتى لو نشرك مثالي، المشكلة موجودة.
           <br><br><strong>والأخطر:</strong> الفقدان ده <em>صامت تمامًا</em> —
           مفيش استثناء ولا لوج ولا تنبيه، لأن العملية من وجهة نظر الكود «نجحت».
@@ -4578,7 +4912,7 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
           <strong>الـ CDC بينشر تغييرات جداول — مش أحداث أعمال.</strong>
           <br>الحدث بيبقى <code>orders row changed: status F→G</code> بدل
           <code>OrderShipped</code>.
-          <br>النتيجة: <strong>مخطّط قاعدة بياناتك الداخلي بقى عقد عام</strong> مع كل المستهلكين.
+          <br>النتيجة: <strong>مخطّط قاعدة بياناتك الداخلي بقى عقد عام</strong> مع كل الـ <span class="term">consumers</span>.
           أي إعادة تسمية عمود أو تقسيم جدول = كسر لكل اللي مستهلكين منك.
           <br><em>وده يمكن أكبر عيب معماري في الـ CDC.</em>
         </div>
@@ -4705,7 +5039,7 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
         <div class="card__icon">🔔</div>
         <h3 class="card__title"><span class="term term--v">Push on Ready</span></h3>
         <p class="card__body sm">
-          لما المستهلك يخلّص، ابعت إشعار للواجهة بـ
+          لما الـ <span class="term">consumer</span> يخلّص، ابعت إشعار للواجهة بـ
           <span class="term term--v">SignalR</span> أو
           <span class="term term--v">Server-Sent Events</span> والواجهة تحدّث نفسها.
           <br><strong>أفضل تجربة</strong> وأقل ضغط على السيرفر من الاستطلاع المتكرر.
@@ -4773,7 +5107,7 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
         <ul class="pc pc--pro sm mb0">
           <li><strong>Queue</strong> = توزيع شغل · <strong>Pub/Sub</strong> = خبر للجميع ·
             <strong>Log</strong> = تاريخ قابل لإعادة القراءة</li>
-          <li>المؤشّر في الطابور عند الوسيط، وفي السجل عند المستهلك</li>
+          <li>الـ <span class="term">offset</span> في الطابور عند الـ <span class="term">broker</span>، وفي السجل عند الـ <span class="term">consumer</span></li>
           <li><span class="term">Partition</span> = وحدة التوازي والترتيب في نفس الوقت</li>
           <li>اسم الـ <span class="term">Consumer Group</span> قرار معماري مش إعداد</li>
         </ul>
@@ -4838,8 +5172,8 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
       <div class="checkpoint__title">آخر مراجعة — لو قدرت تشرح دول لحد تاني، الموديول اتثبّت</div>
       <ul>
         <li>إزاي تشرح الفرق بين النماذج التلاتة بجملة واحدة لكل واحد؟</li>
-        <li>ليه <span class="term term--v">Exactly-Once</span> «الحقيقي» بيتبني عند المستهلك مش في الوسيط؟</li>
-        <li>عندك ذروة <span class="ltr">8×</span> لمدة <span class="ltr">10</span> دقايق — إزاي تحسب عدد المستهلكين والتأخير المتوقّع؟</li>
+        <li>ليه <span class="term term--v">Exactly-Once</span> «الحقيقي» بيتبني عند الـ <span class="term">consumer</span> مش في الـ <span class="term">broker</span>؟</li>
+        <li>عندك ذروة <span class="ltr">8×</span> لمدة <span class="ltr">10</span> دقايق — إزاي تحسب عدد الـ <span class="term">consumers</span> والتأخير المتوقّع؟</li>
         <li>إيه اللي بيحصل بالظبط لما رسالة سامّة تدخل Partition في Kafka؟</li>
         <li>ليه <span class="term term--e">Transactional Outbox</span> شرط صحة مش تحسين؟</li>
         <li>إمتى تختار <span class="term term--v">Event-Carried State Transfer</span> وإمتى تختار الإشعار النحيف؟</li>
@@ -4854,7 +5188,7 @@ b.<span class="f">Entity</span>&lt;<span class="t">OutboxMessage</span>&gt;()
         <strong>الرسايل مش بتلغي التعقيد — هي بتنقله.</strong>
         <br>بتشيل تعقيد «التوافر المتزامن» وتحطّ مكانه تعقيد «التكرار والترتيب والاتساق النهائي».
         <br>والمقايضة دي <em>ممتازة</em> — بس بشرط واحد: إنك تدفع تمنها بوعي،
-        فتبني المستهلك Idempotent، وتحطّ Outbox، وتراقب الـ Lag، وتصمّم الشاشة على أساس التأخير.
+        فتبني الـ <span class="term">consumer</span> Idempotent، وتحطّ Outbox، وتراقب الـ Lag، وتصمّم الشاشة على أساس التأخير.
         <br><strong>اللي بيروح للرسايل من غير ما يعمل الأربعة دول، بيستبدل مشكلة يعرفها بمشكلة ما يعرفهاش.</strong>
       </div>
     </div>

@@ -567,7 +567,8 @@
             الرد يرجع بالعكس عبر نفس السلسلة (شبكة ← مستحوذ ← <span class="ltr">PSP</span> ← سيرفرك)
             في أقل من <span class="ltr">3</span> ثواني.
             <br>الميزانية الزمنية الضيقة دي هي سبب كل قرارات التصميم اللي جاية:
-            مهلات قصيرة، قاطع دائرة، وردود «قيد التأكيد» بدل الانتظار للأبد.
+            مهلات قصيرة، <span class="term">Circuit Breaker</span> (قاطع يفصل عن الطرف المتعطّل)،
+            وردود «قيد التأكيد» بدل الانتظار للأبد.
           </div>
         </li>
 
@@ -3044,16 +3045,51 @@
       </div>
     </div>
 
-    <div class="callout callout--key fragment">
-      <div class="callout__icon">🔍</div>
-      <div class="callout__body">
-        <span class="callout__title">فحص الصحة اليومي — <span class="term term--e">Ledger Integrity Check</span></span>
-        وظيفة ليلية بتعمل تلات فحوص:
-        <br><strong>1.</strong> مجموع كل المدين = مجموع كل الدائن في النظام كله (لازم <span class="ltr">= 0</span>).
-        <br><strong>2.</strong> كل قيد لوحده موزون (مفيش قيد مدين ≠ دائن).
-        <br><strong>3.</strong> كل لقطة بتطابق إعادة الحساب من الصفر لعيّنة عشوائية من الحسابات.
-        <br><br><em>لو فحص واحد فشل ⟵ الأولوية القصوى، وإيقاف أي عملية إقفال أو دفع للتجّار
-        لحد ما يتحل. الدفتر غير الموزون معناه إن رقم مالي في مكان ما غلط، وانت متعرفش أنهي واحد.</em>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع تشغيلة واحدة للوظيفة الليلية: <span class="term term--e">Ledger Integrity Check</span></div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Global Balance Check</span>
+          <div class="trace__body">
+            أول فحص وأوسع واحد: مجموع كل المدين = مجموع كل الدائن <strong>في النظام كله</strong>
+            (لازم الفرق يطلع <span class="ltr">= 0</span> بالهللة).
+            <br>ليه بيتعمل الأول؟ لأنه أرخص استعلام وأشمل إجابة: مجموعين على الجدول كله.
+            لو الرقم ده مظبوط، يبقى مفيش قيد ضاع ولا اتكتب نصّه —
+            <strong>ولو مش مظبوط، مفيش أي معنى تكمّل باقي الفحوص</strong> قبل ما تعرف السبب،
+            لأن كل رصيد في النظام بقى مشكوك فيه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Per-Entry Balance</span>
+          <div class="trace__body">
+            بعدين بينزل درجة: كل قيد لوحده موزون (مفيش قيد مدين ≠ دائن).
+            <br>ليه محتاجينه لو المجموع الكلي طلع صفر؟ لأن <em>خطأين متعاكسين بيلغوا بعض</em>
+            في المجموع الكلي: قيد ناقصه <span class="ltr">100</span> وقيد تاني زايد
+            <span class="ltr">100</span> بيدّوا صفر — والنظام مبسوط وحساب تاجرين غلط.
+            الفحص ده هو اللي بيحوّل «الدفتر موزون إجمالًا» لـ«كل قيد فيه موزون»،
+            وبيدّيك <strong>معرّف القيد الغلط بالتحديد</strong> مش رقم مجمّع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Snapshot Replay</span>
+          <div class="trace__body">
+            آخر فحص: كل لقطة (<span class="term">Snapshot</span>) بتتقارن بإعادة الحساب
+            <strong>من الصفر</strong> لعيّنة عشوائية من الحسابات.
+            <br>الفحصين اللي فاتوا بيختبروا القيود — ودي بتختبر <em>الطبقة المشتقة</em>.
+            اللقطة اختصار للأداء، ولو فيها باج (خطوة اتحسبت مرتين، أو قيد متأخّر وصل بعد اللقطة)
+            الأرصدة اللي بتعرضها للتجّار هتبقى غلط <strong>رغم إن الدفتر نفسه سليم تمامًا</strong>.
+            العيّنة العشوائية بتخلّي التكلفة معقولة والتغطية كافية مع الوقت.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        لو فحص واحد فشل ⟵ الأولوية القصوى، وإيقاف أي عملية إقفال أو دفع للتجّار لحد ما يتحل.
+        <br>الدفتر غير الموزون معناه إن رقم مالي في مكان ما غلط، <strong>وانت متعرفش أنهي واحد</strong> —
+        فأي دفعة تطلع وهو كده هي مخاطرة مفتوحة.
       </div>
     </div>
   </div>
@@ -4812,7 +4848,7 @@
           <li><strong>✅ تسجّل النيّة:</strong> اقبل الطلب، سجّل
             <span class="term term--e">Payment Intent</span> في قاعدة بياناتك،
             حطّه في طابور، وقول للعميل «طلبك اتسجّل، هنأكّد الدفع خلال دقايق».
-            <br>لما الـ PSP يرجع، المستهلك بيصرّف الطابور بالمفاتيح المخزّنة.</li>
+            <br>لما الـ PSP يرجع، الـ <span class="term">consumer</span> بيصرّف الطابور بالمفاتيح المخزّنة.</li>
         </ul>
         <div class="plain mt">
           <span class="plain__label">القاعدة الذهبية</span>
@@ -5215,7 +5251,7 @@
       </div>
       <div class="flow__vert">↓</div>
       <div class="flow__tier">
-        <div class="node node--a"><span class="node__ico">🔌</span>محوّل الـ PSP<span class="node__sub">قاطع دائرة · مهل</span></div>
+        <div class="node node--a"><span class="node__ico">🔌</span>محوّل الـ PSP<span class="node__sub">Circuit Breaker · مهل</span></div>
         <div class="node node--ghost"><span class="node__ico">🔀</span>PSP بديل<span class="node__sub">تحويل مسار</span></div>
       </div>
       <div class="flow__vert">↓</div>
@@ -5296,7 +5332,7 @@
             المحوّل بينادي التفويض بمهلة قصيرة و<span class="term">Circuit Breaker</span>.
             لو وقع، بيحوّل للـ PSP البديل، أو <strong>يسجّل النيّة في طابور</strong>
             ويرد «قيد التأكيد» — <em>الطلب ما بيضيعش أبدًا</em>.
-            <br>من غير المهلة والقاطع، أول تباطؤ عند الـ PSP بيستهلك كل خيوطك
+            <br>من غير المهلة والـ <span class="term">Circuit Breaker</span>، أول تباطؤ عند الـ PSP بيستهلك كل خيوطك
             ويوقّف الخدمة كلها — مش بس الدفع.
           </div>
         </li>

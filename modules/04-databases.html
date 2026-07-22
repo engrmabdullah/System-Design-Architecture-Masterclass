@@ -2224,7 +2224,8 @@ to.Balance   <span class="p">+=</span> amount;
       </div>
       <div class="decode__sum">
         السر كله: <b>الكتابة كلها تسلسلية ومفيش أي تعديل في مكانه</b>.
-        والقرص بيحب الكتابة التسلسلية جدًا — عشان كده Cassandra بتوصل لمئات الآلاف من عمليات الكتابة في الثانية على عقدة واحدة.
+        والقرص بيحب الكتابة التسلسلية جدًا — عشان كده Cassandra بتوصل لمئات الآلاف من عمليات الكتابة في الثانية على
+        <span class="term">node</span> (سيرفر واحد من المجموعة) واحد.
       </div>
     </div>
 
@@ -2268,11 +2269,11 @@ to.Balance   <span class="p">+=</span> amount;
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          البيانات متخزّنة كـ <strong>عُقد</strong> (<span class="term term--b">Nodes</span>) و<strong>علاقات</strong>
-          (<span class="term term--b">Edges</span>)، والعلاقة نفسها كيان من الدرجة الأولى:
+          البيانات متخزّنة كـ <span class="term term--b">nodes</span> (الكيانات نفسها) و<span class="term term--b">Edges</span>
+          (العلاقات)، والعلاقة نفسها كيان من الدرجة الأولى:
           ليها نوع واتجاه وخصائص.
-          <br><strong>النقطة الجوهرية:</strong> كل عقدة بتمسك <strong>مؤشرات مباشرة</strong> لجيرانها على القرص.
-          الانتقال من عقدة لجارها = <strong>اتباع مؤشر</strong>، مش بحث في فهرس.
+          <br><strong>النقطة الجوهرية:</strong> كل <span class="term term--b">node</span> بيمسك <strong>مؤشرات مباشرة</strong> لجيرانه على القرص.
+          الانتقال من <span class="term term--b">node</span> لجاره = <strong>اتباع مؤشر</strong>، مش بحث في فهرس.
           الخاصية دي اسمها <span class="term term--b">Index-Free Adjacency</span>.
         </div>
         <div class="tblock tblock--analogy">
@@ -2290,8 +2291,8 @@ to.Balance   <span class="p">+=</span> amount;
 <span class="lbl">عمق 3</span> <span class="eq">=</span> <span class="n">3</span> <span class="var">JOIN</span>  <span class="eq">→</span> <span class="n">8,000,000</span> <span class="var">صف وسيط</span>
 <span class="lbl">عمق 4</span> <span class="eq">=</span> <span class="n">4</span> <span class="var">JOIN</span>  <span class="eq">→</span> <span class="res">1,600,000,000 صف وسيط 💥</span>
 
-<span class="cmt">// ═══ Graph: اتباع مؤشرات من العقدة ═══</span>
-<span class="lbl">عمق 4</span> <span class="eq">=</span> <span class="var">تنقّل موضعي من العقدة</span> <span class="eq">→</span> <span class="res">ملي ثواني</span>
+<span class="cmt">// ═══ Graph: اتباع مؤشرات من الـ node ═══</span>
+<span class="lbl">عمق 4</span> <span class="eq">=</span> <span class="var">تنقّل موضعي من الـ node</span> <span class="eq">→</span> <span class="res">ملي ثواني</span>
 <span class="cmt">// التكلفة بتعتمد على حجم النتيجة، مش على حجم الجدول كله</span>
           </div>
         </div>
@@ -2372,24 +2373,24 @@ to.Balance   <span class="p">+=</span> amount;
           <div class="decode__exp">
             <span class="term">Consistency</span> = <b>الاتساق</b> — وبالتحديد
             <span class="term">Linearizability</span>: أي قراءة بترجّع <b>آخر كتابة مكتملة</b>،
-            من أي عقدة تقرا منها.
+            من أي <span class="term">node</span> (سيرفر واحد من المجموعة) تقرا منه.
             <br><b>مش</b> الـ C بتاعة <span class="ltr">ACID</span> — دي عن <b>تطابق النسخ</b>، مش عن القيود.
           </div>
         </div>
         <div class="decode__row">
           <span class="decode__tok">A</span>
           <div class="decode__exp">
-            <span class="term">Availability</span> = <b>التوافر</b> — كل عقدة <b>شغالة</b> بترد على كل طلب
+            <span class="term">Availability</span> = <b>التوافر</b> — كل <span class="term">node</span> <b>شغّال</b> بيرد على كل طلب
             برد <b>غير خطأ</b>، في وقت محدود.
-            <br><b>انتبه:</b> ده تعريف أصرم من «النظام شغّال». عقدة بترد
-            <span class="ltr">503</span> أو بتستنى للأبد = <b>مش Available</b> بمعنى CAP.
+            <br><b>انتبه:</b> ده تعريف أصرم من «النظام شغّال». <span class="term">node</span> بيرد
+            <span class="ltr">503</span> أو بيستنى للأبد = <b>مش Available</b> بمعنى CAP.
           </div>
         </div>
         <div class="decode__row">
           <span class="decode__tok">P</span>
           <div class="decode__exp">
             <span class="term">Partition Tolerance</span> = <b>تحمّل الانقسام الشبكي</b>.
-            الـ <span class="term">Partition</span> = الشبكة اتقطعت بين مجموعتين من العقد،
+            الـ <span class="term">Partition</span> = الشبكة اتقطعت بين مجموعتين من الـ <span class="term">nodes</span>،
             فكل مجموعة شايفة التانية «ميتة» وهي في الحقيقة شغالة.
             <br><b>Tolerance</b> = النظام يفضل يشتغل رغم كده.
           </div>
@@ -2427,13 +2428,14 @@ to.Balance   <span class="p">+=</span> amount;
 
   <div class="slide__body">
     <div class="flow">
-      <div class="node node--c"><span class="node__ico">🖥️</span>عقدة A<span class="node__sub">القاهرة</span></div>
+      <div class="node node--c"><span class="node__ico">🖥️</span>Node A<span class="node__sub">القاهرة</span></div>
       <span class="arrow">✂️</span>
       <div class="node node--r"><span class="node__ico">💔</span>الشبكة اتقطعت<span class="node__sub">Partition</span></div>
       <span class="arrow">✂️</span>
-      <div class="node node--c"><span class="node__ico">🖥️</span>عقدة B<span class="node__sub">دبي</span></div>
+      <div class="node node--c"><span class="node__ico">🖥️</span>Node B<span class="node__sub">دبي</span></div>
     </div>
-    <p class="sm mute center">مستخدم بيكتب على عقدة A، ومستخدم تاني بيقرا من عقدة B. العقدتين مش شايفين بعض دلوقتي.</p>
+    <p class="sm mute center">مستخدم بيكتب على <span class="term">Node A</span>، ومستخدم تاني بيقرا من
+      <span class="term">Node B</span>. الاتنين مش شايفين بعض دلوقتي.</p>
 
     <div class="vs">
       <div class="card card--v">
@@ -2441,7 +2443,7 @@ to.Balance   <span class="p">+=</span> amount;
         <h3 class="card__title"><span class="term term--v">CP</span> — اتساق + تحمّل انقسام</h3>
         <p class="card__body sm">
           <strong>القرار:</strong> «مش هرد برد ممكن يكون قديم».
-          <br>عقدة B <strong>بترفض الطلب</strong> (خطأ أو انتظار) لحد ما الشبكة ترجع.
+          <br><span class="term">Node B</span> <strong>بيرفض الطلب</strong> (خطأ أو انتظار) لحد ما الشبكة ترجع.
           <br><br><strong>المستخدم بيشوف:</strong> «الخدمة غير متاحة مؤقتًا، حاول بعد شوية».
           <br><strong>أمثلة:</strong> <span class="ltr">MongoDB</span> (افتراضيًا)،
           <span class="ltr">HBase</span>، <span class="ltr">etcd</span>، <span class="ltr">ZooKeeper</span>،
@@ -2454,7 +2456,7 @@ to.Balance   <span class="p">+=</span> amount;
         <h3 class="card__title"><span class="term term--a">AP</span> — توافر + تحمّل انقسام</h3>
         <p class="card__body sm">
           <strong>القرار:</strong> «هرد على طول، حتى لو ببيانات قديمة».
-          <br>عقدة B <strong>بترد بآخر حاجة عندها</strong>، ولما الشبكة ترجع بيتم التصالح.
+          <br><span class="term">Node B</span> <strong>بيرد بآخر حاجة عنده</strong>، ولما الشبكة ترجع بيتم التصالح.
           <br><br><strong>المستخدم بيشوف:</strong> بيانات شغالة بس ممكن تكون متأخرة ثواني.
           <br><strong>أمثلة:</strong> <span class="ltr">Cassandra</span>، <span class="ltr">DynamoDB</span>،
           <span class="ltr">Riak</span>، معظم أنظمة <span class="term term--a">Eventual Consistency</span>.
@@ -2952,14 +2954,59 @@ to.Balance   <span class="p">+=</span> amount;
       </div>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">تتبّع بحث واحد خطوة بخطوة — <code>WHERE Id = 1547</code></span>
-      <strong>1)</strong> المحرّك بيقرا <strong>صفحة الجذر</strong> (وهي دايمًا في الذاكرة) ويشوف: 1547 في أي نطاق؟ ⇒ النطاق التاني.
-      <br><strong>2)</strong> بيقرا <strong>الصفحة الوسيطة</strong> ويضيّق أكتر: 1547 في <span class="ltr">[1301-1600]</span>.
-      <br><strong>3)</strong> بيقرا <strong>صفحة الورقة</strong> ويلاقي المفتاح 1547 ومعاه مؤشر الصف.
-      <br><strong>4)</strong> بيروح للصف الأصلي ويجيب باقي الأعمدة (العملية دي اسمها <span class="term term--r">Key Lookup</span>).
-      <br><br><strong>المجموع: 3 أو 4 قراءات صفحات</strong> — على جدول فيه <strong>100 مليون صف</strong>.
-      من غير الفهرس كان لازم يقرا <span class="ltr">~12 GB</span> كاملة.
+    <div class="trace">
+      <div class="trace__head">تتبّع بحث واحد: <code>WHERE Id = 1547</code> على جدول فيه 100 مليون صف</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Root Page</span>
+          <div class="trace__body">
+            المحرّك بيبدأ من صفحة الجذر — وهي <strong>دايمًا في الذاكرة</strong> لأنها بتتقرا في كل بحث
+            على الفهرس ده. بيقارن <span class="ltr">1547</span> بالنطاقات المكتوبة فيها ويقرّر: النطاق التاني.
+            <br>الخطوة دي موجودة عشان <strong>ترمي ثلثين الجدول في قراءة واحدة</strong>.
+            من غيرها مفيش نقطة بداية، والبديل الوحيد إنك تقرا كل الصفحات واحدة واحدة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Intermediate Page</span>
+          <div class="trace__body">
+            بيقرا الصفحة الوسيطة ويضيّق أكتر: <span class="ltr">1547</span> واقعة في
+            <span class="ltr">[1301-1600]</span>.
+            <br>المستويات الوسيطة دي هي اللي بتخلّي <strong>العمق يفضل 3 أو 4 مهما كبر الجدول</strong>.
+            من غيرها كان الجذر لازم يشاور على كل ورقة مباشرة — يعني صفحة جذر بحجم الفهرس نفسه،
+            وترجع لنقطة الصفر.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Leaf Page</span>
+          <div class="trace__body">
+            بيقرا صفحة الورقة ويلاقي المفتاح <span class="ltr">1547</span> ومعاه <strong>مؤشر الصف</strong>.
+            <br>دي <strong>الخطوة الوحيدة اللي فيها بيانات حقيقية</strong> في التتبّع كله — اللي قبلها كله توجيه.
+            والأوراق مربوطة ببعض في الاتجاهين، وده هو السبب إن
+            <code>BETWEEN</code> و<code>ORDER BY</code> بيشتغلوا من غير عملية ترتيب إضافية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Clustered Index / Heap</span>
+          <div class="trace__body">
+            بيروح للصف الأصلي ويجيب باقي الأعمدة اللي الاستعلام طلبها.
+            العملية دي اسمها <span class="term term--r">Key Lookup</span>.
+            <br>وهي <strong>الخطوة الوحيدة اللي ممكن تلغيها</strong>: لو الفهرس مُغطّي
+            (<span class="term term--e">Covering Index</span> بـ <code>INCLUDE</code>)،
+            التتبّع بيقف عند الورقة.
+            <br>من غير التغطية، الخطوة دي بتتكرّر <em>لكل صف</em> في النتيجة —
+            وده اللي بيحوّل استعلام سريع لاستعلام بطيء على 50 ألف صف.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        المجموع: <strong>3 أو 4 قراءات صفحات</strong> على جدول فيه <strong>100 مليون صف</strong>.
+        <br>من غير الفهرس كان لازم يقرا <span class="ltr">~12 GB</span> كاملة.
+      </div>
     </div>
 
     <div class="decode fragment">

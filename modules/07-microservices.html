@@ -950,7 +950,7 @@
         <ul class="pc pc--pro sm">
           <li>ب تقدر تقع ساعة والرسايل مستنياها في الطابور.</li>
           <li>امتصاص موجات الحمل (<span class="term term--v">Buffering</span>).</li>
-          <li>سهل تضيف مستهلك جديد من غير ما تعدّل المنتج.</li>
+          <li>سهل تضيف <span class="term">consumer</span> جديد من غير ما تعدّل الـ <span class="term">producer</span>.</li>
         </ul>
         <ul class="pc pc--con sm mb0">
           <li><span class="term term--r">Eventual Consistency</span> إجباري.</li>
@@ -1464,8 +1464,8 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
               <li><strong>2 ⇒ gRPC.</strong> <span class="ltr">40K</span> استدعاء/ثانية داخلي = بالظبط الحالة اللي المكسب فيها حقيقي:
                 توفير <span class="ltr">~66%</span> من حجم الشبكة وتقليل الزمن للنص. الاتصال مفتوح ومعاد استخدامه.</li>
               <li><strong>3 ⇒ Messaging.</strong> ولا واحدة من التلاتة المستخدم مستنيها.
-                حدث <span class="ltr">OrderPlaced</span> واحد و3 مستهلكين مستقلين ⇒
-                سيرفر الإيميل يقع ما يأثرش على الطلب، وتقدر تضيف مستهلك رابع بكرة من غير ما تلمس خدمة الطلبات.</li>
+                حدث <span class="ltr">OrderPlaced</span> واحد و3 <span class="term">consumers</span> مستقلين ⇒
+                سيرفر الإيميل يقع ما يأثرش على الطلب، وتقدر تضيف <span class="term">consumer</span> رابع بكرة من غير ما تلمس خدمة الطلبات.</li>
               <li><strong>4 ⇒ REST.</strong> شركاء خارجيين معناها: أدوات جاهزة، توثيق <span class="ltr">OpenAPI</span>،
                 يشتغل من وراء أي جدار حماية، وأي مطوّر يفهمه في دقيقة. المكسب هنا <strong>التوافق مش السرعة</strong>.</li>
               <li><strong>5 ⇒ gRPC Server Streaming</strong> (أو <span class="ltr">SignalR</span> لو العميل متصفح).
@@ -1558,15 +1558,74 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
       </div>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">تتبّع طلب واحد من أوله لآخره</span>
-      <strong>1.</strong> الموبايل يبعت <code>GET /api/orders/42</code> ومعاه <span class="term term--v">Bearer Token</span>.
-      <strong>2.</strong> البوابة تتحقق من توقيع الـ JWT (مرة واحدة، محليًا، من غير أي استدعاء شبكة).
-      <strong>3.</strong> تتأكد إن العميل ما تعداش حد المعدّل.
-      <strong>4.</strong> تولّد <span class="term term--v">Trace ID</span> جديد وتحطه في الترويسة.
-      <strong>5.</strong> توجّه الطلب لخدمة الطلبات مع الهوية والـ Trace ID.
-      <strong>6.</strong> ترجّع الرد وتسجّل الزمن والحالة.
-      <br><br><em>لاحظ إن ولا خطوة من دول فيها كلمة واحدة عن «الطلب» كمفهوم عمل. ده هو الاختبار.</em>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع طلب واحد من أوله لآخره: <code>GET /api/orders/42</code> عبر البوابة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Mobile Client</span>
+          <div class="trace__body">
+            الموبايل يبعت <code>GET /api/orders/42</code> ومعاه
+            <span class="term term--v">Bearer Token</span> في ترويسة <code>Authorization</code>.
+            <br>لحد اللحظة دي <strong>مفيش خدمة داخلية واحدة اشتغلت</strong> — العميل بيكلّم
+            عنوان واحد بس، وما يعرفش إن ورا العنوان ده اتناشر خدمة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">API Gateway · JWT Validation</span>
+          <div class="trace__body">
+            البوابة تتحقق من توقيع الـ <span class="term">JWT</span>
+            (مرة واحدة، محليًا، من غير أي استدعاء شبكة).
+            <br>الخطوة دي موجودة عشان <strong>كل خدمة داخلية تفترض إن الهوية اتأكّدت خلاص</strong>.
+            من غيرها كل خدمة هتعمل التحقق بنفسها ⇒ اتناشر نسخة من نفس الكود،
+            وأول مرة تنسى تحدّث واحدة منهم يبقى عندك باب خلفي مفتوح.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Rate Limiter</span>
+          <div class="trace__body">
+            تتأكد إن العميل ما تعداش حد المعدّل المسموح له.
+            <br>ليه هنا بالذات؟ لأن <strong>ده آخر مكان تقدر ترفض فيه الطلب وهو لسه رخيص</strong>.
+            من غير الخطوة دي، عميل واحد بيعمل حلقة لا نهائية يقدر يشغّل خدمة الطلبات
+            وقاعدة بياناتها ويأذي كل باقي المستخدمين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Trace ID Propagation</span>
+          <div class="trace__body">
+            تولّد <span class="term term--v">Trace ID</span> جديد وتحطه في الترويسة قبل التوجيه.
+            <br>من غير الرقم ده، لما الطلب يتأخّر 8 ثواني <strong>مش هتعرف الثواني راحت فين</strong> —
+            هتفتح لوجات كل الخدمات وتحاول تطابق التوقيتات بإيدك.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Orders Service</span>
+          <div class="trace__body">
+            البوابة توجّه الطلب لخدمة الطلبات ومعاه الهوية والـ Trace ID.
+            <br>دي <strong>الخطوة الوحيدة اللي فيها منطق عمل حقيقي</strong> في التتبّع كله.
+            الخدمة ما بتشوفش الـ Token الخام ولا بتعرف حاجة عن حدود المعدّل —
+            بتشوف «مين» بس وتشتغل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">API Gateway · Response</span>
+          <div class="trace__body">
+            ترجّع الرد للعميل وتسجّل الزمن والحالة.
+            <br>التسجيل هنا مقصود: <strong>البوابة هي النقطة الوحيدة اللي شايفة كل الطلبات</strong>،
+            فهي أرخص مكان تقيس منه معدّل الأخطاء وزمن الاستجابة للنظام كله.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        لاحظ إن ولا خطوة من دول فيها كلمة واحدة عن «الطلب» كمفهوم عمل. ده هو الاختبار:
+        <strong>لو لقيت منطق عمل في البوابة، تبقى البوابة بقت خدمة تانية مش بوابة.</strong>
+      </div>
     </div>
 
     <h3 class="mt">Backend For Frontend — بوابة لكل نوع عميل</h3>
@@ -1920,13 +1979,13 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">ليه دي إجبارية مش اختيارية ⚠️</span>
-          كل وسيط رسايل عملي (<span class="ltr">RabbitMQ</span> · <span class="ltr">Kafka</span> ·
+          كل <span class="term">message broker</span> عملي (<span class="ltr">RabbitMQ</span> · <span class="ltr">Kafka</span> ·
           <span class="ltr">Azure Service Bus</span> · <span class="ltr">SQS</span>) بيضمن
           <strong class="ltr">at-least-once delivery</strong> — يعني الرسالة <em>هتتسلّم مرة على الأقل،
           وممكن أكتر</em>.
           <br>ليه؟ لأن البديل (<span class="ltr">exactly-once</span>) <strong>مستحيل عمليًا</strong>
-          عبر الشبكة: المستهلك ممكن يعالج الرسالة وبعدين يموت قبل ما يأكّد الاستلام،
-          فالوسيط <em>لازم</em> يبعتها تاني.
+          عبر الشبكة: الـ <span class="term">consumer</span> ممكن يعالج الرسالة وبعدين يموت قبل ما يأكّد الاستلام،
+          فالـ <span class="term">broker</span> <em>لازم</em> يبعتها تاني.
           <br><br><strong>يعني: التكرار مش احتمال — هو ضمانة. وشغلك إنك تتعامل معاه.</strong>
         </div>
         <div class="tblock tblock--net">
@@ -1939,7 +1998,7 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تستخدمها</span>
-          <strong>كل مستهلك رسائل، وكل نقطة نهاية بتغيّر بيانات، وكل عملية بتتعمل عليها إعادة محاولة.</strong>
+          <strong>كل <span class="term">consumer</span> رسائل، وكل نقطة نهاية بتغيّر بيانات، وكل عملية بتتعمل عليها إعادة محاولة.</strong>
           <br>عمليًا: أي حاجة غير <code>GET</code>.
         </div>
       </div>
@@ -1952,8 +2011,8 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         <div class="decode__row">
           <span class="decode__tok">at-least-once</span>
           <div class="decode__exp">
-            <b>مرة على الأقل</b>. ضمان الوسيط إن الرسالة مش هتضيع — بس ممكن توصل <b>مرتين أو تلاتة</b>
-            لو المستهلك مات قبل التأكيد أو التأكيد نفسه ضاع في الشبكة.
+            <b>مرة على الأقل</b>. ضمان الـ <span class="term">broker</span> إن الرسالة مش هتضيع — بس ممكن توصل <b>مرتين أو تلاتة</b>
+            لو الـ <span class="term">consumer</span> مات قبل التأكيد أو التأكيد نفسه ضاع في الشبكة.
           </div>
         </div>
         <div class="decode__row">
@@ -1972,8 +2031,8 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         </div>
       </div>
       <div class="decode__sum">
-        طول ما وسيط الرسايل بيضمن «مرة على الأقل»، أي معالج مش محصّن ضد التكرار
-        <b>هيسبّب عملية مكرّرة — مش لو، لأ: إمتى</b>. والحل مش تغيير الوسيط؛ الحل تحصين المعالج.
+        طول ما الـ <span class="term">message broker</span> بيضمن «مرة على الأقل»، أي معالج مش محصّن ضد التكرار
+        <b>هيسبّب عملية مكرّرة — مش لو، لأ: إمتى</b>. والحل مش تغيير الـ <span class="term">broker</span>؛ الحل تحصين المعالج.
       </div>
     </div>
 
@@ -1987,7 +2046,7 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         <strong>مستحيل على مستوى التسليم الشبكي</strong> —
         اللي موجود فعليًا هو <em>at-least-once + معالجة عديمة التأثير</em>،
         وده اللي بيسمّوه أحيانًا <span class="ltr">effectively-once</span>.
-        <br><br><strong>يعني: الـ Idempotency هي اللي بتصنع الـ exactly-once، مش الوسيط.</strong>
+        <br><br><strong>يعني: الـ Idempotency هي اللي بتصنع الـ exactly-once، مش الـ <span class="term">broker</span>.</strong>
       </div>
     </div>
   </div>
@@ -2071,18 +2130,57 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">الكود ده بيعمل إيه بالظبط؟</span>
-      <strong>1.</strong> بيسأل الأول: «شفت الرسالة دي قبل كده؟» — لو أيوه، بيخرج فورًا ويأكّد الاستلام.
-      ده بيمنع <span class="ltr">99%</span> من التكرارات بأرخص طريقة.
-      <br><strong>2.</strong> بيفتح <strong>معاملة واحدة</strong> تضم <em>نتيجة الدفع</em> و<em>تسجيل الرسالة في الوارد</em>.
-      لو حفظ واحد بس منهم، كنا هنبقى في ورطة: دفع من غير سجل ⇒ هيتكرر تاني.
-      <br><strong>3.</strong> بيمرّر <code>idempotencyKey</code> لبوابة الدفع نفسها — عشان حتى لو الشبكة قطعت بعد الخصم
-      وأعدنا المحاولة، البوابة تتعرّف على المفتاح وترجّع نفس نتيجة العملية الأولى <em>بدون خصم جديد</em>.
-      <br><strong>4.</strong> الفحص في السطر الأول <strong>مش كافي لوحده</strong>: نسختين من الخدمة ممكن يقروا في نفس المللي ثانية
-      ويلاقوا الاتنين «مفيش». عشان كده <strong>القيد الفريد في قاعدة البيانات هو الضمان الحقيقي</strong>،
-      والـ <code>catch</code> بيتعامل مع الخسران في السباق بهدوء بدل ما يفشل الرسالة.
-      <br><br><strong>القاعدة:</strong> الفحص للأداء · <strong>القيد للصحّة</strong>. عمرك ما تعتمد على الفحص وحده.
+    <div class="trace">
+      <div class="trace__head">تتبّع رسالة واحدة: نفس رسالة الدفع بتوصل مرتين — إيه اللي بيحصل في كل مرة؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Inbox Lookup</span>
+          <div class="trace__body">
+            الكود بيسأل الأول: «شفت الرسالة دي قبل كده؟» — لو أيوه، بيخرج فورًا ويأكّد الاستلام.
+            <br>الخطوة دي موجودة عشان <strong>ترفض التكرار وهو لسه رخيص</strong>:
+            قراءة واحدة بمفتاح أساسي. من غيرها كل رسالة مكررة هتفتح معاملة وتضرب على بوابة الدفع
+            الأول وبعدين تكتشف إنها زيادة. ده بيمنع <span class="ltr">99%</span> من التكرارات بأرخص طريقة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Local Transaction</span>
+          <div class="trace__body">
+            بيفتح <strong>معاملة واحدة</strong> تضم <em>نتيجة الدفع</em>
+            و<em>تسجيل الرسالة في الوارد</em>.
+            <br>ليه في نفس المعاملة؟ لأن لو حفظ واحد بس منهم كنا هنبقى في ورطة:
+            <strong>دفع من غير سجل ⇒ هيتكرر تاني</strong> عند أول إعادة تسليم،
+            وسجل من غير دفع ⇒ العميل دفع في ورق بس فعليًا محصلش خصم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Payment Gateway</span>
+          <div class="trace__body">
+            بيمرّر <code>idempotencyKey</code> لبوابة الدفع نفسها.
+            <br>الخطوة دي بتغطّي الحالة اللي حمايتك المحلية ما بتشوفهاش:
+            الشبكة قطعت <em>بعد</em> الخصم وقبل ما يوصلك الرد. لما تعيد المحاولة،
+            البوابة تتعرّف على المفتاح وترجّع نفس نتيجة العملية الأولى <em>بدون خصم جديد</em>.
+            من غيره العميل بيتخصم منه مرتين والفرق ده بيوصل لدعم العملاء مش للوج بتاعك.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Unique Index</span>
+          <div class="trace__body">
+            الفحص في الخطوة الأولى <strong>مش كافي لوحده</strong>: نسختين من الخدمة ممكن يقروا
+            في نفس المللي ثانية ويلاقوا الاتنين «مفيش».
+            <br>عشان كده <strong>القيد الفريد في قاعدة البيانات هو الضمان الحقيقي</strong>،
+            والـ <code>catch</code> بيتعامل مع الخسران في السباق بهدوء بدل ما يفشل الرسالة
+            ويبعتها لطابور الموتى بدون سبب.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الفحص للأداء · <strong>القيد للصحّة</strong>. عمرك ما تعتمد على الفحص وحده.
+      </div>
     </div>
 
     <div class="exercise fragment">
@@ -2518,8 +2616,8 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
         <span class="callout__title">صياغة المشكلة بدقة</span>
         عايز تعمل حاجتين <strong>مع بعض بشكل ذرّي</strong>:
         <strong>(1)</strong> تحفظ الطلب في قاعدة بياناتك ·
-        <strong>(2)</strong> تنشر حدث <span class="ltr">OrderPlaced</span> على وسيط الرسايل.
-        <br><br><strong>بس دول نظامين مختلفين تمامًا</strong> — قاعدة بيانات ووسيط رسايل.
+        <strong>(2)</strong> تنشر حدث <span class="ltr">OrderPlaced</span> على الـ <span class="term">message broker</span>.
+        <br><br><strong>بس دول نظامين مختلفين تمامًا</strong> — قاعدة بيانات و<span class="term">message broker</span>.
         ومفيش أي معاملة بتضم الاتنين.
         <br>يعني <strong>مستحيل تضمن إن الاتنين ينجحوا أو الاتنين يفشلوا</strong>.
         <em>ودي مش مشكلة كود — دي حقيقة معمارية.</em>
@@ -2594,16 +2692,65 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
       </div>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">تتبّع رسالة واحدة من أولها لآخرها</span>
-      <strong>1.</strong> الخدمة بتحفظ <em>الطلب</em> و<em>الحدث</em> في نفس <code>SaveChangesAsync</code> ⇒
-      يا الاتنين يتحفظوا يا الاتنين لأ. <strong>مفيش حالة نص نص.</strong>
-      <br><strong>2.</strong> العامل الخلفي بيقرا الصفوف اللي <code>ProcessedAt = NULL</code> وينشرها.
-      <br><strong>3.</strong> نشر ونجح بس مات قبل ما يعلّم الصف كـ «متنشر»؟ ⇒ هينشرها تاني بعدين ⇒
-      <strong>at-least-once</strong>.
-      <br><strong>4.</strong> عشان كده الطرف التاني عنده <strong>Inbox</strong> بيرفض المعرّف المتكرر.
-      <br><br><strong>الاتنين مع بعض (Outbox + Inbox) بيدّوك النتيجة العملية للـ exactly-once —
-      من غير أي سحر، وبمكوّنين بسيطين تقدر تنقّحهم.</strong>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع رسالة واحدة من أولها لآخرها: من الـ Outbox للـ Inbox</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Order Service · Transaction</span>
+          <div class="trace__body">
+            الخدمة بتحفظ <em>الطلب</em> و<em>الحدث</em> في نفس <code>SaveChangesAsync</code> ⇒
+            يا الاتنين يتحفظوا يا الاتنين لأ. <strong>مفيش حالة نص نص.</strong>
+            <br>ودي أهم خطوة في التتبّع كله: من غيرها بترجع لمشكلة الكتابة المزدوجة —
+            الطلب اتسجّل والحدث ضاع، فالمخزون ما اتحجزش أبدًا ومحدش يعرف.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Outbox Table</span>
+          <div class="trace__body">
+            الحدث قاعد في جدول عادي جوّه <em>نفس</em> قاعدة بياناتك، بحالة
+            <code>ProcessedAt = NULL</code>.
+            <br>الجدول ده هو اللي بيخلّي الخدمة تقدر تسجّل طلبات <strong>حتى والـ <span class="term">broker</span> واقع</strong> —
+            الرسايل بتتكدّس هنا وتتنشر لما يرجع، بدل ما ترفض الطلب على العميل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Outbox Relay</span>
+          <div class="trace__body">
+            العامل الخلفي بيقرا الصفوف اللي <code>ProcessedAt = NULL</code> وينشرها،
+            وبعدين يعلّمها كـ «متنشرة».
+            <br>لاحظ الترتيب: <strong>النشر قبل التعليم</strong>. لو عكسته، أول مرة العامل يموت
+            بين السطرين هتفقد الحدث للأبد — وده أسوأ بكتير من إنك تنشره مرتين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Message Broker</span>
+          <div class="trace__body">
+            نشر ونجح بس مات قبل ما يعلّم الصف كـ «متنشر»؟ ⇒ هينشرها تاني بعدين ⇒
+            <strong>at-least-once</strong>.
+            <br>ده مش عيب في تصميمك، ده <em>اختيار واعي</em>: الضمان الوحيد الرخيص اللي
+            أي <span class="term">message broker</span> يقدر يقدّمه بصدق.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Inbox Table</span>
+          <div class="trace__body">
+            عشان كده الطرف التاني عنده <strong>Inbox</strong> بيرفض المعرّف المتكرر
+            ويأكّد الاستلام من غير ما ينفّذ تاني.
+            <br>من غير الخطوة دي، الـ at-least-once بتتحوّل من ضمان لمشكلة:
+            خصم مرتين، إيميلين، مخزون محجوز مرتين لنفس الطلب.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الاتنين مع بعض (<strong>Outbox + Inbox</strong>) بيدّوك النتيجة العملية للـ exactly-once —
+        من غير أي سحر، وبمكوّنين بسيطين تقدر تنقّحهم.
+      </div>
     </div>
   </div>
 </section>
@@ -2706,7 +2853,7 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
       فلما الخدمة التانية تستهلكها تقدر تكمّل نفس الـ <span class="term">Trace</span> بدل ما تبدأ واحد جديد.
       <br><strong>5.</strong> <code>base.SaveChangesAsync</code> بيحفظ الاتنين في
       <strong>معاملة واحدة</strong> — وده اللي بيقتل مشكلة الكتابة المزدوجة من جذورها.
-      <br><br><span class="mute sm">لاحظ إن الكود ده <strong>مفيهوش أي ذكر لوسيط الرسايل</strong>.
+      <br><br><span class="mute sm">لاحظ إن الكود ده <strong>مفيهوش أي ذكر لـ <span class="term">message broker</span></strong>.
       الخدمة ما بتعرفش عن الـ Broker حاجة وقت الحفظ — وده اللي بيخلّيها تشتغل حتى لو الـ Broker واقع.</span>
     </div>
   </div>
@@ -2799,24 +2946,80 @@ builder.Services.<span class="f">AddGrpcClient</span>&lt;<span class="t">Pricing
 builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">OutboxRelay</span>&gt;();</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">الكود ده بيعمل إيه سطر سطر؟</span>
-      <strong>1.</strong> <code>PeriodicTimer</code> بيدّي نبضة كل ثانية. أحسن من
-      <code>await Task.Delay</code> جوّه <code>while</code> لأنه <em>ما بيراكمش انحراف</em>:
-      لو الدورة خدت 300ms، النبضة الجاية لسه بعد 700ms مش بعد ثانية كاملة.
-      <br><strong>2.</strong> <code>CreateScope</code> ضروري: الـ <code>DbContext</code> مسجّل
-      <span class="ltr">Scoped</span>، والخدمة الخلفية <span class="ltr">Singleton</span> —
-      من غير النطاق ده هتاخد استثناء أو تسريب.
-      <br><strong>3.</strong> <code>UPDLOCK</code> بيقفل الصفوف المختارة للنسخة دي،
-      و<code>READPAST</code> بيخلّي أي نسخة تانية <strong>تتخطّى المقفول وتكمّل</strong> بدل ما تستنى.
-      النتيجة: تشغّل 5 نسخ من الخدمة وكل واحدة بتاخد دفعة مختلفة — <strong>توسّع أفقي مجاني</strong>.
-      <br><strong>4.</strong> الترتيب بـ <code>CreatedAt</code> بيحافظ على تسلسل الأحداث لنفس الكيان
-      (وده مهم لو الترتيب يفرق عندك).
-      <br><strong>5.</strong> عدّاد <code>Attempts</code> بيمنع رسالة تالفة تفضل تتحاول للأبد وتوقف الطابور
-      (<span class="term term--r">Poison Message</span>)، وبعد 10 محاولات بتخرج من الاستعلام وبيتسجّل تنبيه حرج.
-      <br><strong>6.</strong> الـ <code>try/catch</code> اللي حوالين <code>PumpAsync</code>
-      <strong>مش زيادة</strong>: أي استثناء يخرج من <code>ExecuteAsync</code> بيقتل الخدمة الخلفية
-      <em>من غير ما تطلع الخدمة نفسها</em> ⇒ نظام «شغّال» بس مش بينشر ولا رسالة. ده عطل صامت كلاسيكي.
+    <div class="trace">
+      <div class="trace__head">تتبّع دورة واحدة من الـ Outbox Relay: من النبضة لحد نشر الرسالة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">PeriodicTimer</span>
+          <div class="trace__body">
+            بيدّي نبضة كل ثانية. أحسن من <code>await Task.Delay</code> جوّه <code>while</code>
+            لأنه <em>ما بيراكمش انحراف</em>: لو الدورة خدت <span class="ltr">300ms</span>،
+            النبضة الجاية لسه بعد <span class="ltr">700ms</span> مش بعد ثانية كاملة.
+            <br>من غيره، كل دورة بتضيف تأخيرها للفاصل ⇒ بعد ساعة بتلاقي النشر بيحصل كل
+            <span class="ltr">3</span> ثواني وانت فاكره كل ثانية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">DI Scope</span>
+          <div class="trace__body">
+            <code>CreateScope</code> ضروري: الـ <code>DbContext</code> مسجّل
+            <span class="ltr">Scoped</span>، والخدمة الخلفية <span class="ltr">Singleton</span>.
+            <br>من غير النطاق ده هتاخد استثناء عند أول حقن، أو الأسوأ:
+            <strong><code>DbContext</code> واحد عايش طول عمر التطبيق</strong> بيكبّر متعقّب التغييرات
+            لحد ما الذاكرة تخلص.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">UPDLOCK · READPAST</span>
+          <div class="trace__body">
+            <code>UPDLOCK</code> بيقفل الصفوف المختارة للنسخة دي،
+            و<code>READPAST</code> بيخلّي أي نسخة تانية
+            <strong>تتخطّى المقفول وتكمّل</strong> بدل ما تستنى.
+            <br>النتيجة: تشغّل <span class="ltr">5</span> نسخ من الخدمة وكل واحدة بتاخد دفعة
+            مختلفة — <strong>توسّع أفقي مجاني</strong>. من غيرهم إما نشر مكرر لنفس الصف،
+            وإما كل النسخ واقفة في طابور على نفس القفل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">ORDER BY CreatedAt</span>
+          <div class="trace__body">
+            الترتيب بـ <code>CreatedAt</code> بيحافظ على تسلسل الأحداث لنفس الكيان.
+            <br>من غيره ممكن يتنشر <code>OrderCancelled</code> قبل <code>OrderCreated</code>،
+            والـ <span class="term">consumer</span> يرفض إلغاء طلب <em>مش موجود عنده لسه</em> — وده بيبان كخطأ عشوائي
+            صعب إعادة إنتاجه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Attempts Counter</span>
+          <div class="trace__body">
+            عدّاد <code>Attempts</code> بيمنع رسالة تالفة تفضل تتحاول للأبد وتوقف الطابور
+            (<span class="term term--r">Poison Message</span>).
+            <br>بعد <span class="ltr">10</span> محاولات بتخرج من الاستعلام وبيتسجّل تنبيه حرج ⇒
+            <strong>رسالة واحدة باظت ما توقّفش نشر باقي النظام</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Error Boundary</span>
+          <div class="trace__body">
+            الـ <code>try/catch</code> اللي حوالين <code>PumpAsync</code> <strong>مش زيادة</strong>:
+            أي استثناء يخرج من <code>ExecuteAsync</code> بيقتل الخدمة الخلفية
+            <em>من غير ما تطلع الخدمة نفسها</em>.
+            <br>النتيجة نظام «شغّال» وفحص صحّته أخضر بس <strong>مش بينشر ولا رسالة</strong>.
+            ده عطل صامت كلاسيكي، وأغلب الفرق بتكتشفه من شكوى عميل مش من لوحة مراقبة.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        العامل الخلفي بيتحاسب على حاجتين بس: <strong>ما يقفش</strong> و<strong>ما يعلّمش رسالة
+        كمنشورة قبل ما تتنشر فعلاً</strong>. كل سطر فوق بيخدم واحدة من الاتنين.
+      </div>
     </div>
 
     <div class="exercise fragment">
@@ -3096,7 +3299,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
   <div class="slide__head">
     <span class="eyebrow">المفهوم 22 و 23 و 24</span>
     <h2 class="slide__title">ليه «الاتفاق» صعب أوي في نظام موزّع؟</h2>
-    <p class="slide__sub">السبب في جملة: <strong>مفيش طريقة تفرّق بين «العقدة ماتت» و«العقدة بطيئة»</strong>.</p>
+    <p class="slide__sub">السبب في جملة: <strong>مفيش طريقة تفرّق بين «الـ <span class="term">node</span> ماتت» و«الـ <span class="term">node</span> بطيئة»</strong>.</p>
     <div class="rule"></div>
   </div>
 
@@ -3124,8 +3327,8 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
           <ul class="clean sm mb0">
             <li>اختيار الـ <span class="term term--a">Primary</span> في قاعدة بيانات مكرّرة.</li>
             <li><span class="term term--a">Distributed Lock</span>: «مين اللي يشغّل المهمة المجدولة دي؟».</li>
-            <li>عضوية المجموعة: «مين العقد الحيّة دلوقتي؟».</li>
-            <li>إعدادات موزّعة لازم كل العقد تشوفها بنفس الترتيب.</li>
+            <li>عضوية المجموعة: «مين الـ <span class="term">nodes</span> الحيّة دلوقتي؟».</li>
+            <li>إعدادات موزّعة لازم كل الـ <span class="term">nodes</span> تشوفها بنفس الترتيب.</li>
           </ul>
         </div>
       </div>
@@ -3178,7 +3381,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
       <div class="decode__rows">
         <div class="decode__row">
           <span class="decode__tok">N</span>
-          <div class="decode__exp"><b>عدد العقد الكلي</b> في المجموعة (<span class="term">Cluster</span>).</div>
+          <div class="decode__exp"><b>عدد الـ <span class="term">nodes</span> الكلي</b> في المجموعة (<span class="term">Cluster</span>).</div>
         </div>
         <div class="decode__row">
           <span class="decode__tok">⌊N/2⌋</span>
@@ -3191,7 +3394,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
           <span class="decode__tok">+ 1</span>
           <div class="decode__exp">
             <b>واحد زيادة على النص</b> — وده اللي بيخلّيها <b>أغلبية حقيقية</b>.
-            وأي مجموعتين أغلبية <b>لازم يشتركوا في عقدة واحدة على الأقل</b>،
+            وأي مجموعتين أغلبية <b>لازم يشتركوا في <span class="term">node</span> واحدة على الأقل</b>،
             وبالتالي <b>مستحيل يكون فيه قائدين في نفس الوقت</b>. دي الحماية كلها.
           </div>
         </div>
@@ -3200,13 +3403,13 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
           <div class="decode__exp">
             <b>عدد الأعطال المحتملة</b> اللي النظام يفضل شغّال معاها.
             <span class="ltr">N=5</span> ⇒ يتحمّل <span class="ltr">2</span>.
-            <br><b>ملاحظة مهمة:</b> ده تحمّل <b>أعطال سقوط</b> (العقدة ماتت وسكتت) —
+            <br><b>ملاحظة مهمة:</b> ده تحمّل <b>أعطال سقوط</b> (الـ <span class="term">node</span> ماتت وسكتت) —
             مش أعطال كذب أو تخريب، ودي حالة تانية خالص هنشوفها بعدين.
           </div>
         </div>
       </div>
       <div class="decode__sum">
-        لو خليت كل قرار محتاج موافقة أكتر من نص العقد، يبقى <b>مستحيل ينفصل النظام لعقلين
+        لو خليت كل قرار محتاج موافقة أكتر من نص الـ <span class="term">nodes</span>، يبقى <b>مستحيل ينفصل النظام لعقلين
         كل واحد بياخد قرارات</b> — لأن نص واحد بس هو اللي هيقدر يجمّع الأغلبية،
         والنص التاني هيتوقّف عن قبول الكتابة (وده <b>مقصود</b>: التوقف أأمن من التضارب).
       </div>
@@ -3246,7 +3449,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
       </div>
       <div class="flow__vert">↓ القائد وقع — مفيش نبض</div>
       <div class="flow__tier">
-        <div class="node node--a">انتهت مهلة الانتخاب عند العقدة C<span class="node__sub">مهلة عشوائية 150–300ms</span></div>
+        <div class="node node--a">انتهت مهلة الانتخاب عند الـ <span class="term">node</span> C<span class="node__sub">مهلة عشوائية 150–300ms</span></div>
       </div>
       <div class="flow__vert">↓</div>
       <div class="flow__tier">
@@ -3265,34 +3468,118 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
       </div>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">تتبّع الانتخاب خطوة بخطوة</span>
-      <strong>1.</strong> كل تابع عنده <strong>مهلة انتخاب عشوائية</strong> بين
-      <span class="ltr">150</span> و<span class="ltr">300ms</span>. لو وصل النبض قبل ما تخلص، بيصفّر العدّاد.
-      <br><strong>2.</strong> <em>ليه عشوائية؟</em> عشان <strong>ما يترشّحش اتنين في نفس اللحظة ويقسموا الأصوات</strong>.
-      العشوائية بتخلّي واحد يسبق الباقيين غالبًا، ولو حصل تعادل بيتكرر بمهل جديدة ويتحل خلال دورة أو اتنين.
-      <br><strong>3.</strong> <strong>Term (الدورة)</strong> = رقم بيزيد مع كل انتخاب.
-      دي «ساعة منطقية»: أي رسالة بدورة أقدم بتترفض على طول، وده بيمنع قائد قديم رجع من الموت
-      إنه يفرض نفسه.
-      <br><strong>4.</strong> كل عقدة بتصوّت <strong>مرة واحدة بس في كل دورة</strong> ⇒ مستحيل يطلع قائدين لنفس الدورة.
-      <br><strong>5.</strong> العقدة بترفض تصوّت لأي عقدة <strong>سجلها أقدم من سجل العقدة نفسها</strong> ⇒
-      ضمان إن القائد الجديد عنده كل الكتابات اللي اتأكّدت. <em>ده اللي بيمنع ضياع البيانات.</em>
+    <div class="trace mt">
+      <div class="trace__head">تتبّع انتخاب واحد: القائد وقع — إزاي بيطلع قائد جديد؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Follower · Election Timeout</span>
+          <div class="trace__body">
+            كل تابع عنده <strong>مهلة انتخاب</strong> بين <span class="ltr">150</span>
+            و<span class="ltr">300ms</span>. لو وصل النبض قبل ما تخلص، بيصفّر العدّاد.
+            <br>المهلة دي هي <strong>كاشف الأعطال الوحيد في النظام</strong> —
+            من غيرها مفيش حاجة تعرف إن القائد مات، والكتابات هتفضل مستنية للأبد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Randomized Timeout</span>
+          <div class="trace__body">
+            <em>ليه المهلة عشوائية؟</em> عشان
+            <strong>ما يترشّحش اتنين في نفس اللحظة ويقسموا الأصوات</strong>.
+            <br>من غير العشوائية، كل التابعين هيصحوا في نفس المللي ثانية وكل واحد ياخد صوته بس ⇒
+            مفيش أغلبية ⇒ الانتخاب بيفشل ويتكرر للأبد. العشوائية بتخلّي واحد يسبق الباقيين غالبًا،
+            ولو حصل تعادل بيتكرر بمهل جديدة ويتحل خلال دورة أو اتنين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Term</span>
+          <div class="trace__body">
+            <strong>Term (الدورة)</strong> = رقم بيزيد مع كل انتخاب.
+            <br>دي «ساعة منطقية»: أي رسالة بدورة أقدم بتترفض على طول.
+            من غيرها، قائد قديم رجع من الموت وهو فاكر نفسه لسه القائد هيقدر
+            <strong>يفرض كتابات على عنقود عنده قائد جديد</strong> ⇒ عقلين وبيانات متضاربة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Voter Node</span>
+          <div class="trace__body">
+            كل node بتصوّت <strong>مرة واحدة بس في كل دورة</strong>.
+            <br>القاعدة البسيطة دي هي اللي بتضمن <strong>مستحيل يطلع قائدين لنفس الدورة</strong>:
+            مفيش طريقة رياضية إن مرشحين الاتنين ياخدوا أغلبية من نفس المجموعة
+            لو كل عضو ما بيديش غير صوت واحد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Log Freshness Check</span>
+          <div class="trace__body">
+            الـ node بترفض تصوّت لأي node <strong>سجلها أقدم من سجل الـ node نفسها</strong>.
+            <br>ده اللي بيضمن إن القائد الجديد عنده كل الكتابات اللي اتأكّدت للعميل.
+            من غير الفحص ده، تابع متأخّر ممكن يكسب الانتخاب و<strong>يمسح كتابات
+            العميل استلم عليها «تمت»</strong> — <em>ودي أسوأ حاجة ممكن يعملها نظام موزّع.</em>
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الانتخاب مش «مين الأسرع» — هو <strong>مين الأسرع من ضمن اللي سجلهم محدّث</strong>.
+        السرعة بتحدّد المرشّح، والسجل بيحدّد مين يستحق.
+      </div>
     </div>
 
-    <div class="callout callout--info fragment">
-      <div class="callout__icon">📜</div>
-      <div class="callout__body">
-        <span class="callout__title">الجزء التاني: نسخ السجل (Log Replication)</span>
-        <strong>1.</strong> العميل بيبعت كتابة ⇒ القائد بس هو اللي بيستقبلها.
-        <br><strong>2.</strong> القائد بيضيفها لسجله كـ <em>غير مؤكّدة</em>، وبيبعت
-        <code>AppendEntries</code> لكل التابعين.
-        <br><strong>3.</strong> أول ما <strong>الأغلبية</strong> ترد «كتبتها في سجلي» ⇒
-        القائد بيعتبرها <span class="term term--e">Committed</span> وبيرد على العميل «تمت».
-        <br><strong>4.</strong> التابعين بيعرفوا إنها اتأكّدت من النبضة اللي بعدها وبيطبّقوها على حالتهم.
-        <br><br><strong>النتيجة العملية:</strong> الكتابة بتتأكّد بمجرد وصولها لـ 3 من 5 عقد —
-        <em>مش لازم كلهم</em>. عشان كده عقدتين ممكن يقعوا والنظام يفضل يكتب عادي.
-        <br><span class="mute sm">وده معنى «الكتابة بتاخد round-trip واحد للأغلبية» —
-        الزمن بيتحدّد بأبطأ عقدة في الأغلبية، مش بأبطأ عقدة في المجموعة.</span>
+    <div class="trace fragment">
+      <div class="trace__head">الجزء التاني — تتبّع كتابة واحدة عبر نسخ السجل (Log Replication)</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Client</span>
+          <div class="trace__body">
+            العميل بيبعت كتابة ⇒ <strong>القائد بس هو اللي بيستقبلها</strong>.
+            <br>لو بعتها لتابع، التابع بيحوّلك للقائد. الحصر ده مقصود:
+            نقطة كتابة واحدة معناها <strong>ترتيب واحد متفق عليه</strong> —
+            من غيرها كل node هيبقى عندها نسخة مختلفة من التاريخ.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Leader · AppendEntries</span>
+          <div class="trace__body">
+            القائد بيضيفها لسجله كـ <em>غير مؤكّدة</em>، وبيبعت <code>AppendEntries</code>
+            لكل التابعين.
+            <br>لاحظ إنها <strong>لسه ما اتطبّقتش على الحالة</strong>. الخطوة الوسيطة دي هي اللي
+            بتخلّي القائد يقدر يتراجع عنها لو مات قبل ما ياخد أغلبية — من غيرها كنت طبّقت
+            كتابة محدش تاني شافها.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Quorum Ack</span>
+          <div class="trace__body">
+            أول ما <strong>الأغلبية</strong> ترد «كتبتها في سجلي» ⇒ القائد بيعتبرها
+            <span class="term term--e">Committed</span> وبيرد على العميل «تمت».
+            <br>الأغلبية (مش الكل) هي بيت القصيد: <strong>الكتابة بتتأكّد بمجرد وصولها لـ 3 من
+            5 nodes</strong> ⇒ اتنين ممكن يقعوا والنظام يفضل يكتب عادي.
+            ولأن أي أغلبيتين لازم يتقاطعوا في node واحدة على الأقل، القائد الجاي
+            <em>أكيد</em> هيشوف الكتابة دي.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Followers · Apply</span>
+          <div class="trace__body">
+            التابعين بيعرفوا إنها اتأكّدت من النبضة اللي بعدها وبيطبّقوها على حالتهم.
+            <br>يعني <strong>التأكيد بيسبق التطبيق</strong> عند التابعين بنبضة واحدة —
+            وده السبب إن قراءة من تابع ممكن ترجّعلك بيانات أقدم بشوية من القائد.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        وده معنى «الكتابة بتاخد round-trip واحد للأغلبية» —
+        الزمن بيتحدّد <strong>بأبطأ node في الأغلبية، مش بأبطأ node في المجموعة</strong>.
       </div>
     </div>
   </div>
@@ -3335,7 +3622,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
             <em>بس مش إجماع حقيقي</em> ومش مناسب لو الصحّة المالية معتمدة عليه.</li>
           <li><strong>في .NET:</strong> <code>DistributedLock.ZooKeeper</code> ·
             <code>dotnet-etcd</code> · و<code>BlobLeaseDistributedLock</code> على
-            <span class="ltr">Azure Blob</span> (أبسط حل عملي لاختيار عقدة واحدة تشتغل).</li>
+            <span class="ltr">Azure Blob</span> (أبسط حل عملي لاختيار <span class="term">node</span> واحدة تشتغل).</li>
           </ul>
       </div>
     </div>
@@ -3355,7 +3642,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
     </div>
 
     <div class="exercise fragment">
-      <div class="exercise__head">تمرين 9 — صمّم مجموعة العقد<span class="exercise__level">صعب</span></div>
+      <div class="exercise__head">تمرين 9 — صمّم مجموعة الـ <span class="term">nodes</span><span class="exercise__level">صعب</span></div>
       <div class="exercise__body">
         <p>
           عندك مجموعة <span class="ltr">etcd</span> من <span class="ltr">5</span> عقد موزّعين على
@@ -3372,7 +3659,8 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
           <summary>شوف الحل</summary>
           <div class="solution__body">
             <div class="math">
-<span class="lbl">N</span> <span class="eq">=</span> <span class="n">5</span>   <span class="lbl">Quorum</span> <span class="eq">=</span> ⌊<span class="n">5</span>/<span class="n">2</span>⌋ <span class="eq">+</span> <span class="n">1</span> <span class="eq">=</span> <span class="res">3</span>
+<span class="lbl">N</span>      <span class="eq">=</span> <span class="n">5</span>
+<span class="lbl">Quorum</span> <span class="eq">=</span> ⌊<span class="n">5</span>/<span class="n">2</span>⌋ <span class="eq">+</span> <span class="n">1</span> <span class="eq">=</span> <span class="res">3</span>
 
 <span class="cmt">// 1) سقوط AZ1 (عقدتين)</span>
 <span class="lbl">الباقي</span> <span class="eq">=</span> <span class="n">3</span> <span class="eq">≥</span> <span class="n">3</span> <span class="eq">→</span> <span class="res">✅ شغّال (وقت انتخاب ~300ms)</span>
@@ -3386,7 +3674,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
                 <br>التوزيع هو تحديدًا اللي بيشتري لك النجاة — <strong>وبتدفع تمنه زمن كتابة أعلى شوية</strong>.
                 <em>دي مقايضة صريحة: 3ms مقابل النجاة من سقوط منطقة.</em></li>
               <li><strong>4) ليه مش 6؟</strong> <span class="ltr">⌊6/2⌋+1 = 4</span> ⇒ يتحمّل سقوط <span class="ltr">2</span> بس —
-                <strong>نفس تحمّل الـ 5 بالظبط</strong>، لكن بتكلفة عقدة زيادة، وزمن كتابة أعلى
+                <strong>نفس تحمّل الـ 5 بالظبط</strong>، لكن بتكلفة <span class="term">node</span> زيادة، وزمن كتابة أعلى
                 (لازم 4 يوافقوا بدل 3)، واحتمال تعادل في التصويت أكبر.
                 <br><strong>العدد الزوجي في أنظمة النصاب = خسارة صافية دايمًا.</strong></li>
             </ul>
@@ -3423,7 +3711,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
           <span class="tblock__label">النص (1985)</span>
           في نظام <strong>غير متزامن</strong> (مفيش حد أقصى معروف لتأخير الرسايل)،
           <strong>مستحيل</strong> تعمل خوارزمية إجماع <em>حتمية</em> تضمن الوصول لقرار
-          لو فيه احتمال سقوط <strong>عقدة واحدة بس</strong>.
+          لو فيه احتمال سقوط <strong><span class="term">node</span> واحدة بس</strong>.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه — ليه دي بديهية لما تفكّر فيها 📞</span>
@@ -3454,7 +3742,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          نوع أصعب من الأعطال: العقدة <strong>مش بس بتقع — دي بتكذب</strong>.
+          نوع أصعب من الأعطال: الـ <span class="term">node</span> <strong>مش بس بتقع — دي بتكذب</strong>.
           بتبعت معلومات متناقضة لعقد مختلفة، إما بسبب اختراق أو خلل في العتاد أو بق خبيث.
         </div>
         <div class="tblock tblock--analogy">
@@ -3495,10 +3783,10 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
     <div class="checkpoint">
       <div class="checkpoint__title">لازم تقدر تشرح دول لحد تاني</div>
       <ul>
-        <li>ليه مستحيل تفرّق بين «عقدة ماتت» و«عقدة بطيئة»؟ وإيه أثر ده على كل التصميم؟</li>
+        <li>ليه مستحيل تفرّق بين «<span class="term">node</span> ماتت» و«<span class="term">node</span> بطيئة»؟ وإيه أثر ده على كل التصميم؟</li>
         <li>إيه هو <span class="term term--r">Split Brain</span>؟ وإزاي الـ <span class="term term--e">Quorum</span> بيمنعه رياضيًا؟</li>
         <li>احسب النصاب وعدد الأعطال المحتملة لـ <span class="ltr">N = 3, 5, 7</span>.</li>
-        <li>ليه العدد الزوجي من العقد خسارة صافية؟</li>
+        <li>ليه العدد الزوجي من الـ <span class="term">nodes</span> خسارة صافية؟</li>
         <li>ليه مهلة الانتخاب في <span class="term term--a">Raft</span> <strong>عشوائية</strong>؟</li>
         <li>إيه وظيفة الـ <span class="term term--a">Term</span> في Raft؟</li>
         <li>الكتابة في Raft بتتأكّد بعد موافقة مين؟ الكل ولا الأغلبية؟ وإيه أثر ده على الزمن؟</li>
@@ -3600,7 +3888,7 @@ builder.Services.<span class="f">AddHostedService</span>&lt;<span class="t">Outb
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف والحالات التلاتة</span>
-          <strong>Closed (مغلقة):</strong> الوضع الطبيعي — الطلبات بتعدّي، والقاطع بيعدّ نسبة الفشل.
+          <strong>Closed (مغلقة):</strong> الوضع الطبيعي — الطلبات بتعدّي، والـ <span class="term">circuit breaker</span> بيعدّ نسبة الفشل.
           <br><strong>Open (مفتوحة):</strong> تعدّت نسبة الفشل الحد ⇒ <strong>كل الطلبات بترفض فورًا من غير ما تتبعت أصلاً</strong>.
           <br><strong>Half-Open (نصف مفتوحة):</strong> بعد فترة، بيسمح لعدد قليل من الطلبات يعدّوا كاختبار.
           نجحوا ⇒ يرجع Closed. فشلوا ⇒ يرجع Open.
@@ -3782,21 +4070,72 @@ builder.Services.<span class="f">AddHttpClient</span>&lt;<span class="t">Recomme
     });</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">ليه الترتيب ده بالذات؟ (ودي أهم نقطة في السلايد)</span>
-      خط الصمود بيتنفّذ من برّه لجوّه: <strong>مهلة إجمالية ← إعادة ← قاطع ← مهلة المحاولة ← الطلب الفعلي</strong>.
-      <br><strong>1.</strong> <strong>المهلة الإجمالية برّه الكل</strong>: بتضمن إن العميل ما يستناش أكتر من 5 ثواني
-      <em>مهما حصل</em> — حتى لو المحاولات التلاتة كلها اتأخّرت.
-      <br><strong>2.</strong> <strong>الإعادة قبل القاطع</strong>: لو حطيت الإعادة جوّه القاطع، كل محاولة هتتحسب
-      فشل منفصل ⇒ القاطع هيفتح بسرعة مضاعفة على أعطال عابرة عادية.
-      <br><strong>3.</strong> <strong>مهلة المحاولة جوّه الكل</strong>: كل محاولة ليها سقفها الخاص
-      (<span class="ltr">800ms</span>)، فمحاولة معلّقة ما تاكلش وقت المحاولات اللي بعدها.
-      <br><strong>4.</strong> <code>MinimumThroughput = 20</code> مهم جدًا: من غيره،
-      <strong>فشل طلبين من أول تلاتة في خدمة فاضية بيفتح الدائرة</strong> — والإحصاء على عيّنة صغيرة مضلّل.
-      <br><strong>5.</strong> <code>PooledConnectionLifetime</code> بيخلّي الاتصالات تتجدّد كل دقيقتين ⇒
-      لو الخدمة اتنقلت لعنوان جديد، عميلك هيلحق التغيير بدل ما يفضل ضارب على عنوان ميت.
-      <br><br><strong>ولاحظ العزل:</strong> التوصيات عندها <span class="ltr">10</span> اتصالات بس ومحاولة واحدة —
-      عشان لو بطؤت، <em>تغرق في حوضها هي</em> وما تلمسش الـ <span class="ltr">50</span> اتصال المحجوزة للدفع.
+    <div class="trace">
+      <div class="trace__head">
+        تتبّع طلب واحد جوّه خط الصمود — من برّه لجوّه:
+        <strong>Total Timeout ← Retry ← Circuit Breaker ← Attempt Timeout ← الطلب الفعلي</strong>
+      </div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Total Timeout</span>
+          <div class="trace__body">
+            المهلة الإجمالية برّه الكل: بتضمن إن العميل ما يستناش أكتر من
+            <span class="ltr">5</span> ثواني <em>مهما حصل</em> — حتى لو المحاولات التلاتة كلها اتأخّرت.
+            <br>من غيرها المهل الداخلية بتتجمّع: <span class="ltr">3</span> محاولات ×
+            <span class="ltr">800ms</span> + فواصل الانتظار ⇒ المستخدم قاعد مستني رقم
+            <strong>محدش حسبه</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Retry</span>
+          <div class="trace__body">
+            الإعادة <strong>قبل</strong> الـ circuit breaker مش بعده.
+            <br>لو حطيت الإعادة جوّه الـ circuit breaker، كل محاولة هتتحسب فشل منفصل ⇒
+            الـ circuit breaker هيفتح بسرعة مضاعفة على أعطال عابرة عادية،
+            وهتقطع خدمة صحّتها كويسة عشان غلطة شبكة واحدة اتكررت.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Circuit Breaker</span>
+          <div class="trace__body">
+            <code>MinimumThroughput = 20</code> مهم جدًا: من غيره،
+            <strong>فشل طلبين من أول تلاتة في خدمة فاضية بيفتح الدائرة</strong>.
+            <br>السبب إحصائي بحت: نسبة فشل محسوبة على عيّنة من تلات طلبات ما بتقولش حاجة عن
+            صحّة الخدمة. الحد الأدنى ده هو اللي بيمنع الـ circuit breaker إنه يبقى
+            <em>مصدر أعطال بنفسه</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Attempt Timeout</span>
+          <div class="trace__body">
+            مهلة المحاولة جوّه الكل: كل محاولة ليها سقفها الخاص
+            (<span class="ltr">800ms</span>).
+            <br>كده محاولة معلّقة <strong>ما تاكلش وقت المحاولات اللي بعدها</strong> —
+            من غيرها أول محاولة بطيئة بتستهلك الميزانية كلها وما بيفضلش وقت لإعادة أصلاً،
+            فالإعادة بتبقى موجودة في الإعدادات ومش موجودة في الواقع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Connection Pool</span>
+          <div class="trace__body">
+            <code>PooledConnectionLifetime</code> بيخلّي الاتصالات تتجدّد كل دقيقتين.
+            <br>لو الخدمة اتنقلت لعنوان جديد (نشر، تحجيم تلقائي، تبديل مركز بيانات)،
+            عميلك هيلحق التغيير بدل ما <strong>يفضل ضارب على عنوان ميت</strong>
+            لحد ما تعيد تشغيله بإيدك.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        ولاحظ العزل: التوصيات عندها <span class="ltr">10</span> اتصالات بس ومحاولة واحدة —
+        عشان لو بطؤت، <em>تغرق في حوضها هي</em> وما تلمسش الـ <span class="ltr">50</span>
+        اتصال المحجوزة للدفع.
+      </div>
     </div>
 
     <div class="exercise fragment">
@@ -4343,7 +4682,7 @@ builder.Services.<span class="f">AddOpenTelemetry</span>()
           تنبيه كتير = تجاهل. تنبيه قليل = عطل مكتشف من العميل.</p></div>
       <div class="card card--r"><span class="card__num">08</span>
         <h4 class="card__title">إصدارات العقود</h4>
-        <p class="card__body sm">حقل جديد في حدث ⇒ المستهلكين القدام لازم يفضلوا شغالين.
+        <p class="card__body sm">حقل جديد في حدث ⇒ الـ <span class="term">consumers</span> القدام لازم يفضلوا شغالين.
           <strong>إضافة اختيارية ✅ · حذف أو إعادة تسمية ❌.</strong> والقاعدة دي للأبد.</p></div>
       <div class="card card--r"><span class="card__num">09</span>
         <h4 class="card__title">التكلفة</h4>
@@ -4360,7 +4699,7 @@ builder.Services.<span class="f">AddOpenTelemetry</span>()
         <br><strong>2.</strong> الحدود بتترسم بـ <strong>قدرة العمل</strong> (Bounded Context)،
         مش بالطبقة التقنية. والاختبار: «الميزة الجاية هتلمس كام خدمة؟».
         <br><strong>3.</strong> <strong>Idempotency</strong> مش تحسين — هي شرط بقاء،
-        لأن كل وسيط رسايل بيضمن at-least-once.
+        لأن كل <span class="term">message broker</span> بيضمن at-least-once.
         <br><strong>4.</strong> مفيش معاملة موزّعة. فيه <strong>Saga + تعويض</strong>،
         و<strong>Outbox + Inbox</strong> لمشكلة الكتابة المزدوجة.
         <br><strong>5.</strong> الأنظمة الموزّعة بتشتغل بـ <strong>الأغلبية</strong> (Quorum) —

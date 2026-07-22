@@ -1897,19 +1897,62 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
   </div>
 
   <div class="slide__body">
-    <div class="callout callout--danger">
-      <div class="callout__icon">🔀</div>
-      <div class="callout__body">
-        <span class="callout__title">المشكلة بالتفصيل</span>
-        عندك <span class="ltr">10</span> نُسخ من الـ API وراء موازن حمل، وكل واحدة عندها
-        <span class="term term--v">L1</span> في ذاكرتها.
-        <br><strong>1.</strong> مستخدم بعت <code>PUT /products/812</code> ⇒ وصل للسيرفر رقم 3.
-        <br><strong>2.</strong> السيرفر 3 حدّث الداتابيز، مسح المفتاح من Redis، ومسحه من ذاكرته هو.
-        <br><strong>3.</strong> السيرفرات <strong>1، 2، 4…10</strong> لسه في ذاكرتهم النسخة القديمة —
-        <em>وما حدش قالّهم حاجة</em>.
-        <br><strong>4.</strong> المستخدم بيعمل تحديث للصفحة، الموازن بيوديه للسيرفر 7 ⇒ <strong>بيشوف السعر القديم</strong>.
-        <br><br><strong>النتيجة اللي هتتعبك:</strong> المستخدم بيقول «السعر بيتغيّر كل ما أعمل refresh!» —
-        وانت مش لاقي المشكلة لأن كل سيرفر لوحده «شغّال صح».
+    <p class="sm">
+      عندك <span class="ltr">10</span> نُسخ من الـ API وراء موازن حمل، وكل واحدة عندها
+      <span class="term term--v">L1</span> في ذاكرتها.
+    </p>
+
+    <div class="trace">
+      <div class="trace__head">تتبّع طلب واحد: ليه السعر بيرجع قديم بعد ما اتحدّث فعلاً؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Load Balancer</span>
+          <div class="trace__body">
+            المستخدم بعت <code>PUT /products/812</code>. الموازن اختار
+            <strong>نسخة واحدة بس</strong> من العشرة — خلّيها <span class="ltr">API #3</span>.
+            <br>الخطوة دي هي <strong>أصل المشكلة كلها</strong>: الموازن بيوزّع الطلبات عشوائيًا،
+            فالنسخة اللي شافت التعديل مش بالضرورة هي اللي هتخدم القراءة الجاية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">API #3</span>
+          <div class="trace__body">
+            النسخة دي عملت التلاتة الصح: حدّثت الداتابيز، مسحت المفتاح من Redis،
+            ومسحته من <span class="term term--v">L1</span> بتاعها هي.
+            <br><strong>لاحظ إنها ما عملتش حاجة غلط</strong> — لو النظام كان نسخة واحدة،
+            التتبّع كان بيخلص هنا والكل مبسوط.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">In-Process L1 · API #1, #2, #4…#10</span>
+          <div class="trace__body">
+            التسع نُسخ التانية لسه شايلة <strong>السعر القديم</strong> في ذاكرتها،
+            <em>وما حدش قالّهم حاجة</em>.
+            <br>ده مش عيب في الكود — الـ <span class="term term--v">L1</span> بطبيعته
+            <strong>ذاكرة عملية واحدة مش مشتركة</strong>. أي إبطال بيحصل جوّه عملية
+            <strong>مالوش أي أثر</strong> على باقي العمليات.
+            <br>من غير قناة تبلّغهم، الوحيد اللي هيصلّح الحالة دي هو الـ
+            <span class="term term--a">TTL</span> لما يخلص.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Load Balancer → API #7</span>
+          <div class="trace__body">
+            المستخدم بيعمل تحديث للصفحة، والموازن وَدّاه للنسخة رقم 7 ⇒
+            <strong>بيشوف السعر القديم</strong>.
+            <br>ولو عمل تحديث تاني وراح للنسخة 3، هيشوف السعر الجديد.
+            وده اللي بيخلّي البلاغ يوصلك بالشكل ده بالظبط: «بيتغيّر كل ما أعمل refresh».
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل سيرفر لوحده «شغّال صح» — وعشان كده المشكلة صعبة تلاقيها في السجلات.
+        <br>الخلل مش في نسخة، الخلل إن <strong>مفيش قناة تربط النُسخ ببعض</strong>.
       </div>
     </div>
 
@@ -1964,13 +2007,61 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">الكود ده بيعمل إيه بالترتيب؟</span>
-      <strong>عند الإقلاع</strong> كل نسخة بتشترك في قناة <code>cache:invalidate</code> وبتفضل سامعة.
-      <br><strong>عند أي كتابة</strong> النسخة اللي استقبلت الطلب بتعمل تلات حاجات بالترتيب ده:
-      تمسح من ذاكرتها ⟵ تمسح من Redis ⟵ تنشر رسالة فيها اسم المفتاح ومعرّفها هي.
-      <br><strong>باقي النُسخ</strong> بتستقبل الرسالة، تشوف إن المُرسِل مش هي، وتمسح المفتاح من L1 عندها.
-      <br>الزمن الكلي: <strong class="ltr">أقل من 5ms</strong> بين النُسخ في نفس الـ DC.
+    <div class="trace">
+      <div class="trace__head">تتبّع عملية إبطال واحدة: من الكتابة لحد ما العشر نُسخ تنضف</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">IHostedService · StartAsync</span>
+          <div class="trace__body">
+            عند الإقلاع، <strong>كل نسخة</strong> بتشترك في قناة <code>cache:invalidate</code> وبتفضل سامعة طول عمرها.
+            <br>الخطوة دي لازم تحصل <strong>قبل ما ياخد السيرفر أول طلب</strong>.
+            لو النسخة بدأت تخدم قبل ما تشترك، هتفوّت كل الإبطالات اللي حصلت في الفجوة دي
+            وتفضل شايلة بيانات قديمة من غير ما حد يعرف.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">In-Process L1</span>
+          <div class="trace__body">
+            عند أي كتابة، النسخة اللي استقبلت الطلب بتمسح المفتاح من ذاكرتها هي <strong>الأول</strong>.
+            <br>بنبدأ من الأقرب عشان <strong>النسخة اللي عارفة إن الحاجة اتغيّرت ما تخدمش قديم ولا لثانية</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Redis L2</span>
+          <div class="trace__body">
+            بعدها بتمسح المفتاح من Redis — الطبقة المشتركة بين كل النُسخ.
+            <br>الترتيب هنا مقصود: لو نشرنا الرسالة <em>قبل</em> ما نمسح من Redis،
+            النُسخ التانية ممكن تمسح L1 عندها وترجع تقرا من Redis <strong>نفس القيمة القديمة</strong>
+            وتخزّنها تاني — يعني نرجع لنقطة الصفر.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Redis Pub/Sub</span>
+          <div class="trace__body">
+            وأخيرًا بتنشر رسالة فيها <strong>اسم المفتاح ومعرّف النسخة نفسها</strong>.
+            <br>المعرّف مش رفاهية: من غيره النسخة هتستقبل رسالتها هي وتمسح مفتاح
+            <strong>مسحته أصلاً</strong> — شغل زيادة على كل كتابة في النظام.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">API #1, #2, #4…#10</span>
+          <div class="trace__body">
+            باقي النُسخ بتستقبل الرسالة، تشوف إن المُرسِل مش هي، وتمسح المفتاح من
+            <span class="term term--v">L1</span> عندها.
+            <br>ودي الحلقة اللي كانت ناقصة في السلايد اللي فاتت: بقى فيه
+            <strong>قناة واحدة بتربط العشرة</strong>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الزمن الكلي من الكتابة لآخر نسخة: <strong class="ltr">أقل من 5ms</strong> في نفس الـ DC.
+      </div>
     </div>
 
     <div class="grid g2">
@@ -2284,11 +2375,12 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          مفتاح واحد بياخد نسبة ضخمة من كل الحركة، لدرجة إن <strong>العقدة اللي هو عليها</strong>
-          بتوصل لسقفها بينما باقي العقد فاضية.
-          <br><strong>المشكلة معمارية مش أدائية:</strong> الكاش الموزّع بيوزّع المفاتيح على العقد بالتجزئة
-          (<span class="term term--r">Hashing</span>). المفتاح الواحد ⇒ تجزئة واحدة ⇒ عقدة واحدة.
-          <strong>مفيش أي طريقة توزّع مفتاح واحد على عشر عقد</strong> — إلا لو غيّرت المفتاح نفسه.
+          مفتاح واحد بياخد نسبة ضخمة من كل الحركة، لدرجة إن <strong>الـ <span class="term">node</span>
+          (سيرفر واحد من العنقود) اللي هو عليه</strong> بيوصل لسقفه بينما باقي الـ
+          <span class="term">nodes</span> فاضية.
+          <br><strong>المشكلة معمارية مش أدائية:</strong> الكاش الموزّع بيوزّع المفاتيح على الـ <span class="term">nodes</span> بالتجزئة
+          (<span class="term term--r">Hashing</span>). المفتاح الواحد ⇒ تجزئة واحدة ⇒ <span class="term">node</span> واحد.
+          <strong>مفيش أي طريقة توزّع مفتاح واحد على عشر <span class="term">nodes</span></strong> — إلا لو غيّرت المفتاح نفسه.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🏟️</span>
@@ -2302,7 +2394,7 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           <ul class="clean sm mb0">
             <li><code>redis-cli --hotkeys</code> — بيشتغل لما تكون السياسة <code>lfu</code>.</li>
             <li><code>redis-cli MONITOR</code> — لثواني معدودة بس! (بيبطّئ السيرفر).</li>
-            <li>في العنقود: عقدة واحدة <span class="term">CPU</span> عندها <span class="ltr">95%</span>
+            <li>في العنقود: <span class="term">node</span> واحد <span class="term">CPU</span> عنده <span class="ltr">95%</span>
               والباقي <span class="ltr">10%</span> ⇒ ده مفتاح ساخن غالبًا.</li>
           </ul>
         </div>
@@ -2335,15 +2427,15 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
         <h3 class="card__title">الحل 2: تقسيم المفتاح (Key Splitting)</h3>
         <p class="card__body sm">
           بدل مفتاح واحد، اعمل <span class="ltr">N</span> نسخة بنفس القيمة وبأسماء مختلفة —
-          فالتجزئة توزّعهم على عقد مختلفة.
+          فالتجزئة توزّعهم على <span class="term">nodes</span> مختلفة.
         </p>
         <div class="math sm mb0" style="border-color:var(--violet)">
 <span class="cmt">// بدل: product:812</span>
 <span class="lbl">اكتب</span>  <span class="eq">→</span> product:812#0 ... product:812#9
 <span class="lbl">اقرا</span>  <span class="eq">→</span> product:812#{Random(<span class="n">0</span>,<span class="n">10</span>)}
 
-<span class="lbl">قبل</span>   <span class="eq">=</span> <span class="n">200,000</span> rps على عقدة واحدة 💥
-<span class="lbl">بعد</span>   <span class="eq">=</span> <span class="n">20,000</span> rps × <span class="n">10</span> عُقد <span class="eq">=</span> <span class="res">مريح</span>
+<span class="lbl">قبل</span>   <span class="eq">=</span> <span class="n">200,000</span> rps على node واحد 💥
+<span class="lbl">بعد</span>   <span class="eq">=</span> <span class="n">20,000</span> rps × <span class="n">10</span> nodes <span class="eq">=</span> <span class="res">مريح</span>
         </div>
         <p class="card__body sm mt">
           <strong>التمن:</strong> الكتابة بقت 10 عمليات بدل واحدة، والإبطال لازم يمسح العشرة.
@@ -2358,8 +2450,8 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
       <div class="exercise__body">
         <p>
           عندك تخفيضات <span class="term">Flash Sale</span>. منتج واحد بياخد <span class="ltr">150,000</span> قراءة/ثانية
-          للمخزون المتبقي. عندك <span class="ltr">30</span> نسخة API وعنقود Redis من <span class="ltr">6</span> عُقد،
-          وكل عقدة بتستحمل <span class="ltr">80,000 ops/s</span>.
+          للمخزون المتبقي. عندك <span class="ltr">30</span> نسخة API وعنقود Redis من <span class="ltr">6</span> <span class="term">nodes</span>،
+          وكل <span class="term">node</span> بيستحمل <span class="ltr">80,000 ops/s</span>.
           <br><strong>(أ)</strong> إيه اللي بيحصل دلوقتي؟
           <strong>(ب)</strong> اقترح حل بأرقام. <strong>(ج)</strong> إيه اللي لازم تنتبه له في الحل ده؟
         </p>
@@ -2368,8 +2460,8 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           <div class="solution__body">
             <p class="sm"><strong>(أ) التشخيص:</strong></p>
             <div class="math sm">
-<span class="lbl">المفتاح</span>   <span class="eq">=</span> واحد <span class="eq">→</span> تجزئة واحدة <span class="eq">→</span> <span class="res">عقدة واحدة بس</span>
-<span class="lbl">الحمل عليها</span> <span class="eq">=</span> <span class="n">150,000</span> <span class="var">ops/s</span>
+<span class="lbl">المفتاح</span>   <span class="eq">=</span> واحد <span class="eq">→</span> تجزئة واحدة <span class="eq">→</span> <span class="res">node واحد بس</span>
+<span class="lbl">الحمل عليه</span> <span class="eq">=</span> <span class="n">150,000</span> <span class="var">ops/s</span>
 <span class="lbl">سعتها</span>     <span class="eq">=</span> <span class="n">80,000</span> <span class="var">ops/s</span>
 <span class="lbl">النتيجة</span>   <span class="eq">=</span> <span class="res">187% من الطاقة</span> <span class="cmt">← الطوابير تطول، الزمن ينفجر</span>
 <span class="lbl">باقي 5 عُقد</span> <span class="eq">=</span> <span class="res">شبه فاضية</span> <span class="cmt">← إضافة عُقد مش هتحل حاجة</span>
@@ -2789,8 +2881,8 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
                 حدّد أقصى <span class="ltr">2,500</span> استعلام متوازي، والباقي يستنّى في طابور بمهلة.
                 <strong>الداتابيز البطيئة أحسن من الداتابيز الواقعة</strong> —
                 لأن الواقعة معناها إن الطلبات هتفضل تتراكم بلا نهاية.</li>
-              <li><strong>3) قاطع الدائرة + تدهور رشيق:</strong> لو زمن الداتابيز عدّى حد معيّن،
-                افتح القاطع وارجّع بيانات ناقصة أو رسالة «جارٍ التحميل» بدل ما تنتظر لحد المهلة.</li>
+              <li><strong>3) <span class="term">circuit breaker</span> + تدهور رشيق:</strong> لو زمن الداتابيز عدّى حد معيّن،
+                افتح الـ <span class="term">circuit breaker</span> وارجّع بيانات ناقصة أو رسالة «جارٍ التحميل» بدل ما تنتظر لحد المهلة.</li>
               <li><strong>4) إحماء تدريجي بعد الـ failover:</strong> ما تفتحش الحنفية 100% مرة واحدة.
                 ابدأ بـ 10% من الحركة وزوّد على 5 دقايق، عشان الكاش يتملّي تدريجيًا.
                 <br><em>ده بالظبط علاج الـ <span class="term term--a">Thundering Herd</span> — فك التزامن.</em></li>
@@ -3279,22 +3371,22 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           <div class="tblock">
             <span class="tblock__label">بيحلّ مشكلة إيه؟</span>
             <strong>التوسّع + التوافر مع بعض.</strong>
-            البيانات بتتقسّم على عدة عقد أساسية (<span class="term term--e">Shards</span>)،
+            البيانات بتتقسّم على عدة <span class="term">primary nodes</span> (<span class="term term--e">Shards</span>)،
             وكل واحدة ليها نسخها المتماثلة.
-            <br>الذاكرة والإنتاجية بيزيدوا خطّيًا مع عدد العقد.
+            <br>الذاكرة والإنتاجية بيزيدوا خطّيًا مع عدد الـ <span class="term">nodes</span>.
           </div>
           <div class="tblock tblock--win">
-            <span class="tblock__label">إزاي بيعرف المفتاح على أنهي عقدة؟</span>
+            <span class="tblock__label">إزاي بيعرف المفتاح على أنهي node؟</span>
             بالـ <strong class="ltr">16384</strong> <span class="term term--e">Hash Slot</span>.
-            كل عقدة مسؤولة عن مدى منهم، وحساب الخانة بسيط:
+            كل <span class="term">node</span> مسؤول عن مدى منهم، وحساب الخانة بسيط:
             <code>slot = CRC16(key) mod 16384</code>.
-            <br>لو العميل سأل العقدة الغلط، بترجّعله <code>MOVED 5471 10.0.0.7:6379</code>
+            <br>لو العميل سأل الـ <span class="term">node</span> الغلط، بيرجّعله <code>MOVED 5471 10.0.0.7:6379</code>
             والمكتبة بتعيد التوجيه تلقائيًا وتفتكر التوزيع.
           </div>
           <div class="tblock tblock--trap">
             <span class="tblock__label">القيد اللي بيوجع ⚠️</span>
             <strong>أي أمر بيلمس أكتر من مفتاح لازم كل المفاتيح تكون على نفس الخانة.</strong>
-            يعني <code>MGET user:1 user:2</code> هيفشل لو الاتنين على عقد مختلفة.
+            يعني <code>MGET user:1 user:2</code> هيفشل لو الاتنين على <span class="term">nodes</span> مختلفة.
             <br><strong>الحل: <span class="term term--e">Hash Tags</span></strong> —
             حطّ الجزء اللي عايز تجزئ عليه بين قوسين معقوفين:
             <br><code>{user:1000}:profile</code> و<code>{user:1000}:cart</code>
@@ -3326,14 +3418,14 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           <span class="decode__tok">16384</span>
           <div class="decode__exp">
             <b class="ltr">2¹⁴</b> = 16,384. ليه الرقم ده بالذات؟ <strong>سببين:</strong>
-            <br><strong>1) حجم رسالة النبض.</strong> كل عقدة بتبعت لباقي العقد كل ثانية رسالة فيها
+            <br><strong>1) حجم رسالة النبض.</strong> كل <span class="term">node</span> بيبعت لباقي الـ <span class="term">nodes</span> كل ثانية رسالة فيها
             <em>خريطة بِتّات</em> بالخانات اللي بتملكها.
             <br><span class="ltr">16,384 bit ÷ 8 = 2 KB</span> لكل رسالة ⇒ مقبول.
             <br>لو كانوا <span class="ltr">65,536</span> خانة ⇒ <span class="ltr">8 KB</span> لكل نبضة
-            × مئات العقد × كل ثانية ⇒ <strong>الشبكة تتخنق في الإدارة بدل البيانات</strong>.
+            × مئات الـ <span class="term">nodes</span> × كل ثانية ⇒ <strong>الشبكة تتخنق في الإدارة بدل البيانات</strong>.
             <br><strong>2) دقّة التوزيع كافية.</strong> Redis Cluster مصمّم لحد
-            <span class="ltr">~1000</span> عقدة عمليًا.
-            <br><span class="ltr">16,384 ÷ 1,000 ≈ 16</span> خانة لكل عقدة —
+            <span class="ltr">~1000</span> <span class="term">node</span> عمليًا.
+            <br><span class="ltr">16,384 ÷ 1,000 ≈ 16</span> خانة لكل <span class="term">node</span> —
             ده كفاية تمامًا عشان توزّع الحمل بالتساوي وتنقل خانات وقت إعادة التوازن.
             <br><span class="mute sm">(العدد المسموح رسميًا أعلى من كده، بس الشبكة بتبقى هي القيد.)</span>
           </div>
@@ -3341,8 +3433,8 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
       </div>
       <div class="decode__sum">
         «خُد اسم المفتاح، احسبله بصمة رقمية سريعة، وخُد باقي قسمتها على 16384 ⇒
-        الرقم ده بيحدّد <b>أنهي عقدة</b> بتملك المفتاح ده.»
-        <br>والرقم 16384 اتختار عشان خريطة الخانات تعدّي في <b>2 كيلوبايت</b> بس في كل نبضة بين العقد.
+        الرقم ده بيحدّد <b>أنهي node</b> بيملك المفتاح ده.»
+        <br>والرقم 16384 اتختار عشان خريطة الخانات تعدّي في <b>2 كيلوبايت</b> بس في كل نبضة بين الـ nodes.
       </div>
     </div>
 
@@ -3353,7 +3445,7 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
         <strong>1) بياناتي بتدخل في ذاكرة سيرفر واحد (مع هامش نمو سنتين)؟</strong>
         <br>أيوة ⇒ <span class="term">Sentinel</span>. أبسط بمراحل، ومفيش قيود على الأوامر متعددة المفاتيح،
         والمعاملات والـ Lua بتشتغل عادي.
-        <br><strong>2) لأ، أو محتاج إنتاجية كتابة أعلى من عقدة واحدة؟</strong>
+        <br><strong>2) لأ، أو محتاج إنتاجية كتابة أعلى من <span class="term">node</span> واحد؟</strong>
         <br>⇒ <span class="term term--e">Cluster</span>. بس استعد لتعديل الكود:
         مراجعة كل أمر متعدد المفاتيح، واستخدام Hash Tags، ومكتبة عميل بتفهم إعادة التوجيه.
         <br><br><em>وفي السحابة: الخدمات المُدارة بتخبّي التفاصيل دي، لكنها <strong>ما بتلغيش القيود</strong> —
@@ -3549,7 +3641,7 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
 <section class="slide" data-title="حسبة: تحجيم عنقود Redis">
   <div class="slide__head">
     <span class="eyebrow">الحسبة 01</span>
-    <h2 class="slide__title">تحجيم عنقود Redis — من قاعدة 80/20 لعدد العقد</h2>
+    <h2 class="slide__title">تحجيم عنقود Redis — من قاعدة 80/20 لعدد الـ <span class="term">nodes</span></h2>
     <p class="slide__sub">الحسبة دي بتجاوب على السؤال: «هشتري كام سيرفر Redis، وبكام؟»</p>
     <div class="rule"></div>
   </div>
@@ -3573,18 +3665,18 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
 <span class="lbl">+ حِمل المفاتيح والهياكل</span> (<span class="cmt">+30%</span>) <span class="eq">=</span> <span class="n">40</span> × <span class="n">1.3</span> <span class="eq">=</span> <span class="n">52 GB</span>
 <span class="lbl">+ هامش fork والتشتّت</span>  (<span class="cmt">استخدم 70% بس</span>) <span class="eq">=</span> <span class="n">52</span> / <span class="n">0.7</span> <span class="eq">=</span> <span class="res">74 GB سعة مطلوبة</span>
 
-<span class="cmt">// ═══ الخطوة 4: عدد العقد الأساسية ═══</span>
-<span class="lbl">ذاكرة العقدة</span>   <span class="eq">=</span> <span class="n">16</span> <span class="var">GB</span> <span class="cmt">(حجم عملي — أكبر من كده الاستعادة بتبطّأ)</span>
-<span class="lbl">عدد الشظايا</span>   <span class="eq">=</span> <span class="n">74</span> / <span class="n">16</span> <span class="eq">=</span> <span class="n">4.6</span> <span class="eq">→</span> <span class="res">5 عقد أساسية</span>
+<span class="cmt">// ═══ الخطوة 4: عدد الـ primary nodes ═══</span>
+<span class="lbl">ذاكرة الـ node</span> <span class="eq">=</span> <span class="n">16</span> <span class="var">GB</span> <span class="cmt">(حجم عملي — أكبر من كده الاستعادة بتبطّأ)</span>
+<span class="lbl">عدد الـ shards</span> <span class="eq">=</span> <span class="n">74</span> / <span class="n">16</span> <span class="eq">=</span> <span class="n">4.6</span> <span class="eq">→</span> <span class="res">5 primary nodes</span>
 
 <span class="cmt">// ═══ الخطوة 5: تحقّق من الإنتاجية (مش الذاكرة بس!) ═══</span>
 <span class="lbl">القراءات وقت الذروة</span> <span class="eq">=</span> <span class="n">60,000</span> <span class="var">ops/s</span>
-<span class="lbl">لكل شظية</span>       <span class="eq">=</span> <span class="n">60,000</span> / <span class="n">5</span> <span class="eq">=</span> <span class="n">12,000</span> <span class="var">ops/s</span>
-<span class="lbl">سعة العقدة</span>     <span class="eq">≈</span> <span class="n">80,000</span> <span class="var">ops/s</span>
+<span class="lbl">لكل shard</span>      <span class="eq">=</span> <span class="n">60,000</span> / <span class="n">5</span> <span class="eq">=</span> <span class="n">12,000</span> <span class="var">ops/s</span>
+<span class="lbl">سعة الـ node</span>   <span class="eq">≈</span> <span class="n">80,000</span> <span class="var">ops/s</span>
 <span class="lbl">الاستغلال</span>      <span class="eq">=</span> <span class="res">15% ✅ — احنا محكومين بالذاكرة مش بالمعالج</span>
 
 <span class="cmt">// ═══ الخطوة 6: النسخ المتماثلة والتكلفة ═══</span>
-<span class="lbl">نسخة لكل أساسية</span> <span class="eq">=</span> <span class="n">5</span> × <span class="n">2</span> <span class="eq">=</span> <span class="res">10 عقدة إجماليًا</span>
+<span class="lbl">نسخة لكل أساسية</span> <span class="eq">=</span> <span class="n">5</span> × <span class="n">2</span> <span class="eq">=</span> <span class="res">10 nodes إجماليًا</span>
 <span class="lbl">التكلفة</span>        <span class="eq">=</span> <span class="n">10</span> × <span class="n">$200</span>/<span class="cmt">شهر</span> <span class="eq">=</span> <span class="res">$2,000/شهر</span>
         </div>
 
@@ -3622,9 +3714,9 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
             <div class="decode__row">
               <span class="decode__tok">5 shards</span>
               <div class="decode__exp">
-                <b>خمس عقد أساسية</b>، كل واحدة مسؤولة عن <span class="ltr">16384/5 ≈ 3,277</span> خانة تجزئة.
-                <br>ليه مش عقدة واحدة بـ 74 جيجا؟ لأن: الاستعادة بعد إعادة التشغيل بتاخد دقايق طويلة،
-                و<code>fork</code> على 74 جيجا بيسبب قفزة زمن كبيرة، والعقدة دي بتبقى نقطة فشل ضخمة.
+                <b>خمس primary nodes</b>، كل واحد مسؤول عن <span class="ltr">16384/5 ≈ 3,277</span> خانة تجزئة.
+                <br>ليه مش <span class="term">node</span> واحد بـ 74 جيجا؟ لأن: الاستعادة بعد إعادة التشغيل بتاخد دقايق طويلة،
+                و<code>fork</code> على 74 جيجا بيسبب قفزة زمن كبيرة، والـ <span class="term">node</span> ده بيبقى نقطة فشل ضخمة.
               </div>
             </div>
             <div class="decode__row">
@@ -3640,18 +3732,18 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           </div>
           <div class="decode__sum">
             «هنكاش <b>10 مليون منتج ساخن</b> يغطّوا <b>80%</b> من الطلبات،
-            هيحتاجوا <b>74 جيجا</b> سعة فعلية، يعني <b>5 عقد أساسية</b> + <b>5 نسخ</b> =
-            <b>10 عقد بـ 2000 دولار شهريًا</b>.»
+            هيحتاجوا <b>74 جيجا</b> سعة فعلية، يعني <b>5 primary nodes</b> + <b>5 replicas</b> =
+            <b>10 nodes بـ 2000 دولار شهريًا</b>.»
           </div>
         </div>
 
         <div class="plain mt">
           <span class="plain__label">أهم ملاحظتين في الحسبة دي</span>
           <strong>1)</strong> إحنا <em>محكومين بالذاكرة</em> (<span class="ltr">15%</span> استغلال معالج بس).
-          يعني لو عايز توفّر فلوس، الطريق هو <strong>تقليل حجم الكائن</strong> مش تقليل العقد:
+          يعني لو عايز توفّر فلوس، الطريق هو <strong>تقليل حجم الكائن</strong> مش تقليل الـ <span class="term">nodes</span>:
           شيل الحقول اللي مش بتتعرض، استخدم <code>MessagePack</code> بدل JSON،
           أو فعّل الضغط ⇒ من <span class="ltr">4KB</span> لـ <span class="ltr">1.5KB</span>
-          يعني <strong class="ltr">3</strong> عقد بدل <span class="ltr">5</span> ⇒ توفير <span class="ltr">$800</span> شهريًا.
+          يعني <strong class="ltr">3</strong> <span class="term">nodes</span> بدل <span class="ltr">5</span> ⇒ توفير <span class="ltr">$800</span> شهريًا.
           <br><strong>2)</strong> الـ <span class="ltr">80%</span> تغطية دي هي <strong>سقف</strong>
           نسبة الإصابة — يعني الداتابيز هتشوف <span class="ltr">20%</span> من <span class="ltr">60,000</span>
           = <span class="ltr">12,000</span> استعلام/ثانية. لو دي أكتر من طاقتها، لازم تكاش نسبة أكبر
@@ -3667,8 +3759,8 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
           منصة فيديو: <span class="ltr">8</span> مليون فيديو، بيانات الفيديو الواحد
           <span class="ltr">2 KB</span>. الذروة <span class="ltr">120,000</span> قراءة/ثانية.
           أعلى <span class="ltr">10%</span> من الفيديوهات بياخدوا <span class="ltr">90%</span> من المشاهدات.
-          العقدة <span class="ltr">8 GB</span> و<span class="ltr">80,000 ops/s</span>.
-          <br>احسب: حجم الكاش · عدد الشظايا · تحقّق من الإنتاجية · العدد الكلي مع نسخة لكل أساسية.
+          الـ <span class="term">node</span> <span class="ltr">8 GB</span> و<span class="ltr">80,000 ops/s</span>.
+          <br>احسب: حجم الكاش · عدد الـ <span class="term">shards</span> · تحقّق من الإنتاجية · العدد الكلي مع نسخة لكل أساسية.
         </p>
         <details class="solution">
           <summary>شوف الحل</summary>
@@ -3682,27 +3774,27 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
 <span class="lbl">+ حِمل 30%</span>  <span class="eq">=</span> <span class="n">1.6</span> × <span class="n">1.3</span> <span class="eq">=</span> <span class="n">2.08 GB</span>
 <span class="lbl">/ 0.7</span>       <span class="eq">=</span> <span class="n">2.08</span> / <span class="n">0.7</span> <span class="eq">=</span> <span class="res">2.97 GB سعة مطلوبة</span>
 
-<span class="cmt">// ═══ 3) عدد الشظايا من ناحية الذاكرة ═══</span>
-<span class="lbl">2.97 / 8</span>    <span class="eq">=</span> <span class="n">0.37</span> <span class="eq">→</span> <span class="res">عقدة واحدة كفاية للذاكرة!</span>
+<span class="cmt">// ═══ 3) عدد الـ shards من ناحية الذاكرة ═══</span>
+<span class="lbl">2.97 / 8</span>    <span class="eq">=</span> <span class="n">0.37</span> <span class="eq">→</span> <span class="res">node واحد كفاية للذاكرة!</span>
 
 <span class="cmt">// ═══ 4) بس نتحقّق من الإنتاجية — وهنا المفاجأة ═══</span>
 <span class="lbl">القراءات</span>   <span class="eq">=</span> <span class="n">120,000</span> <span class="var">ops/s</span>
-<span class="lbl">سعة العقدة</span> <span class="eq">=</span> <span class="n">80,000</span> <span class="var">ops/s</span>
-<span class="lbl">المطلوب</span>    <span class="eq">=</span> <span class="n">120,000</span> / <span class="n">80,000</span> <span class="eq">=</span> <span class="n">1.5</span> <span class="eq">→</span> <span class="res">شظيتين على الأقل</span>
-<span class="lbl">وللأمان (70%)</span> <span class="eq">=</span> <span class="n">120,000</span> / (<span class="n">80,000</span> × <span class="n">0.7</span>) <span class="eq">=</span> <span class="n">2.14</span> <span class="eq">→</span> <span class="res">3 شظايا</span>
+<span class="lbl">سعة الـ node</span> <span class="eq">=</span> <span class="n">80,000</span> <span class="var">ops/s</span>
+<span class="lbl">المطلوب</span>    <span class="eq">=</span> <span class="n">120,000</span> / <span class="n">80,000</span> <span class="eq">=</span> <span class="n">1.5</span> <span class="eq">→</span> <span class="res">2 shards على الأقل</span>
+<span class="lbl">وللأمان (70%)</span> <span class="eq">=</span> <span class="n">120,000</span> / (<span class="n">80,000</span> × <span class="n">0.7</span>) <span class="eq">=</span> <span class="n">2.14</span> <span class="eq">→</span> <span class="res">3 shards</span>
 
 <span class="cmt">// ═══ 5) الإجمالي ═══</span>
-<span class="lbl">العقد</span> <span class="eq">=</span> <span class="n">3</span> أساسية × <span class="n">2</span> <span class="eq">=</span> <span class="res">6 عقد</span>
+<span class="lbl">الـ nodes</span> <span class="eq">=</span> <span class="n">3</span> أساسية × <span class="n">2</span> <span class="eq">=</span> <span class="res">6 nodes</span>
             </div>
             <div class="plain mt">
               <span class="plain__label">الدرس هنا مختلف تمامًا عن المثال السابق</span>
               في المثال اللي فات كنا <strong>محكومين بالذاكرة</strong>. هنا احنا
-              <strong>محكومين بالإنتاجية</strong> — الذاكرة تحتاج عقدة واحدة بس، والإنتاجية بتحتاج تلاتة.
+              <strong>محكومين بالإنتاجية</strong> — الذاكرة تحتاج <span class="term">node</span> واحد بس، والإنتاجية بتحتاج تلاتة.
               <br><br><strong>القاعدة العامة:</strong> دايمًا احسب <em>الاتنين</em> وخُد الأكبر:
               <div class="math sm mt">
-<span class="lbl">عدد الشظايا</span> <span class="eq">=</span> <span class="var">max</span>( الذاكرة المطلوبة / ذاكرة العقدة , الإنتاجية المطلوبة / (سعة العقدة × <span class="n">0.7</span>) )
+<span class="lbl">عدد الـ shards</span> <span class="eq">=</span> <span class="var">max</span>( الذاكرة المطلوبة / ذاكرة الـ node , الإنتاجية المطلوبة / (سعة الـ node × <span class="n">0.7</span>) )
               </div>
-              <br><strong>وملاحظة عملية:</strong> في الحالة دي كان ممكن تحلّها من غير شظايا أصلاً —
+              <br><strong>وملاحظة عملية:</strong> في الحالة دي كان ممكن تحلّها من غير <span class="term">shards</span> أصلاً —
               بيانات <span class="ltr">1.6 GB</span> بس! حطّها في <strong>L1 محلي</strong> في كل نسخة API
               وRedis هيشوف حمل بسيط جدًا. <em>أرخص حل هو اللي بيلغي المشكلة مش اللي بيوسّعها.</em>
             </div>
@@ -3719,7 +3811,7 @@ builder.Services.<span class="f">AddHybridCache</span>(o =&gt;
         <li>إيه المقايضة بين <span class="term">RDB</span> و<span class="term term--a">AOF</span> — وإمتى تقفل الاتنين؟</li>
         <li>ليه <span class="ltr">16384</span> بالذات؟ وإيه فايدة الـ <span class="term term--e">Hash Tags</span>؟</li>
         <li>فكّك <code>SET k v NX PX 30000</code>، وقول ليه <code>DEL</code> وحدها خطر في الفكّ.</li>
-        <li>إيه الحاجتين اللي لازم تحسبهم لتحديد عدد شظايا العنقود؟</li>
+        <li>إيه الحاجتين اللي لازم تحسبهم لتحديد عدد <span class="term">shards</span> العنقود؟</li>
       </ul>
     </div>
   </div>
@@ -4772,7 +4864,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/admin/catalog/publish"</spa
         <h3 class="card__title">الأمراض الأربعة</h3>
         <ul class="pc pc--pro sm mb0">
           <li><strong>Stampede</strong>: مفتاح واحد ⇒ دمج الطلبات + انتهاء احتمالي مبكّر</li>
-          <li><strong>Hot Key</strong>: عقدة واحدة ⇒ نسخ في L1 أو تقسيم المفتاح</li>
+          <li><strong>Hot Key</strong>: <span class="term">node</span> واحد ⇒ نسخ في L1 أو تقسيم المفتاح</li>
           <li><strong>Penetration</strong>: مفاتيح غير موجودة ⇒ كاش سلبي + Bloom Filter</li>
           <li><strong>Avalanche</strong>: موت جماعي ⇒ TTL Jitter</li>
           <li><strong>Thundering Herd</strong> ≠ Stampede: تزامن مش تكرار ⇒ فك التزامن</li>
@@ -4787,7 +4879,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/admin/catalog/publish"</spa
           <li>RDB للنسخ · AOF everysec للأمان · اقفلهم لو كاش بحت</li>
           <li>Sentinel = توافر · Cluster = توسّع (<span class="ltr">16384</span> خانة + Hash Tags)</li>
           <li>القفل: <code>SET NX PX</code> + فكّ بـ Lua · وRedlock مش للصحّة</li>
-          <li>عدد الشظايا = <span class="ltr">max</span>(احتياج الذاكرة، احتياج الإنتاجية)</li>
+          <li>عدد الـ <span class="term">shards</span> = <span class="ltr">max</span>(احتياج الذاكرة، احتياج الإنتاجية)</li>
         </ul>
       </div>
       <div class="card card--b">

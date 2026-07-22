@@ -1154,7 +1154,8 @@
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تستخدمه</span>
           لما يكون فيه <strong>فايدة حقيقية من الالتصاق</strong>: كاش محلي، أو اتصال
-          <span class="term">WebSocket</span> لازم يفضل على نفس العقدة، أو تقسيم بيانات
+          <span class="term">WebSocket</span> لازم يفضل على نفس الـ <span class="term">node</span>
+          (سيرفر واحد من المجموعة)، أو تقسيم بيانات
           (<span class="term">Sharding</span>) على مستوى الطبقة دي.
           <br><strong>ما تستخدمهاش</strong> لمجرد إنك عايز الجلسة تفضل شغّالة — ده الفخ اللي جاي بعد شوية.
         </div>
@@ -1338,7 +1339,8 @@
         <ol class="sm" style="color:var(--text-dim)">
           <li>خدمة <span class="term">gRPC</span> باتصالات طويلة العمر بين خدماتك الداخلية.</li>
           <li>أسطول فيه 3 ماكينات قديمة (8 نوى) و7 ماكينات جديدة (32 نواة).</li>
-          <li>خدمة <span class="term">WebSocket</span> للإشعارات — العميل لازم يفضل على نفس العقدة.</li>
+          <li>خدمة <span class="term">WebSocket</span> للإشعارات — العميل لازم يفضل على نفس الـ
+            <span class="term">node</span> (سيرفر واحد من المجموعة).</li>
           <li><span class="term">API</span> عام فيه 200 سيرفر وطلبات متفاوتة جدًا.</li>
         </ol>
         <details class="solution">
@@ -1353,7 +1355,8 @@
                 و<span class="ltr">4</span> للجديد — ونحطّها في مكان واحد موثّق مع تاريخ المراجعة.
                 البديل الأفضل لو متاح: Two Choices اللي بيتعامل مع التباين تلقائيًا من غير أوزان يدوية.</li>
               <li><strong>3 → IP Hash</strong> أو الأدق: تجزئة على معرّف المستخدم.
-                هنا الالتصاق <em>متطلب وظيفي</em> مش راحة — الاتصال المفتوح موجود على عقدة بعينها.
+                هنا الالتصاق <em>متطلب وظيفي</em> مش راحة — الاتصال المفتوح موجود على
+                <span class="term">node</span> بعينها.
                 وخلي بالك من إعادة التوزيع عند تغيير العدد ⇒ استخدم Consistent Hashing.</li>
               <li><strong>4 → Two Choices.</strong> مع 200 سيرفر، أي خوارزمية <span class="ltr">O(n)</span>
                 بتبقى مكلّفة على كل طلب، والتنسيق بين موزّعات متعددة بيبقى مستحيل عمليًا.</li>
@@ -1908,7 +1911,8 @@ app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/startup"</sp
           <span class="tblock__label">إمتى يكون مقبول فعلاً</span>
           حالتين بس:
           <br><strong>(أ)</strong> اتصال طويل العمر بطبيعته: <span class="term">WebSocket</span> /
-          <span class="term">SignalR</span> — الاتصال فيزيائيًا موجود على عقدة واحدة.
+          <span class="term">SignalR</span> — الاتصال فيزيائيًا موجود على
+          <span class="term">node</span> واحدة (سيرفر واحد من المجموعة).
           <br><strong>(ب)</strong> كحل مؤقت معلن أثناء ترحيل تطبيق قديم، مع
           <strong>تاريخ انتهاء مكتوب</strong> ومهمة في الـ backlog لإزالته.
           <br><em>وما عدا كده: الحل الصح إنك تنقل الحالة لمخزن مشترك — والسلايد الجاية بتوريك إزاي.</em>
@@ -2195,14 +2199,69 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
       </div>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">تتبّع طلب واحد في الرسمة دي</span>
-      <strong>1)</strong> نسخة الفواتير لما بتقلع بتسجّل نفسها في السجل وبتبعت نبضة كل 10 ثواني.
-      <strong>2)</strong> خدمة الطلبات بتسأل السجل عن قائمة النسخ (وبتكاشها لثواني قليلة).
-      <strong>3)</strong> بتختار نسخة بخوارزمية التوزيع اللي اتفقنا عليها.
-      <strong>4)</strong> نسخة #3 ماتت ⇒ وقفت النبضة ⇒ السجل شالها بعد المهلة ⇒ الاستعلام الجاي مش هيشوفها.
-      <br><em>لاحظ: فيه فترة قصيرة (الفجوة بين موتها وشيلها) العملاء فيها هيكلّموا نسخة ميتة —
-      وعشان كده الاكتشاف <strong>لازم</strong> يتقرن بمهلة وإعادة محاولة. ولا واحد منهم بيغني عن التاني.</em>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع طلب واحد في الرسمة دي: خدمة الطلبات بتنادي خدمة الفواتير</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Billing Instance</span>
+          <div class="trace__body">
+            نسخة الفواتير أول ما بتقلع <strong>بتسجّل نفسها</strong> في السجل بعنوانها ومنفذها،
+            وبعدين بتبعت نبضة (<span class="term term--e">Heartbeat</span>) كل 10 ثواني.
+            <br>التسجيل بيحصل من النسخة نفسها عشان <strong>ما يبقاش فيه ملف إعدادات حد لازم يفتكر يحدّثه</strong>.
+            من غير الخطوة دي، كل ما تزوّد نسخة هتحتاج تعديل يدوي في كل عميل — وده أول حاجة بتتنسى وقت الذروة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Service Registry</span>
+          <div class="trace__body">
+            السجل (<span class="ltr">Consul</span> أو <span class="ltr">K8s API</span>)
+            بيمسك القائمة الحيّة: مين موجود، وعنوانه إيه، وآخر نبضة جت منه إمتى.
+            <br>السجل ده هو <strong>مصدر الحقيقة الوحيد</strong> لعناوين الخدمات.
+            من غيره، كل خدمة هتخزّن عناوين إخواتها عندها، وأول تغيير في الشبكة يبقى عندك
+            نسخ متضاربة من الحقيقة في أماكن مختلفة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Orders Service</span>
+          <div class="trace__body">
+            خدمة الطلبات بتسأل السجل: «فين نسخ خدمة الفواتير؟»
+            وبتكاش الرد <strong>لثواني قليلة بس</strong>.
+            <br>الكاش القصير ده مقصود ومهم: من غيره كل نداء هيتحوّل لنداءين
+            (سؤال للسجل + نداء للخدمة) ⇒ السجل نفسه يبقى نقطة اختناق ونقطة فشل.
+            وطويل أوي؟ ساعتها هتفضل تكلّم نسخ ميتة لمدة أطول.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Load Balancing</span>
+          <div class="trace__body">
+            من القائمة اللي رجعت، الخدمة بتختار نسخة بخوارزمية التوزيع اللي اتفقنا عليها
+            (<span class="ltr">PowerOfTwoChoices</span> مثلاً).
+            <br>لاحظ إن التوزيع هنا بيحصل <em>عند العميل</em> مش في صندوق وسط —
+            وده بيوفّر قفزة شبكة كاملة. تمنه إن كل عميل لازم يبقى فيه منطق التوزيع ده.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Health Heartbeat</span>
+          <div class="trace__body">
+            نسخة #3 ماتت ⇒ وقفت النبضة ⇒ السجل شالها بعد المهلة ⇒
+            <strong>الاستعلام الجاي مش هيشوفها أصلاً</strong>.
+            <br>الإزالة دي هي اللي بتخلّي القايمة «حيّة» مش مجرد ورقة قديمة.
+            من غير مهلة على النبضة، النسخة الميتة هتفضل في القائمة للأبد
+            و<mark>هتاخد نصيبها من الطلبات وهي مش موجودة</mark>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        فيه فترة قصيرة — الفجوة بين موتها وشيلها — العملاء فيها هيكلّموا نسخة ميتة.
+        <br>وعشان كده الاكتشاف <strong>لازم</strong> يتقرن بمهلة وإعادة محاولة.
+        ولا واحد منهم بيغني عن التاني.
+      </div>
     </div>
   </div>
 </section>
@@ -2245,15 +2304,18 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
           <strong><span class="ltr">6,000</span> طلب معلّق</strong> في أي لحظة ⇒
           <span class="term term--r">Thread Pool Starvation</span> ⇒
           <mark>خدمتك انت كمان وقعت</mark> رغم إن العطل في خدمة تانية.
-          <br>مع القاطع: الطلب بيفشل في <span class="ltr">&lt; 1ms</span>، والموارد بتفضل متاحة
+          <br>مع الـ <span class="term term--r">circuit breaker</span>: الطلب بيفشل في
+          <span class="ltr">&lt; 1ms</span>، والموارد بتفضل متاحة
           لباقي الوظايف اللي شغّالة كويس.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          <strong>قاطع واحد لكل الخدمات.</strong> لو عملت قاطع مشترك، عطل في خدمة التوصيات
+          <strong><span class="term term--r">circuit breaker</span> واحد لكل الخدمات.</strong>
+          لو عملت واحد مشترك، عطل في خدمة التوصيات
           هيقفل النداءات لخدمة الدفع كمان.
-          <br>الصح: <em>قاطع منفصل لكل وجهة</em> (وأحيانًا لكل نقطة نهاية لو سلوكها مختلف).
-          <br>وفخ تاني: عتبة منخفضة أوي (<span class="ltr">10%</span> مثلاً) بتخلّي القاطع يفتح
+          <br>الصح: <em><span class="term term--r">circuit breaker</span> منفصل لكل وجهة</em>
+          (وأحيانًا لكل نقطة نهاية لو سلوكها مختلف).
+          <br>وفخ تاني: عتبة منخفضة أوي (<span class="ltr">10%</span> مثلاً) بتخلّيه يفتح
           من أي ارتفاع مؤقت، فيتحوّل هو نفسه لمصدر انقطاع.
         </div>
         <div class="tblock tblock--win">
@@ -2294,12 +2356,12 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
 
     <div class="decode fragment">
       <div class="decode__raw">FailureRatio = 0.5 · MinimumThroughput = 20 · SamplingDuration = 30s · BreakDuration = 15s</div>
-      <div class="decode__hint">الأربع أرقام دي هما القاطع كله. لو فهمتهم، تقدر تظبطه لأي خدمة</div>
+      <div class="decode__hint">الأربع أرقام دي هما الـ <span class="term term--r">circuit breaker</span> كله. لو فهمتهم، تقدر تظبطه لأي خدمة</div>
       <div class="decode__rows">
         <div class="decode__row">
           <span class="decode__tok">FailureRatio = 0.5</span>
           <div class="decode__exp">
-            <b>نسبة الفشل اللي بتفتح القاطع = 50%</b>.
+            <b>نسبة الفشل اللي بتفتح الـ <span class="term term--r">circuit breaker</span> = 50%</b>.
             لاحظ إنها <em>نسبة</em> مش عدد — عشان تشتغل صح سواء عندك 100 طلب/ثانية أو 10 آلاف.
             <br>الأرقام العملية: <span class="ltr">0.5</span> للخدمات العادية،
             <span class="ltr">0.2</span> للخدمات اللي المفروض ما تفشلش أبدًا،
@@ -2309,9 +2371,9 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
         <div class="decode__row">
           <span class="decode__tok">MinimumThroughput = 20</span>
           <div class="decode__exp">
-            <b>أقل عدد طلبات لازم يحصل في النافذة قبل ما القاطع يفكّر يفتح</b>.
+            <b>أقل عدد طلبات لازم يحصل في النافذة قبل ما الـ <span class="term term--r">circuit breaker</span> يفكّر يفتح</b>.
             <br>ده حزام أمان إحصائي: من غيره، طلب واحد فشل من طلب واحد = نسبة فشل
-            <span class="ltr">100%</span> ⇒ القاطع بيفتح على خدمة سليمة تمامًا.
+            <span class="ltr">100%</span> ⇒ الـ <span class="term term--r">circuit breaker</span> بيفتح على خدمة سليمة تمامًا.
             <br><strong>ده أكتر إعداد بيتنسى، وأكتر واحد بيسبب فتح عشوائي في الخدمات قليلة الترافيك.</strong>
           </div>
         </div>
@@ -2326,7 +2388,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
         <div class="decode__row">
           <span class="decode__tok">BreakDuration = 15s</span>
           <div class="decode__exp">
-            <b>مدة بقاء القاطع مفتوح قبل ما يجرّب تاني</b>.
+            <b>مدة بقاء الـ <span class="term term--r">circuit breaker</span> مفتوح قبل ما يجرّب تاني</b>.
             <br>ودي لازم تكون <em>أطول من زمن تعافي الخدمة المتوقّع</em>:
             لو الخدمة بتاخد 20 ثانية تقلع، ومدة الانقطاع 5 ثواني، هتفضل تجرّب وتفشل
             وتضغط عليها وهي بتحاول تقوم.
@@ -2380,7 +2442,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/jobs/settle"</span>, <span 
               في أسوأ لحظة (<span class="term term--r">Retry Storm</span>).</li>
             <li><strong>مجموعة اتصالات مشتركة</strong> ⇒ نقطة نهاية بطيئة بتستهلك الاتصالات المخصّصة
               لكل الباقي.</li>
-            <li><strong>مفيش قاطع دائرة</strong> ⇒ بنفضل نبعت لخدمة معروف إنها فاشلة.</li>
+            <li><strong>مفيش <span class="term term--r">circuit breaker</span></strong> ⇒ بنفضل نبعت لخدمة معروف إنها فاشلة.</li>
             <li><strong>موجة العملاء</strong> ⇒ المستخدمون بيعيدوا التحميل، فالحمل بيتضاعف وقت الضعف.</li>
           </ul>
         </div>
@@ -2777,7 +2839,7 @@ app.<span class="f">Run</span>();</code></pre>
 </section>
 
 <!-- ═════ 35 ═════ -->
-<section class="slide" data-title="كود: Polly v8 — القاطع والإعادة والمهلة">
+<section class="slide" data-title="كود: Polly v8 — Circuit Breaker وRetry وTimeout">
   <div class="slide__head">
     <span class="eyebrow">كود 04</span>
     <h2 class="slide__title">خط الصمود الكامل بـ <span class="term term--e">Polly v8</span></h2>
@@ -2871,7 +2933,9 @@ builder.Services.<span class="f">AddResiliencePipeline</span>&lt;<span class="t"
     <div class="plain">
       <span class="plain__label">أهم 5 نقاط في الكود ده</span>
       <strong>1. الترتيب مش عشوائي.</strong> الحاجز برّه (يرفض بدري ويحمي الموارد)،
-      والقاطع جوّه (أقرب للشبكة). لو عكست، هتلاقي الإعادة بتشتغل <em>جوّه</em> القاطع
+      والـ <span class="term term--r">circuit breaker</span> جوّه (أقرب للشبكة).
+      لو عكست، هتلاقي الإعادة بتشتغل <em>جوّه</em> الـ
+      <span class="term term--r">circuit breaker</span>
       فكل محاولة هتتحسب فشل منفصل وهتفتحه أسرع بكتير مما تتوقّع.
       <br><strong>2. مهلتين مش واحدة.</strong> <code>AttemptTimeout</code> للمحاولة الواحدة
       (<span class="ltr">2s</span>) و<code>TotalRequestTimeout</code> للعملية كلها بمحاولاتها
@@ -3050,7 +3114,7 @@ builder.Services.<span class="f">AddResiliencePipeline</span>&lt;<span class="t"
           مش موجود بالاسم ده في <code>AddRateLimiter</code>، لكن
           <code>AddConcurrencyLimiter</code> مع <code>QueueLimit</code> بيدّي نفس السلوك تقريبًا:
           خروج منتظم مع طابور محدود. وهو النمط المستخدم في <span class="term">Backpressure</span>
-          على المستهلكين.
+          على الـ <span class="term">consumers</span> (الطرف اللي بيقرا الشغل وينفّذه).
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
@@ -3060,7 +3124,7 @@ builder.Services.<span class="f">AddResiliencePipeline</span>&lt;<span class="t"
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تستخدمه</span>
-          لما يكون <strong>المستهلِك حسّاس للمعدّل مش للعدد</strong>:
+          لما يكون <strong>الـ <span class="term">consumer</span> حسّاس للمعدّل مش للعدد</strong>:
           الكتابة على قاعدة بيانات ليها سقف <span class="ltr">IOPS</span>،
           أو النداء على <span class="ltr">API</span> طرف تالت بيحظرك لو تجاوزت،
           أو إرسال إيميلات/رسائل بمعدّل مسموح.
@@ -3167,7 +3231,8 @@ builder.Services.<span class="f">AddResiliencePipeline</span>&lt;<span class="t"
           <span class="ltr">Token Bucket</span> للـ APIs العامة ⟵
           <span class="ltr">Sliding Counter</span> لما تحتاج «X في الفترة» بدقة ⟵
           <span class="ltr">Fixed Window</span> بس لو الأداء أهم من الدقة ⟵
-          <span class="ltr">Leaky Bucket</span> للحماية من التدفّق لمستهلك محدود السرعة ⟵
+          <span class="ltr">Leaky Bucket</span> للحماية من التدفّق لـ
+          <span class="term">consumer</span> محدود السرعة ⟵
           <span class="ltr">Sliding Log</span> لما الدقة المطلقة مطلوبة والمفاتيح قليلة
           (حدود صارمة على مستوى الحساب).
         </div>
@@ -3462,8 +3527,9 @@ app.<span class="f">MapGet</span>(<span class="s">"/api/products"</span>, <span 
           في التبديل التلقائي، لو الشبكة اتقطعت بين النسختين، كل واحدة ممكن تفتكر إن التانية ماتت
           و<strong>تعلن نفسها الرئيسية</strong>. النتيجة: نسختين بيكتبوا في نفس الوقت
           ⇒ بيانات متضاربة يصعب إصلاحها.
-          <br>الحل: <span class="term term--r">Quorum</span> — لازم <em>أغلبية</em> العقد توافق
-          على التبديل. وعشان كده بنشوف دايمًا 3 أو 5 عقد مش 2:
+          <br>الحل: <span class="term term--r">Quorum</span> — لازم <em>أغلبية</em> الـ
+          <span class="term">nodes</span> (السيرفرات المشتركة في المجموعة) توافق
+          على التبديل. وعشان كده بنشوف دايمًا 3 أو 5 <span class="term">nodes</span> مش 2:
           <mark>باتنين مفيش أغلبية ممكنة.</mark>
         </div>
       </div>
@@ -3533,7 +3599,8 @@ app.<span class="f">MapGet</span>(<span class="s">"/api/products"</span>, <span 
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          إشارة بترجع من <strong>المستهلِك للمنتِج</strong> بتقول «بطّأ، أنا مش لاحق».
+          إشارة بترجع من <strong>الـ <span class="term">consumer</span> (اللي بينفّذ الشغل)
+          للـ <span class="term">producer</span> (اللي بيولّده)</strong> بتقول «بطّأ، أنا مش لاحق».
           <br>الفكرة الجوهرية: <mark>لما تكون مش قادر، ارفض بسرعة بدل ما تقبل وتخزّن في طابور</mark> —
           لأن الطابور بيأجّل المشكلة وبيكبّرها مش بيحلها.
         </div>
@@ -3555,7 +3622,8 @@ app.<span class="f">MapGet</span>(<span class="s">"/api/products"</span>, <span 
             <li>في <span class="term">gRPC</span>: تدفّق <span class="ltr">HTTP/2</span>
               بيعمل ضغط عكسي على مستوى البروتوكول تلقائيًا.</li>
             <li>في الطوابير: <code>PrefetchCount</code> في
-              <span class="ltr">RabbitMQ</span> بيحدّد كام رسالة المستهلك ياخدها مرة واحدة.</li>
+              <span class="ltr">RabbitMQ</span> بيحدّد كام رسالة الـ
+              <span class="term">consumer</span> ياخدها مرة واحدة.</li>
           </ul>
         </div>
         <div class="tblock tblock--trap">
@@ -3568,7 +3636,8 @@ app.<span class="f">MapGet</span>(<span class="s">"/api/products"</span>, <span 
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">إمتى تستخدمه</span>
-          في أي مكان فيه <strong>منتِج أسرع من مستهلِك</strong>:
+          في أي مكان فيه <strong><span class="term">producer</span> أسرع من
+          <span class="term">consumer</span></strong>:
           استقبال أحداث، معالجة ملفات، مزامنة، أي <code>BackgroundService</code>.
         </div>
       </div>
@@ -3647,7 +3716,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
     <div class="plain">
       <span class="plain__label">ليه الكود ده مهم في التوسّع بالذات</span>
       في التوسّع الأفقي، النسخ بتتقفل <strong>باستمرار</strong>: كل نشر، وكل تقليص تلقائي،
-      وكل نقل بين العقد.
+      وكل نقل بين الـ <span class="term">nodes</span> (سيرفرات المجموعة).
       <br><strong>1.</strong> <code>ApplicationStopping</code> بيشتغل أول ما ييجي
       <span class="ltr">SIGTERM</span>. قلب الجاهزية لـ <code>false</code> هنا بيخلّي الموزّع
       يشيلنا خلال ثواني ⇒ الطلبات الجديدة تروح لنسخ تانية.
@@ -3829,7 +3898,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
           </div>
           <div class="flow__vert">↓</div>
           <div class="flow__tier">
-            <div class="node node--a"><span class="node__ico">⚡</span>Redis<span class="node__sub">عقدة واحدة · للجلسات</span></div>
+            <div class="node node--a"><span class="node__ico">⚡</span>Redis<span class="node__sub">single node · للجلسات</span></div>
             <div class="node node--r"><span class="node__ico">🗄️</span>SQL Primary<span class="node__sub">نسخة احتياطية يدوية</span></div>
             <div class="node node--v"><span class="node__ico">🔐</span>Identity<span class="node__sub">خدمة داخلية واحدة</span></div>
           </div>
@@ -3847,7 +3916,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
                   <tr><td>2</td><td>كل النسخ في <span class="ltr">AZ-a</span></td>
                     <td class="td-bad">فشل منطقة واحدة = فشل كامل رغم الـ 3 نسخ</td>
                     <td>وزّع على 3 مناطق، وخطّط لتحمّل فقدان واحدة</td></tr>
-                  <tr><td>3</td><td class="ltr">Redis عقدة واحدة</td>
+                  <tr><td>3</td><td class="ltr">Redis single node</td>
                     <td class="td-bad">كل الجلسات ضاعت ⇒ تسجيل خروج جماعي</td>
                     <td><span class="ltr">Redis Cluster</span> أو <span class="ltr">Sentinel</span>
                       + نسخ متماثل</td></tr>
@@ -4030,9 +4099,10 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
           <div class="decode__exp">
             <b>معامل التماسك — Coherency</b>. <strong>وده الجزء الجديد اللي أمدال ما حسبوش.</strong>
             <br>ده تكلفة <em>إبقاء كل العمال متفقين على نفس الحالة</em>:
-            مزامنة الكاش، اتفاق العقد، إبطال البيانات، نبضات الصحة.
+            مزامنة الكاش، اتفاق الـ <span class="term">nodes</span> (سيرفرات المجموعة)
+            على نفس الحالة، إبطال البيانات، نبضات الصحة.
             <br>بيكبر <strong>تربيعيًا</strong> — لأن عدد أزواج التواصل بين
-            <span class="ltr">N</span> عقدة = <span class="ltr">N(N−1)/2</span>.
+            <span class="ltr">N</span> <span class="term">node</span> = <span class="ltr">N(N−1)/2</span>.
             <br><em>تشبيه: 50 شيف كل واحد لازم يقول للـ 49 التانيين إنه خد آخر بيضة.</em>
           </div>
         </div>
@@ -4307,30 +4377,129 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
       </div>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">تتبّع طلب واحد من أوله لآخره — 10 خطوات</span>
-      <strong>1)</strong> المستخدم يكتب العنوان ⟵ الـ <strong>DNS</strong> يرجّع عنوان الـ
-      <span class="ltr">Anycast</span>، والشبكة توجّهه لأقرب نقطة جغرافيًا.
-      <br><strong>2)</strong> الملفات الثابتة (صور، <span class="ltr">JS</span>) بتترد من الـ
-      <strong>CDN</strong> — <em>ما وصلتش لسيرفرك أصلاً</em>، وده بيوفّر معظم الترافيك.
-      <br><strong>3)</strong> طلب الـ API بيوصل للـ <strong>L4</strong> اللي بيوزّع الاتصال على
-      موزّعات الـ <strong>L7</strong> — L4 لأنه بيستحمل حجم اتصالات لا يقارن.
-      <br><strong>4)</strong> الـ <strong>L7</strong> بيفك التشفير
-      (<span class="ltr">TLS Termination</span>)، ودلوقتي بقى شايف المسار والترويسات.
-      <br><strong>5)</strong> الـ <strong>Rate Limiter</strong> بيشوف مفتاح المستأجر:
-      عنده رصيد في دلوه؟ لأ ⇒ <span class="ltr">429</span> + <code>Retry-After</code> وخلاص الرحلة.
-      <br><strong>6)</strong> الموزّع بيختار <strong>سيرفرين عشوائي من السليمين بس</strong>
-      وبياخد الأقل حملاً — وقائمة «السليمين» دي جاية من فحص الصحة النشط والسلبي.
-      <br><strong>7)</strong> النسخة بتشتغل. الجلسة والكاش من <strong>Redis</strong>
-      (مش من ذاكرتها) — عشان كده أي نسخة تانية كانت هتقدر تخدم نفس الطلب بالظبط.
-      <br><strong>8)</strong> محتاجة تنادي خدمة المخزون ⟵ النداء بيعدّي على
-      <strong>مهلة</strong> و<strong>حاجز</strong> و<strong>قاطع دائرة</strong>.
-      القاطع مفتوح؟ ⇒ ترجّع رد متدهور فورًا («المخزون غير متاح») والصفحة تكمّل شغل.
-      <br><strong>9)</strong> القراءة بتروح لـ <strong>نسخة قراءة</strong>، والكتابة للرئيسية،
-      والشغل التقيل (إيميل، تقرير، فهرسة) بيتحط في <strong>الطابور</strong> ويرجع
-      <span class="ltr">202</span> فورًا.
-      <br><strong>10)</strong> كل خطوة بتسجّل مقاييس وتتبّع — ومن هنا بالظبط بتيجي أرقام
-      <span class="ltr">p99</span> والاستغلال اللي بنيت عليها كل الحسابات في السلايد اللي فاتت.
+    <div class="trace">
+      <div class="trace__head">تتبّع طلب واحد من أوله لآخره — 10 خطوات في المعمارية الكاملة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">DNS · Anycast</span>
+          <div class="trace__body">
+            المستخدم يكتب العنوان، والـ <span class="term">DNS</span> يرجّع عنوان
+            <span class="ltr">Anycast</span> — نفس العنوان معلن من عشرات المواقع،
+            والشبكة توجّه المستخدم لأقربهم جغرافيًا.
+            <br>الخطوة دي بتوفّر <strong>ميلي ثواني من سرعة الضوء نفسها</strong>، وهي حاجة
+            مستحيل تعوّضها بأي تحسين في كودك. من غيرها كل مستخدم في العالم بيدفع تمن المسافة
+            لمركز بيانات واحد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">CDN</span>
+          <div class="trace__body">
+            الملفات الثابتة (صور، <span class="ltr">JS</span>) بتترد من الـ
+            <span class="term">CDN</span> — <em>ما وصلتش لسيرفرك أصلاً</em>.
+            <br>وده بيوفّر <strong>معظم الترافيك</strong> بالحجم. من غير الخطوة دي هتلاقي
+            حسبة السيرفرات اللي عملناها اتضاعفت كذا مرة، وأغلب الطاقة رايحة في تسليم بايتات
+            ما بتتغيّرش من أسبوع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">L4 Load Balancer</span>
+          <div class="trace__body">
+            طلب الـ <span class="term">API</span> بيوصل للـ <span class="ltr">L4</span>
+            اللي بيوزّع <em>الاتصال</em> (مش الطلب) على موزّعات الـ <span class="ltr">L7</span>.
+            <br>بنحط <span class="ltr">L4</span> في المقدّمة لأنه بيستحمل حجم اتصالات لا يقارن —
+            هو بيبصّ على الحزمة بس، ما بيفكّش تشفير ولا يقرا مسار.
+            من غيره، موزّعات <span class="ltr">L7</span> هتبقى هي أول حاجة تقع تحت أي تدفّق.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">L7 Gateway</span>
+          <div class="trace__body">
+            الـ <span class="ltr">L7</span> بيفك التشفير
+            (<span class="term term--v">TLS Termination</span>)،
+            ودلوقتي بقى شايف المسار والترويسات.
+            <br>ومن اللحظة دي بس بقى ممكن التوجيه بالمسار والحدود لكل مستأجر.
+            <strong>كل قرار ذكي في الرحلة كلها متوقّف على الخطوة دي</strong> —
+            قبلها مفيش حد شايف محتوى الطلب أصلاً.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Rate Limiter</span>
+          <div class="trace__body">
+            الـ <span class="term term--a">Rate Limiter</span> بيشوف مفتاح المستأجر:
+            عنده رصيد في دلوه؟ لأ ⇒ <span class="ltr">429</span> + <code>Retry-After</code>
+            وخلاص الرحلة هنا.
+            <br>الرفض بيحصل <strong>قبل</strong> ما الطلب يستهلك خيط أو اتصال قاعدة بيانات —
+            وده الفرق بين رفض بملّي ثانية وبين انهيار كامل.
+            من غيرها، مستأجر واحد بسكريبت غلط يقدر ياكل طاقة الأسطول كله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">PowerOfTwoChoices</span>
+          <div class="trace__body">
+            الموزّع بيختار <strong>سيرفرين عشوائي من السليمين بس</strong> وبياخد الأقل حملاً.
+            <br>وقائمة «السليمين» دي جاية من فحص الصحة النشط والسلبي —
+            يعني الخطوة دي <em>معتمدة بالكامل</em> على إن الفحوصات مظبوطة.
+            فحص صحة بيرجّع «سليم» وهو مش سليم بيحوّل الموزّع نفسه لمصدر الأعطال.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">API Instance</span>
+          <div class="trace__body">
+            النسخة بتشتغل. الجلسة والكاش من <span class="term term--a">Redis</span>
+            <strong>مش من ذاكرتها</strong>.
+            <br>عشان كده أي نسخة تانية كانت هتقدر تخدم نفس الطلب بالظبط —
+            وده الشرط الوحيد اللي بيخلّي كل اللي فات ده ممكن أصلاً.
+            أول ما تحط حالة في ذاكرة النسخة، بتكون كسرت الخطوة 6 من غير ما تحس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Circuit Breaker</span>
+          <div class="trace__body">
+            محتاجة تنادي خدمة المخزون؟ النداء بيعدّي على <strong>مهلة</strong>
+            (<span class="term term--r">Timeout</span>)، و<strong>حاجز</strong>
+            (<span class="term term--r">Bulkhead</span>)، و<span class="term term--r">Circuit Breaker</span>.
+            <br>الـ <span class="term term--r">Circuit Breaker</span> مفتوح؟ ⇒ ترجّع رد متدهور فورًا
+            («المخزون غير متاح») والصفحة تكمّل شغل.
+            من غير التلاتة دول، عطل في خدمة تانية بيتحوّل لعطل عندك خلال ثواني.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Replicas · Primary · Queue</span>
+          <div class="trace__body">
+            القراءة بتروح لـ <span class="term">Read Replica</span>، والكتابة للـ
+            <span class="term term--r">Primary</span>، والشغل التقيل (إيميل، تقرير، فهرسة)
+            بيتحط في <span class="term term--v">Queue</span> ويرجع
+            <span class="ltr">202</span> فورًا.
+            <br>التقسيمة دي هي اللي بتحمي أندر مورد عندك: <strong>القدرة على الكتابة</strong>.
+            من غيرها، تقرير واحد تقيل يقدر يوقف كل عمليات الشراء في نفس اللحظة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Metrics · Traces</span>
+          <div class="trace__body">
+            كل خطوة فاتت بتسجّل مقاييس وتتبّع.
+            <br>ومن هنا بالظبط بتيجي أرقام <span class="term">p99</span> والاستغلال
+            اللي بنيت عليها كل الحسابات في السلايد اللي فاتت.
+            <strong>من غير الخطوة دي، كل قرار في الرحلة كلها بيبقى تخمين</strong> —
+            مش هتعرف أي صندوق هو البطيء، ولا إمتى تزوّد، ولا إمتى تقلّل.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        عشر خطوات، وكل واحدة فيهم موجودة عشان تحمي مورد أندر من اللي قبلها.
+        <br>لو قدرت تحكي الرحلة دي على نظامك انت بأرقامه، تبقى فاهم معماريتك فعلاً.
+      </div>
     </div>
 
     <div class="callout callout--key fragment">
@@ -4410,7 +4579,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
           <li>هو <span class="term">Stateless</span>؟ دوّر على <code>static</code> و<code>IMemoryCache</code>
             و<code>BackgroundService</code> وكتابة على القرص المحلي.</li>
           <li>فحص الصحة بتاعك بيفحص إيه؟ فيه اعتمادية اختيارية داخلة فيه؟</li>
-          <li>كل نداء شبكة عنده مهلة صريحة؟ وقاطع دائرة؟</li>
+          <li>كل نداء شبكة عنده مهلة صريحة؟ و<span class="term term--r">circuit breaker</span>؟</li>
           <li>إيه أقصر مسار من مستخدم لقاعدة بيانات — وكام نقطة فشل واحدة فيه؟</li>
           <li>إيه الجزء التسلسلي (<span class="ltr">α</span>) الأكبر عندك؟ قفل؟ كتابة مركزية؟</li>
           <li>لو الحمل اتضاعف 5 مرات بكرة، إيه أول حاجة هتنكسر — وإزاي عرفت؟</li>
@@ -4482,7 +4651,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">HostOptions
       <br><br>
       في الموديول ده وصلنا لسقف تكرارًا بسبب <strong>قاعدة البيانات</strong> —
       هي الجزء التسلسلي الأكبر في أغلب الأنظمة. الموديول الجاي كله عن إزاي تكسر السقف ده:
-      من الفهرس الواحد لحد تقسيم البيانات على عشرات العقد، بأمثلة
+      من الفهرس الواحد لحد تقسيم البيانات على عشرات الـ <span class="term">nodes</span>، بأمثلة
       <span class="term">EF Core 9</span> كاملة.
     </p>
     <div class="row row--center mt">

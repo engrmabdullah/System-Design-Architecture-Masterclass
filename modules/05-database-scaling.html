@@ -496,9 +496,9 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          نموذج فيه عقدة <strong>واحدة بس</strong> مسموح لها تستقبل الكتابة اسمها
+          نموذج فيه <span class="term">node</span> (سيرفر واحد من المجموعة) <strong>واحد بس</strong> مسموح له يستقبل الكتابة اسمه
           <span class="term term--v">Primary</span> (أو <span class="term term--v">Leader</span> أو
-          <span class="term term--v">Master</span> في الأدبيات القديمة)، وباقي العقد
+          <span class="term term--v">Master</span> في الأدبيات القديمة)، وباقي الـ <span class="term">nodes</span>
           <span class="term term--v">Replicas</span> (<span class="term term--v">Followers</span>)
           بتستقبل قراءة بس، وبتاخد التحديثات من الـ Primary.
         </div>
@@ -1407,7 +1407,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
     <div class="divider__num">02</div>
     <h2 class="divider__title">تعدّد الكتّاب والنِصاب <span class="term" style="font-size:.55em">Multi-Primary &amp; Quorum</span></h2>
     <p class="divider__sub">
-      لما تسمح لأكتر من عقدة تكتب، بتكسب توافر رهيب وبتفتح على نفسك أصعب سؤال في الأنظمة الموزّعة:
+      لما تسمح لأكتر من <span class="term">node</span> يكتب، بتكسب توافر رهيب وبتفتح على نفسك أصعب سؤال في الأنظمة الموزّعة:
       <strong>مين الصح لما الاتنين يكتبوا في نفس اللحظة؟</strong>
     </p>
   </div>
@@ -1417,7 +1417,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
 <section class="slide" data-title="Multi-Primary وتعارض الكتابة">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 05</span>
-    <h2 class="slide__title">Multi-Primary — لما أكتر من عقدة تقدر تكتب</h2>
+    <h2 class="slide__title">Multi-Primary — لما أكتر من <span class="term">node</span> يقدر يكتب</h2>
     <p class="slide__sub">بيحل مشكلتين حقيقيتين، وبيخلق مشكلة واحدة صعبة جدًا.</p>
     <div class="rule"></div>
   </div>
@@ -1431,7 +1431,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          كل عقدة في العنقود تقدر تستقبل <strong>كتابة</strong>، وكل واحدة بتنشر تغييراتها للباقي.
+          كل <span class="term">node</span> في العنقود يقدر يستقبل <strong>كتابة</strong>، وكل واحد بينشر تغييراته للباقي.
           مفيش «قائد» واحد — كلهم قادة.
         </div>
         <div class="tblock tblock--analogy">
@@ -1455,7 +1455,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <br>① إيه اللي يحصل لما اتنين يكتبوا نفس الصف في نفس اللحظة؟
           <br>② الـ <span class="term">Auto-increment</span> هيتكرّر — إزاي تولّد معرّفات؟
           <br>③ الـ <span class="term">Unique Constraint</span> ما بقاش مضمون عالميًا
-          (اتنين ممكن يسجّلوا بنفس الإيميل في نفس اللحظة على عقدتين).
+          (اتنين ممكن يسجّلوا بنفس الإيميل في نفس اللحظة على اتنين <span class="term">nodes</span> مختلفين).
           <br><strong>لو ما عندكش إجابة مكتوبة للتلاتة دول، ما تروحش للنموذج ده.</strong>
         </div>
       </div>
@@ -1481,7 +1481,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
 <span class="lbl">النتيجة</span>    <span class="eq">=</span> <span class="res">قطعة واحدة اتباعت لاتنين ✗</span>
         </div>
         <p class="sm mt mb0">
-          <strong>خد بالك من نقطة مهمة:</strong> ولا واحدة من العقدتين عملت حاجة غلط.
+          <strong>خد بالك من نقطة مهمة:</strong> ولا واحد من الـ <span class="term">nodes</span> الاتنين عمل حاجة غلط.
           الاتنين شافوا <code>qty = 1</code> والاتنين نفّذوا صح.
           المشكلة إن <em>«اللحظة الواحدة» مالهاش معنى</em> في نظام موزّع —
           الفرق بينهم <span class="ltr">3ms</span> والمعلومة محتاجة <span class="ltr">90ms</span> تسافر.
@@ -1523,7 +1523,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <span class="tblock__label">فخ شائع ⚠️ — إزاي «بيبلع» البيانات بالظبط</span>
           <strong>① فقد صامت 100%:</strong> مفيش خطأ، مفيش سجل، مفيش تنبيه.
           الكتابة الخاسرة بتختفي كأنها ما حصلتش أصلاً.
-          <br><strong>② ساعات الماكينات مش مضبوطة:</strong> لو ساعة عقدة متقدّمة
+          <br><strong>② ساعات الماكينات مش مضبوطة:</strong> لو ساعة <span class="term">node</span> متقدّمة
           <span class="ltr">200ms</span> عن التانية (وده طبيعي جدًا رغم <span class="term">NTP</span>)،
           فكتابة <em>أقدم</em> ممكن تكسب كتابة <em>أحدث</em> منها.
           يعني «الأحدث يكسب» مش بيضمن حتى إن الأحدث فعلاً هو اللي كسب.
@@ -1545,7 +1545,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
       <div class="example__body">
         <div class="math sm" style="border-color:var(--rose)">
 <span class="cmt">// محفظة عميل، الرصيد = 1,000 · النظام Multi-Primary بـ LWW</span>
-<span class="lbl">t = 10:00:00.000</span>  الرصيد على العقدتين <span class="eq">=</span> <span class="n">1,000</span>
+<span class="lbl">t = 10:00:00.000</span>  الرصيد على الـ nodes <span class="eq">=</span> <span class="n">1,000</span>
 <span class="lbl">t = 10:00:00.120</span>  <span class="var">جدة</span>: شحن <span class="eq">+</span><span class="n">800</span> <span class="eq">→</span> يكتب <span class="n">1,800</span>  <span class="cmt">ts=...120</span>
 <span class="lbl">t = 10:00:00.150</span>  <span class="var">فرانكفورت</span>: شراء <span class="eq">−</span><span class="n">300</span> <span class="eq">→</span> يكتب <span class="n">700</span>   <span class="cmt">ts=...150 (قرا 1,000 القديمة)</span>
 <span class="lbl">t = 10:00:00.240</span>  التزامن: LWW يقارن <span class="n">150</span> <span class="eq">&gt;</span> <span class="n">120</span> <span class="eq">→</span> يكسب <span class="res">700</span>
@@ -1563,7 +1563,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           (<span class="ltr">+800</span>، <span class="ltr">−300</span>)، والرصيد = مجموعهم.
           حركتين مختلفتين ما بيتعارضوش أصلاً — كل واحدة صف جديد.
           <br>② أو استخدم <span class="term term--v">CRDT Counter</span> اللي بيدمج الزيادات رياضيًا.
-          <br>③ أو خلّي الأرصدة على <strong>عقدة واحدة</strong> (نموذج Primary واحد)
+          <br>③ أو خلّي الأرصدة على <strong><span class="term">node</span> واحد</strong> (نموذج Primary واحد)
           واسمح بالـ Multi-Primary للبيانات غير الحرجة بس.
           <br><br><em>الدرس اللي يفضل معاك: لما تلاقي نفسك بتدوّر على «سياسة تعارض أذكى»،
           غالبًا السؤال الصح هو «إزاي أصمّم البيانات بحيث التعارض ما يحصلش من الأساس؟».</em>
@@ -1590,8 +1590,8 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          بدل ما نعتمد على ساعة الحيطة (اللي بتكدب)، كل عقدة بتمسك <strong>عدّاد خاص بيها</strong>.
-          كل نسخة من البيانة بتشيل معاها خريطة: <code>{عقدة: عدّادها}</code>.
+          بدل ما نعتمد على ساعة الحيطة (اللي بتكدب)، كل <span class="term">node</span> بيمسك <strong>عدّاد خاص بيه</strong>.
+          كل نسخة من البيانة بتشيل معاها خريطة: <code>{node: عدّاده}</code>.
           <br>المقارنة بتديك <strong>تلات إجابات</strong> مش اتنين:
           <span class="ltr">A</span> قبل <span class="ltr">B</span> ⇒ خُد B ·
           <span class="ltr">B</span> قبل <span class="ltr">A</span> ⇒ خُد A ·
@@ -1613,7 +1613,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          الخريطة بتكبر مع عدد العقد ومع الوقت، ولازم تقصقصها
+          الخريطة بتكبر مع عدد الـ <span class="term">nodes</span> ومع الوقت، ولازم تقصقصها
           (<span class="term">Pruning</span>) وإلا هتلاقي بيانات وصفية أكبر من البيانات نفسها.
           <br>والأهم: <strong>الـ Vector Clock بيكتشف التعارض بس — ما بيحلّهوش.</strong>
           لازم انت تكتب منطق الدمج، ولو كتبته غلط رجعت لنفس مشكلة الـ LWW.
@@ -1628,8 +1628,8 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         <div class="decode__row">
           <span class="decode__tok">{A:2, B:1}</span>
           <div class="decode__exp">
-            النسخة دي شافت <b>كتابتين</b> من العقدة <code>A</code> و<b>كتابة واحدة</b> من <code>B</code>.
-            كل رقم = «كام تعديل من العقدة دي أنا عارف بيه».
+            النسخة دي شافت <b>كتابتين</b> من الـ node <code>A</code> و<b>كتابة واحدة</b> من <code>B</code>.
+            كل رقم = «كام تعديل من الـ node ده أنا عارف بيه».
           </div>
         </div>
         <div class="decode__row">
@@ -1657,7 +1657,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         </div>
       </div>
       <div class="decode__sum">
-        النسختين دول اتكتبوا في نفس الوقت على عقدتين ما شافوش بعض.
+        النسختين دول اتكتبوا في نفس الوقت على اتنين nodes ما شافوش بعض.
         النظام <b>ما بيقررش</b> — بيبلّغك بالحقيقة بدل ما يخفيها. وده الفرق الجوهري بينه وبين الـ LWW.
       </div>
     </div>
@@ -1685,7 +1685,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         <div class="tblock tblock--net">
           <span class="tblock__label">الأنواع العملية اللي هتستخدمها</span>
           <ul class="clean sm mb0">
-            <li><strong>G-Counter</strong> — عدّاد بيزيد بس. كل عقدة بتزوّد عدّادها، والقيمة = المجموع.</li>
+            <li><strong>G-Counter</strong> — عدّاد بيزيد بس. كل <span class="term">node</span> بيزوّد عدّاده، والقيمة = المجموع.</li>
             <li><strong>PN-Counter</strong> — يزيد وينقص (عدّادين: زيادة ونقصان).</li>
             <li><strong>OR-Set</strong> — مجموعة بتدعم الإضافة والحذف بأمان (كل عنصر معاه معرّف فريد).</li>
             <li><strong>LWW-Register</strong> — خانة قيمتها الأحدث (نفس الـ LWW بس مُعرّفة رياضيًا).</li>
@@ -1769,7 +1769,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <span class="tblock__label">التعريف الدقيق</span>
           بدل ما تستنى <em>كل</em> النسخ (بطيء وهش) أو <em>واحدة</em> بس (سريع وخطر)،
           حدّد <strong>أقل عدد نسخ لازم يوافقوا</strong> عشان العملية تتعتبر ناجحة.
-          <br>القاعدة الذهبية: طالما مجموعة الكتابة ومجموعة القراءة <strong>بيتقاطعوا في عقدة واحدة على الأقل</strong>،
+          <br>القاعدة الذهبية: طالما مجموعة الكتابة ومجموعة القراءة <strong>بيتقاطعوا في <span class="term">node</span> واحد على الأقل</strong>،
           فأي قراءة مضمون إنها هتشوف آخر كتابة ناجحة.
         </div>
         <div class="tblock tblock--analogy">
@@ -1793,11 +1793,11 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           الناس بتفتكر إن <code>W + R &gt; N</code> بتديك
           <span class="term">Strong Consistency</span> كاملة. <strong>لأ.</strong>
           هي بتضمن إن القراءة هتشوف <em>نسخة</em> من آخر كتابة ناجحة، لكن:
-          <br>① لو الكتابة <strong>فشلت جزئيًا</strong> (وصلت عقدة وفشلت في التانية)،
+          <br>① لو الكتابة <strong>فشلت جزئيًا</strong> (وصلت <span class="term">node</span> وفشلت في التاني)،
           الحالة بتبقى غير محدّدة — ممكن تظهر بعدين وممكن لأ.
           <br>② القراءات <strong>مش مرتّبة زمنيًا</strong> بين بعضها بالضرورة.
           <br>③ لازم آلية <span class="term">Read Repair</span> أو
-          <span class="term">Anti-Entropy</span> عشان العقد المتأخرة تتصلّح.
+          <span class="term">Anti-Entropy</span> عشان الـ <span class="term">nodes</span> المتأخرة تتصلّح.
         </div>
       </div>
     </div>
@@ -1810,8 +1810,8 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <span class="decode__tok">N</span>
           <div class="decode__exp">
             <b>Number of Replicas</b> — إجمالي عدد النسخ اللي بتتخزّن منها البيانة الواحدة.
-            <br>مش عدد العقد في العنقود! ممكن يكون عندك <span class="ltr">100</span> عقدة و<code>N=3</code>،
-            يعني كل مفتاح متخزّن على 3 عقد بس (اللي بيحدّدهم هو الـ
+            <br>مش عدد الـ <span class="term">nodes</span> في العنقود! ممكن يكون عندك <span class="ltr">100</span> <span class="term">node</span> و<code>N=3</code>،
+            يعني كل مفتاح متخزّن على 3 <span class="term">nodes</span> بس (اللي بيحدّدهم هو الـ
             <span class="term">Consistent Hashing</span> اللي جاي في الجزء 4).
           </div>
         </div>
@@ -1834,12 +1834,12 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         <div class="decode__row">
           <span class="decode__tok">W + R &gt; N</span>
           <div class="decode__exp">
-            <b>شرط التقاطع.</b> عدد العقد المشتركة بين مجموعة الكتابة ومجموعة القراءة
+            <b>شرط التقاطع.</b> عدد الـ <span class="term">nodes</span> المشتركة بين مجموعة الكتابة ومجموعة القراءة
             <b>على الأقل</b> = <code>W + R − N</code>.
-            <br>هنا: <span class="ltr">2 + 2 − 3 = 1</span> ⇒ <b>عقدة واحدة على الأقل</b>
+            <br>هنا: <span class="ltr">2 + 2 − 3 = 1</span> ⇒ <b>node واحد على الأقل</b>
             أكيد في المجموعتين ⇒ أكيد شايفة آخر كتابة ⇒ القراءة هتلاقيها.
             <br>لو <code>W + R ≤ N</code> (مثلاً <span class="ltr">1+1=2 ≤ 3</span>)،
-            ممكن تكتب في العقد <span class="ltr">{1}</span> وتقرا من <span class="ltr">{2}</span> ⇒
+            ممكن تكتب في الـ nodes <span class="ltr">{1}</span> وتقرا من <span class="ltr">{2}</span> ⇒
             <b>مفيش تقاطع ⇒ قراءة قديمة مشروعة</b> ⇒ ده الـ
             <span class="term">Eventual Consistency</span>.
           </div>
@@ -1848,15 +1848,15 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <span class="decode__tok">N − W</span>
           <div class="decode__exp">
             <b>عدد الأعطال اللي الكتابة بتتحملها</b>. هنا <span class="ltr">3 − 2 = 1</span>:
-            عقدة تقع والكتابة تفضل شغّالة. اتنين يقعوا ⇒ الكتابة بتفشل.
+            <span class="term">node</span> يقع والكتابة تفضل شغّالة. اتنين يقعوا ⇒ الكتابة بتفشل.
             <br>وبالمثل <code>N − R</code> لتحمّل أعطال القراءة.
           </div>
         </div>
       </div>
       <div class="decode__sum">
         بنخزّن كل بيانة على <b>3 نسخ</b>. الكتابة بتنجح لما <b>2</b> يأكّدوا،
-        والقراءة بتسأل <b>2</b>. المجموعتين لازم يتقاطعوا في <b>عقدة واحدة على الأقل</b>،
-        فالقراءة مضمون إنها تشوف آخر كتابة ناجحة. والنظام بيتحمّل سقوط <b>عقدة واحدة</b> من غير أي توقف.
+        والقراءة بتسأل <b>2</b>. المجموعتين لازم يتقاطعوا في <b>node واحد على الأقل</b>،
+        فالقراءة مضمون إنها تشوف آخر كتابة ناجحة. والنظام بيتحمّل سقوط <b>node واحد</b> من غير أي توقف.
       </div>
     </div>
   </div>
@@ -1876,22 +1876,22 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
       <div class="example__body">
         <div class="math">
 <span class="cmt">// ═══ التكوين ①: المتوازن — N=3, W=2, R=2 ═══</span>
-<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">2</span> <span class="eq">+</span> <span class="n">2</span> <span class="eq">−</span> <span class="n">3</span> <span class="eq">=</span> <span class="res">1 عقدة ✓</span>
+<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">2</span> <span class="eq">+</span> <span class="n">2</span> <span class="eq">−</span> <span class="n">3</span> <span class="eq">=</span> <span class="res">1 node ✓</span>
 <span class="lbl">تحمّل أعطال الكتابة</span> <span class="eq">=</span> <span class="n">3</span> <span class="eq">−</span> <span class="n">2</span> <span class="eq">=</span> <span class="res">1</span>
 <span class="lbl">تحمّل أعطال القراءة</span> <span class="eq">=</span> <span class="n">3</span> <span class="eq">−</span> <span class="n">2</span> <span class="eq">=</span> <span class="res">1</span>
-<span class="lbl">زمن الكتابة</span>    <span class="eq">=</span> تاني أسرع عقدة <span class="eq">≈</span> <span class="res">p50 معتدل</span>
+<span class="lbl">زمن الكتابة</span>    <span class="eq">=</span> تاني أسرع node <span class="eq">≈</span> <span class="res">p50 معتدل</span>
 <span class="lbl">بيحسّن</span>        <span class="eq">=</span> <span class="res">التوازن — الاختيار الافتراضي لـ 80% من الحالات</span>
 
 <span class="cmt">// ═══ التكوين ②: كتابة فائقة السرعة — N=5, W=1, R=5 ═══</span>
-<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">1</span> <span class="eq">+</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">1 عقدة ✓</span>
+<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">1</span> <span class="eq">+</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">1 node ✓</span>
 <span class="lbl">تحمّل أعطال الكتابة</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">1</span> <span class="eq">=</span> <span class="res">4 ✓✓</span>
-<span class="lbl">تحمّل أعطال القراءة</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">0 ✗ أي عقدة تقع = القراءة تفشل</span>
-<span class="lbl">زمن الكتابة</span>    <span class="eq">=</span> أسرع عقدة <span class="eq">≈</span> <span class="res">p50 منخفض جدًا ⚡</span>
-<span class="lbl">زمن القراءة</span>    <span class="eq">=</span> أبطأ عقدة من 5 <span class="eq">≈</span> <span class="res">p99 عالي جدًا 🐢</span>
+<span class="lbl">تحمّل أعطال القراءة</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">0 ✗ أي node يقع = القراءة تفشل</span>
+<span class="lbl">زمن الكتابة</span>    <span class="eq">=</span> أسرع node <span class="eq">≈</span> <span class="res">p50 منخفض جدًا ⚡</span>
+<span class="lbl">زمن القراءة</span>    <span class="eq">=</span> أبطأ node من 5 <span class="eq">≈</span> <span class="res">p99 عالي جدًا 🐢</span>
 <span class="lbl">بيحسّن</span>        <span class="eq">=</span> <span class="res">استقبال قياسات IoT / سجلات — كتابة غزيرة وقراءة نادرة</span>
 
 <span class="cmt">// ═══ التكوين ③: قراءة سريعة ومضمونة — N=5, W=4, R=2 ═══</span>
-<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">4</span> <span class="eq">+</span> <span class="n">2</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">1 عقدة ✓</span>
+<span class="lbl">التقاطع</span>       <span class="eq">=</span> <span class="n">4</span> <span class="eq">+</span> <span class="n">2</span> <span class="eq">−</span> <span class="n">5</span> <span class="eq">=</span> <span class="res">1 node ✓</span>
 <span class="lbl">تحمّل أعطال الكتابة</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">4</span> <span class="eq">=</span> <span class="res">1</span>
 <span class="lbl">تحمّل أعطال القراءة</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">2</span> <span class="eq">=</span> <span class="res">3 ✓✓</span>
 <span class="lbl">الاستمرارية</span>    <span class="eq">=</span> <span class="res">4 نسخ مؤكّدة لكل كتابة — أعلى أمان</span>
@@ -1915,34 +1915,34 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
       <div class="exercise__head">تمرين 5 — صمّم النِصاب<span class="exercise__level">صعب</span></div>
       <div class="exercise__body">
         <p>
-          عنقود <span class="ltr">N = 5</span> موزّع على 3 مناطق: منطقة أ (عقدتين)، منطقة ب (عقدتين)، منطقة ج (عقدة).
+          عنقود <span class="ltr">N = 5</span> موزّع على 3 مناطق: منطقة أ (<span class="ltr">2 nodes</span>)، منطقة ب (<span class="ltr">2 nodes</span>)، منطقة ج (<span class="ltr">1 node</span>).
           <br><strong>أ)</strong> اختار <span class="ltr">W</span> و<span class="ltr">R</span> بحيث النظام يفضل شغّال
           لو <strong>منطقة كاملة</strong> وقعت، ومع ذلك القراءة تفضل مضمونة.
           <br><strong>ب)</strong> لو استخدمت <span class="ltr">W=3, R=3</span>،
-          هل النظام يستحمل سقوط منطقة أ (عقدتين)؟
+          هل النظام يستحمل سقوط منطقة أ (<span class="ltr">2 nodes</span>)؟
           <br><strong>ج)</strong> ليه <code>LOCAL_QUORUM</code> بيبقى أسرع بكتير من <code>QUORUM</code> العادي؟
         </p>
         <details class="solution">
           <summary>شوف الحل</summary>
           <div class="solution__body">
             <div class="math">
-<span class="cmt">// (أ) نحتاج نتحمّل سقوط منطقة فيها عقدتين</span>
-<span class="lbl">العقد الباقية</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">2</span> <span class="eq">=</span> <span class="n">3</span>
+<span class="cmt">// (أ) نحتاج نتحمّل سقوط منطقة فيها 2 nodes</span>
+<span class="lbl">nodes الباقية</span> <span class="eq">=</span> <span class="n">5</span> <span class="eq">−</span> <span class="n">2</span> <span class="eq">=</span> <span class="n">3</span>
 <span class="lbl">الشرط 1</span>     <span class="eq">→</span> <span class="lbl">W</span> <span class="eq">≤</span> <span class="n">3</span>  <span class="cmt">وإلا الكتابة تفشل</span>
 <span class="lbl">الشرط 2</span>     <span class="eq">→</span> <span class="lbl">R</span> <span class="eq">≤</span> <span class="n">3</span>  <span class="cmt">وإلا القراءة تفشل</span>
 <span class="lbl">الشرط 3</span>     <span class="eq">→</span> <span class="lbl">W</span> <span class="eq">+</span> <span class="lbl">R</span> <span class="eq">&gt;</span> <span class="n">5</span>
 <span class="lbl">الحل</span>        <span class="eq">=</span> <span class="res">W = 3, R = 3   (3+3 = 6 &gt; 5 ✓)</span>
             </div>
             <ul class="pc pc--pro sm mt">
-              <li><strong>(ب) أيوه، بيستحمل.</strong> بعد سقوط منطقة أ فاضل 3 عقد،
+              <li><strong>(ب) أيوه، بيستحمل.</strong> بعد سقوط منطقة أ فاضل 3 <span class="term">nodes</span>،
               و<span class="ltr">W=3</span> يعني محتاج 3 بالظبط ⇒ شغّال، <em>بس على الحافة تمامًا</em>:
-              أي عقدة إضافية تقع (حتى للصيانة) والنظام كله بيقف عن الكتابة.</li>
+              أي <span class="term">node</span> إضافي يقع (حتى للصيانة) والنظام كله بيقف عن الكتابة.</li>
             </ul>
             <ul class="pc pc--con sm">
               <li><strong>التصميم ده هش عمليًا.</strong> الأفضل <span class="ltr">N=6</span> موزّعين
               <span class="ltr">2+2+2</span> مع <span class="ltr">W=4, R=3</span>
-              (<span class="ltr">4+3=7 &gt; 6</span>) ⇒ يستحمل سقوط منطقة كاملة + عقدة زيادة.
-              <br><em>القاعدة العملية: صمّم على «منطقة كاملة + عقدة واحدة»، مش «منطقة كاملة» بالظبط —
+              (<span class="ltr">4+3=7 &gt; 6</span>) ⇒ يستحمل سقوط منطقة كاملة + <span class="term">node</span> زيادة.
+              <br><em>القاعدة العملية: صمّم على «منطقة كاملة + <span class="term">node</span> واحد»، مش «منطقة كاملة» بالظبط —
               لأن الصيانة والأعطال بتحصل في نفس الوقت أكتر مما تتخيّل.</em></li>
             </ul>
             <div class="plain mt">
@@ -2285,7 +2285,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
               انقلها لجدول منفصل — أو الأصح خالص: انقل الصور لتخزين كائنات وسيب رابط بس.</li>
               <li><strong>2 → Sharding.</strong>
               <span class="ltr">40K w/s</span> يعني <span class="ltr">6.7×</span> سقف الماكينة الواحدة،
-              و<span class="ltr">30 TB</span> مستحيل على عقدة. دي الحالة اللي الـ Sharding اتعمل عشانها.
+              و<span class="ltr">30 TB</span> مستحيل على <span class="term">node</span> واحد. دي الحالة اللي الـ Sharding اتعمل عشانها.
               (وغالبًا هنا الأنسب قاعدة سلاسل زمنية أصلاً.)</li>
               <li><strong>3 → Federation</strong> (أو <span class="term">Read Replica</span> مخصّصة).
               المشكلة مش حجم — المشكلة <em>عزل الأحمال</em>. افصل التحليلات في قاعدة لوحدها.</li>
@@ -3190,7 +3190,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         <br>① لسه <span class="ltr">50%</span> من بياناتك بتتحرّك — على <span class="ltr">8 TB</span> دي 4 تيرا.
         <br>② مش دايمًا محتاج تضاعف. محتاج <span class="ltr">25%</span> طاقة زيادة؟
         هتدفع <span class="ltr">100%</span> تكلفة حديد.
-        <br>③ لو <strong>عقدة وقعت</strong> (مش انت اللي قررت)، العدد بينقص من <span class="ltr">8</span>
+        <br>③ لو <strong><span class="term">node</span> وقع</strong> (مش انت اللي قررت)، العدد بينقص من <span class="ltr">8</span>
         لـ <span class="ltr">7</span> — ودي مش قوة اتنين، والدنيا بتتقلب في نص حادثة.
         <br><br><em>الـ Consistent Hashing بيحل التلاتة مع بعض.</em>
       </div>
@@ -3327,12 +3327,12 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <br><strong>② انهيار متتالي:</strong> Shard وقع ⇒ حِمله بيتوزّع على
           <strong>كل</strong> الباقيين، مش على جاره الوحيد.
           <br><strong>③ حديد غير متجانس:</strong> ماكينة أقوى <span class="ltr">2×</span>؟
-          إدّيها <span class="ltr">300</span> عقدة افتراضية بدل <span class="ltr">150</span> ⇒
+          إدّيها <span class="ltr">300</span> <span class="term">virtual node</span> بدل <span class="ltr">150</span> ⇒
           بتاخد ضعف الحمل تلقائيًا. <em>ودي حاجة الـ <code>% N</code> ما يقدرش يعملها خالص.</em>
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ شائع ⚠️</span>
-          عدد كبير جدًا من العقد الافتراضية (<span class="ltr">10,000</span> مثلاً) بيخلّي
+          عدد كبير جدًا من الـ <span class="term">virtual nodes</span> (<span class="ltr">10,000</span> مثلاً) بيخلّي
           جدول الحلقة ضخم وبطيء في البناء وبياكل ذاكرة في كل خدمة.
           <br><strong>الرقم العملي: <span class="ltr">100–200</span> لكل Shard.</strong>
           (<span class="term">Cassandra</span> افتراضيًا <span class="ltr">256</span>،
@@ -3343,14 +3343,14 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
 
     <div class="math fragment" style="border-color:var(--emerald)">
 <span class="cmt">// ═══ توزيع 80M مفتاح على 4 Shards — بالقياس الفعلي ═══</span>
-<span class="cmt">// (أ) عقدة واحدة لكل Shard على الحلقة</span>
+<span class="cmt">// (أ) node واحد لكل Shard على الحلقة</span>
 <span class="lbl">Shard A</span> <span class="eq">=</span> <span class="n">41%</span>  <span class="cmt">(32.8M مفتاح)</span>
 <span class="lbl">Shard B</span> <span class="eq">=</span> <span class="n">28%</span>
 <span class="lbl">Shard C</span> <span class="eq">=</span> <span class="n">19%</span>
 <span class="lbl">Shard D</span> <span class="eq">=</span> <span class="n">12%</span>  <span class="cmt">(9.6M مفتاح)</span>
 <span class="lbl">معامل الانحراف</span> <span class="eq">=</span> <span class="n">41</span> / <span class="n">12</span> <span class="eq">=</span> <span class="res">3.4×  ✗ غير مقبول</span>
 
-<span class="cmt">// (ب) 150 عقدة افتراضية لكل Shard = 600 نقطة على الحلقة</span>
+<span class="cmt">// (ب) 150 virtual node لكل Shard = 600 نقطة على الحلقة</span>
 <span class="lbl">Shard A</span> <span class="eq">=</span> <span class="n">25.8%</span>
 <span class="lbl">Shard B</span> <span class="eq">=</span> <span class="n">24.9%</span>
 <span class="lbl">Shard C</span> <span class="eq">=</span> <span class="n">25.1%</span>
@@ -3358,7 +3358,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
 <span class="lbl">معامل الانحراف</span> <span class="eq">=</span> <span class="n">25.8</span> / <span class="n">24.2</span> <span class="eq">=</span> <span class="res">1.07×  ✓ ممتاز</span>
 
 <span class="cmt">// ═══ القانون اللي وراه ═══</span>
-<span class="lbl">الانحراف المتوقّع</span> <span class="eq">≈</span> <span class="n">1</span> / <span class="var">√V</span>   <span class="cmt">V = عدد العقد الافتراضية لكل Shard</span>
+<span class="lbl">الانحراف المتوقّع</span> <span class="eq">≈</span> <span class="n">1</span> / <span class="var">√V</span>   <span class="cmt">V = عدد الـ virtual nodes لكل Shard</span>
 <span class="lbl">V = 1</span>    <span class="eq">→</span> <span class="n">1</span>/<span class="n">1</span>  <span class="eq">=</span> <span class="res">100% انحراف محتمل</span>
 <span class="lbl">V = 25</span>   <span class="eq">→</span> <span class="n">1</span>/<span class="n">5</span>  <span class="eq">=</span> <span class="res">20%</span>
 <span class="lbl">V = 150</span>  <span class="eq">→</span> <span class="n">1</span>/<span class="n">12.2</span> <span class="eq">=</span> <span class="res">~8%</span>
@@ -3367,12 +3367,12 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
 
     <div class="decode fragment">
       <div class="decode__raw">imbalance ≈ 1/√V  →  V=150 ⇒ ~8%</div>
-      <div class="decode__hint">القانون ده هو اللي بيحدّدلك رقم العقد الافتراضية — مش التخمين</div>
+      <div class="decode__hint">القانون ده هو اللي بيحدّدلك رقم الـ virtual nodes — مش التخمين</div>
       <div class="decode__rows">
         <div class="decode__row">
           <span class="decode__tok">V</span>
           <div class="decode__exp">
-            <b>عدد العقد الافتراضية لكل Shard</b>. كل عقدة افتراضية = نقطة على الحلقة
+            <b>عدد الـ <span class="term">virtual nodes</span> لكل Shard</b>. كل <span class="term">virtual node</span> = نقطة على الحلقة
             بتاخد قوس صغير من مساحة المفاتيح.
           </div>
         </div>
@@ -3380,7 +3380,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
           <span class="decode__tok">√V</span>
           <div class="decode__exp">
             <b>الجذر التربيعي</b>. وجوده هنا معناه إن التحسّن <b>بيقل كل ما تزوّد</b>:
-            من <span class="ltr">1</span> لـ <span class="ltr">25</span> عقدة كسبت
+            من <span class="ltr">1</span> لـ <span class="ltr">25</span> <span class="term">virtual node</span> كسبت
             <span class="ltr">80%</span> تحسّن، ومن <span class="ltr">150</span> لـ
             <span class="ltr">600</span> كسبت <span class="ltr">4%</span> بس مقابل
             <span class="ltr">4×</span> ذاكرة.
@@ -3398,7 +3398,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         <div class="decode__row">
           <span class="decode__tok">1/N بتفضل صح</span>
           <div class="decode__exp">
-            نقطة مهمة: العقد الافتراضية <b>ما بتغيّرش</b> نسبة المفاتيح المنقولة عند التوسّع —
+            نقطة مهمة: الـ <span class="term">virtual nodes</span> <b>ما بتغيّرش</b> نسبة المفاتيح المنقولة عند التوسّع —
             هي بتفضل <span class="ltr">1/N</span>. اللي بتغيّره إن المفاتيح دي
             <b>بتتسحب من كل الـ Shards بالتساوي</b> بدل ما تتسحب من جار واحد،
             فعملية النقل نفسها بتبقى متوازية وأسرع.
@@ -3406,7 +3406,7 @@ builder.Services.<span class="f">Configure</span>&lt;<span class="t">ReplicaOpti
         </div>
       </div>
       <div class="decode__sum">
-        <b>150</b> عقدة افتراضية لكل Shard بتديك توزيع في حدود <b>±8%</b> من المثالي —
+        <b>150</b> virtual node لكل Shard بتديك توزيع في حدود <b>±8%</b> من المثالي —
         وده أحسن بكتير من <b>±240%</b> اللي بتاخدها من غيرها. الرقم ده هو الإعداد الافتراضي المعقول في أي تنفيذ.
       </div>
     </div>
@@ -3571,14 +3571,14 @@ builder.Services.<span class="f">AddSingleton</span>&lt;<span class="t">ShardedC
               <span class="plain__label">(ج) الـ Shard الجديد هياخد إيه بالظبط؟</span>
               هياخد <strong><span class="ltr">1/11 = 9.1%</span></strong> من البيانات
               (<span class="ltr">~1.09 TB</span>).
-              <br><strong>ومن مين؟</strong> مع <span class="ltr">150</span> عقدة افتراضية،
+              <br><strong>ومن مين؟</strong> مع <span class="ltr">150</span> <span class="term">virtual node</span>،
               الـ <span class="ltr">150</span> نقطة الجديدة بتقع متفرّقة على الحلقة كلها ⇒
               بتقتطع أقواس صغيرة من <strong>كل الـ 10 Shards تقريبًا بالتساوي</strong>
               (حوالي <span class="ltr">0.91%</span> من كل واحد).
               <br><br><strong>وده مكسب تشغيلي ضخم مش واضح من أول نظرة:</strong>
               النقل بيبقى <em>موزّع ومتوازي</em> — 10 مصادر بتبعت في نفس الوقت لهدف واحد،
               وكل مصدر بيدّي <span class="ltr">1%</span> من بياناته بس فما بيحسّش بضغط.
-              <br>ولو كانت عقدة واحدة لكل Shard، كل الـ <span class="ltr">1.09 TB</span>
+              <br>ولو كان <span class="term">virtual node</span> واحد بس لكل Shard، كل الـ <span class="ltr">1.09 TB</span>
               كانت هتتسحب من <strong>Shard واحد بس</strong> ⇒ الماكينة دي هتختنق أثناء النقل
               والمستخدمين اللي عليها هيحسّوا.
             </div>
@@ -3974,12 +3974,78 @@ builder.Services.<span class="f">AddSingleton</span>&lt;<span class="t">ShardedC
       </div>
     </div>
 
-    <p class="sm mt">
-      <strong>امشي مع العملية:</strong> الخطوة 1 و2 <em>اتثبّتوا فعليًا</em> في قواعدهم —
-      مفيش أقفال متعلّقة ومفيش حد مستني. لما الخطوة 3 فشلت، المنسّق نفّذ التعويضات بترتيب عكسي.
-      <br>النتيجة النهائية زي إن حاجة ما حصلتش — <em>بس مش لأن العملية كانت ذرّية،
-      لأننا كتبنا كود يرجّع كل حاجة لمكانها</em>. الفرق ده هو كل الحكاية.
-    </p>
+    <div class="trace">
+      <div class="trace__head">تتبّع طلب شراء واحد فشل في نصّه — الساغا خطوة بخطوة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Saga Orchestrator</span>
+          <div class="trace__body">
+            المنسّق بياخد الطلب ويقسّمه لتلات معاملات محلية، وبيسجّل حالته هو
+            («وصلت لخطوة كام») <strong>قبل</strong> ما ينادي أي خدمة.
+            <br>السجل ده هو اللي بيخلّي التعويض ممكن أصلاً: لو المنسّق نفسه وقع بعد الخطوة 2،
+            لما يقوم <strong>لازم يعرف إن فيه ساغا نصّها في الهوا</strong>.
+            من غيره الطلب بيفضل عالق بلا نهاية ومحدش عارف بيه.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Inventory · Shard 3</span>
+          <div class="trace__body">
+            <strong>الخطوة 1 — احجز مخزون.</strong> نجحت و<em>اتثبّتت فعليًا</em> في قاعدة الـ Shard دي.
+            <br>لاحظ الفرق عن <span class="term">2PC</span>: مفيش قفل متعلّق ومفيش حد مستني.
+            الـ Shard خلّص شغله وسابه.
+            <br>التمن إن الحالة دي <strong>حد تاني يقدر يشوفها</strong> —
+            وعشان كده لازم يكون فيه علامة <code>Pending</code> صريحة على الحجز.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Wallet · Shard 7</span>
+          <div class="trace__body">
+            <strong>الخطوة 2 — اخصم من المحفظة.</strong> نجحت واتثبّتت كمان في قاعدة تانية تمامًا.
+            <br>دلوقتي النظام في حالة <em>غير مكتملة لكن ثابتة</em>: مخزون محجوز وفلوس مخصومة وشحنة لسه ما اتعملتش.
+            <br>من غير علامات حالة واضحة على الشاشة، المستخدم هنا هيشوف فلوسه ناقصة وطلب مش موجود.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Shipping · Shard 1</span>
+          <div class="trace__body">
+            <strong>الخطوة 3 — أنشئ الشحنة. فشلت ❌.</strong>
+            <br>وهنا الفرق الجوهري: مفيش <code>ROLLBACK</code> واحد يلغي الخطوتين اللي فاتوا،
+            لأنهم <strong>اتثبّتوا خلاص في قواعد تانية</strong>.
+            التراجع التلقائي اللي اتعوّدت عليه في المعاملة الواحدة <em>مش موجود هنا</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Compensation · Wallet Shard 7</span>
+          <div class="trace__body">
+            المنسّق بينفّذ التعويضات <strong>بترتيب عكسي</strong>: أول حاجة يرجّع فلوس المحفظة.
+            <br>العكس مقصود — بنفكّ آخر حاجة اتعملت الأول عشان ما نسيبش النظام
+            في حالة أغرب من اللي كان فيها.
+            <br>والتعويض ده لازم يكون <span class="term">Idempotent</span>:
+            لو الرسالة اتكرّرت، ما ينفعش نرجّع الفلوس مرتين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Compensation · Inventory Shard 3</span>
+          <div class="trace__body">
+            وبعدها بيفك حجز المخزون، والقطعة ترجع متاحة للبيع تاني.
+            <br>لو التعويض ده فشل، <strong>مش هينفع تتجاهله</strong> — لازم يدخل في
+            إعادة محاولة وفي الآخر تنبيه بشري، لأن قطعة محجوزة للأبد
+            = مخزون بيختفي من غير سبب واضح.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        النتيجة النهائية زي إن حاجة ما حصلتش — <em>بس مش لأن العملية كانت ذرّية،
+        لأننا كتبنا كود يرجّع كل حاجة لمكانها</em>. الفرق ده هو كل الحكاية.
+      </div>
+    </div>
   </div>
 </section>
 
@@ -5166,7 +5232,7 @@ modelBuilder.<span class="f">Entity</span>&lt;<span class="t">Order</span>&gt;(e
         <h3 class="card__title">الحلقة والمعرّفات</h3>
         <ul class="pc pc--pro sm mb0">
           <li><code>% N</code> بينقل <span class="ltr">~90%</span> · الحلقة بتنقل <span class="ltr">1/N</span></li>
-          <li><span class="ltr">150</span> عقدة افتراضية ⇒ انحراف <span class="ltr">~8%</span> بدل <span class="ltr">240%</span></li>
+          <li><span class="ltr">150</span> <span class="term">virtual node</span> ⇒ انحراف <span class="ltr">~8%</span> بدل <span class="ltr">240%</span></li>
           <li>GUID عشوائي = انقسام صفحات + <span class="ltr">47%</span> حجم زيادة</li>
           <li>Snowflake: <span class="ltr">41|10|12</span> = <span class="ltr">69.7</span> سنة · <span class="ltr">1024</span> ماكينة · <span class="ltr">4096</span>/ms</li>
         </ul>

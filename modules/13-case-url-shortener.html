@@ -635,11 +635,13 @@
             </div>
             <div class="plain mt">
               <span class="plain__label">إيه اللي الأرقام دي بتقوله؟</span>
-              <strong>1.</strong> <span class="ltr">600,000 QPS</span> ذروة ⇒ ده رقم بيكسر أي كاش على عقدة واحدة.
+              <strong>1.</strong> <span class="ltr">600,000 QPS</span> ذروة ⇒ ده رقم بيكسر أي كاش على
+              <span class="term">node</span> (سيرفر واحد جوّه المجموعة) واحدة.
               محتاج <span class="term term--v">Redis Cluster</span> + كاش محلي في كل سيرفر تطبيق.
               <br><strong>2.</strong> <span class="ltr">5,000 Write QPS</span> ⇒ دلوقتي بس الكتابة بقت مشكلة.
               قاعدة بيانات واحدة مش هتستحمل ⇒ <strong>تقسيم إجباري</strong>.
-              <br><strong>3.</strong> <span class="ltr">25 GB</span> كاش ⇒ لسه رقم معقول، بس مش على عقدة واحدة.
+              <br><strong>3.</strong> <span class="ltr">25 GB</span> كاش ⇒ لسه رقم معقول، بس مش على
+              <span class="term">node</span> واحدة.
               <br><br>
               <strong>الدرس:</strong> ضربنا الحجم في 5 بس، فالكتابة قفزت من «مش مشكلة» لـ «مشكلة كبيرة».
               <em>التعقيد المعماري مش بيزيد خطّيًا مع الحجم — بيقفز عند عتبات معيّنة.</em>
@@ -1536,23 +1538,80 @@
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">نقرا الكود ده سطر سطر</span>
-      <strong>1.</strong> <code>Alphabet</code> — ترتيب الحروف <em>جزء من العقد</em>.
-      لو غيّرته بعد ما الخدمة اشتغلت، كل رابط قديم هيفك لرقم مختلف ⇒ <strong>كارثة</strong>.
-      اعتبره ثابت للأبد.
-      <br><strong>2.</strong> <code>Lookup</code> — مصفوفة 128 خانة بدل ما نبحث في النص كل مرة.
-      البحث في مصفوفة <span class="ltr">O(1)</span> والبحث في نص <span class="ltr">O(62)</span> —
-      وإحنا بننفّذ ده <span class="ltr">10,000</span> مرة في الثانية.
-      <br><strong>3.</strong> <code>stackalloc</code> — بنحجز المخزن المؤقت على الـ <span class="term">Stack</span>
-      مش الـ <span class="term">Heap</span> ⇒ <strong>صفر ضغط على جامع القمامة</strong>.
-      وده مهم جدًا لأن توقفات الـ GC هي أكبر مصدر لارتفاع الـ p99.
-      <br><strong>4.</strong> <code>do...while</code> مش <code>while</code> — عشان لو الرقم صفر يطلّع
-      <code>"0"</code> بدل نص فاضي.
-      <br><strong>5.</strong> <code>PadLeft</code> — بتضمن إن كل الأكواد طولها 7 من أول رابط،
-      وده بيخلّي <code>CHAR(7)</code> في قاعدة البيانات صحيح ويخلّي شكل الروابط متسق.
-      <br><strong>6.</strong> <code>checked</code> — من غيرها، كود طويل جدًا هيعمل
-      <span class="term term--r">Integer Overflow</span> بصمت ويرجّع رقم غلط بدل ما يرمي خطأ.
+    <div class="trace">
+      <div class="trace__head">تتبّع تحويل واحد: من <code class="ltr">long</code> لكود Base62 والعكس</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Alphabet</span>
+          <div class="trace__body">
+            ترتيب الحروف نفسه <em>جزء من العقد</em> بين النظام وكل رابط اتولّد قبل كده.
+            <br><strong>ليه الخطوة دي أول حاجة؟</strong> لأنها المدخل اللي كل الخطوات اللي بعدها
+            بتقرا منه. ولو غيّرت الترتيب بعد ما الخدمة اشتغلت، كل رابط قديم هيفك لرقم مختلف
+            ⇒ <strong>كل الروابط المنشورة في الدنيا تبوظ في لحظة</strong>. اعتبره ثابت للأبد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Lookup Table</span>
+          <div class="trace__body">
+            مصفوفة 128 خانة بتحوّل الحرف لقيمته الرقمية على طول، بدل ما ندوّر عليه في النص كل مرة.
+            <br>البحث في مصفوفة <span class="ltr">O(1)</span> والبحث في نص <span class="ltr">O(62)</span>.
+            من غيرها الفرق ما يبانش على ورقة، بس إحنا بننفّذ ده <span class="ltr">10,000</span>
+            مرة في الثانية — يعني <strong>620 ألف مقارنة زيادة كل ثانية</strong> على كل سيرفر.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">stackalloc</span>
+          <div class="trace__body">
+            بنحجز المخزن المؤقت على الـ <span class="term">Stack</span> مش الـ
+            <span class="term">Heap</span> ⇒ <strong>صفر ضغط على جامع القمامة</strong>.
+            <br>من غيرها كل عملية ترميز بتخلّف كائن صغير في الـ Heap؛ اضربها في
+            <span class="ltr">10,000</span> في الثانية تلاقي جامع القمامة بيشتغل باستمرار.
+            وتوقفات الـ <span class="term">GC</span> هي <em>أكبر مصدر منفرد</em> لارتفاع الـ p99
+            في خدمات .NET.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">do…while</span>
+          <div class="trace__body">
+            بنستخدم <code>do...while</code> مش <code>while</code> عشان الجسم يتنفّذ
+            <strong>مرة واحدة على الأقل</strong>.
+            <br>من غيرها، الرقم صفر هيدخل الشرط ويطلع من غير ما يكتب أي حرف ⇒ نص فاضي بدل
+            <code>"0"</code>. حالة حدّية صغيرة، بس هي أول كود في النظام كله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">PadLeft</span>
+          <div class="trace__body">
+            بتكمّل الكود بأصفار على الشمال عشان كل الأكواد يبقى طولها 7 من أول رابط.
+            <br>الصفر قيمته صفر فمش بيغيّر الرقم عند فك الترميز — آمن تمامًا.
+            والمكسب: <code>CHAR(7)</code> في قاعدة البيانات يبقى صحيح (حجم صف ثابت وفهرس أصغر)،
+            وشكل الروابط يبقى متسق قدام المستخدم. من غيرها هتحتاج
+            <code>VARCHAR</code> وأكواد بأطوال مختلفة من أول يوم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">checked</span>
+          <div class="trace__body">
+            آخر حماية في مسار فك الترميز: لو حد بعت كود طويل جدًا، الضرب هيتعدّى حدود
+            <code class="ltr">long</code>.
+            <br>من غير <code>checked</code> ده بيحصل <span class="term term--r">Integer Overflow</span>
+            <strong>بصمت</strong> ويرجّع رقم غلط — يعني هتوجّه المستخدم لرابط مش بتاعه.
+            مع <code>checked</code> بترمي استثناء وترجّع <span class="ltr">400</span>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        لاحظ إن أربع خطوات من الستة (<code>Lookup</code> · <code>stackalloc</code> ·
+        <code>PadLeft</code> · <code>checked</code>) مالهاش أي علاقة بـ «تحويل رقم لحروف» —
+        دي كلها قرارات <em>أداء وسلامة</em>. ده الفرق بين كود شغّال وكود بيخدم 10 آلاف طلب في الثانية.
+      </div>
     </div>
 
     <div class="example fragment">
@@ -1625,8 +1684,9 @@
             <br>يعني كل الكتابات بتتحوّل لطابور <em>متسلسل</em> على صف واحد.
           </li>
           <li>
-            <strong>مش قابل للتقسيم.</strong> لحظة ما تقسّم قاعدة البيانات على 10 عقد،
-            كل عقدة عندها عدّاد لوحدها ⇒ <em>هتطلّع نفس الأرقام</em> ⇒ تصادم مضمون.
+            <strong>مش قابل للتقسيم.</strong> لحظة ما تقسّم قاعدة البيانات على 10
+            <span class="term">node</span>، كل <span class="term">node</span> عندها عدّاد لوحدها
+            ⇒ <em>هتطلّع نفس الأرقام</em> ⇒ تصادم مضمون.
           </li>
           <li>
             <strong>قابل للتخمين تمامًا.</strong> الرابط رقم <span class="ltr">1000</span> يبقى بعده
@@ -1853,22 +1913,67 @@
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">نفهم الكود ده سطر سطر</span>
-      <strong>1. <code>Interlocked.Increment</code></strong> — زيادة ذرّية على مستوى المعالج،
-      من غير قفل ومن غير <code>lock</code>. ده اللي بيخلّي المسار السريع يخدم
-      <span class="ltr">ملايين</span> عملية في الثانية على السيرفر الواحد.
-      <br><strong>2. <code>SemaphoreSlim(1,1)</code></strong> — بيضمن إن نسخة <em>واحدة</em> بس
-      هي اللي تروح لقاعدة البيانات لما المدى يخلص. لولاه، 500 طلب متزامن هيبعتوا 500 طلب حجز في نفس اللحظة.
-      <br><strong>3. الفحص التاني جوّه القفل</strong> — ده نمط اسمه
-      <span class="term term--e">Double-Checked Locking</span>. من غيره كل خيط كان مستني هيحجز مدى جديد
-      بعد ما الأول حجز خلاص ⇒ هدر ضخم في الأرقام.
-      <br><strong>4. <code>UPDATE ... OUTPUT deleted.NextValue</code></strong> — ده جوهر الحل.
-      بيحدّث ويرجّع <em>القيمة القديمة</em> في عملية واحدة ذرّية.
-      لو فصلناها لـ <code>SELECT</code> ثم <code>UPDATE</code>، سيرفرين ممكن ياخدوا نفس المدى.
-      <br><strong>5. <code>ToCode</code></strong> — بنضرب المعرّف في رقم فردي كبير وناخد أول 42 بت.
-      الضرب في رقم فردي مع القناع ده <strong>تحويل عكوس</strong>: كل مدخل بيدّي مخرج فريد،
-      فمفيش تصادم أبدًا — بس الأرقام المتتالية بتطلّع أكواد <em>مبعثرة تمامًا</em>.
+    <div class="trace">
+      <div class="trace__head">تتبّع طلب واحد لتوليد كود: من <code class="ltr">NextIdAsync</code> لحد الكود المبعثر</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Interlocked.Increment</span>
+          <div class="trace__body">
+            المسار السريع: زيادة ذرّية على مستوى المعالج، من غير قفل ومن غير <code>lock</code>.
+            <br>ده اللي بيخلّي <span class="ltr">99.99%</span> من الطلبات تتخدم في
+            <strong>نانوثواني</strong> من الذاكرة. من غيره كنت هتاخد قفل على كل طلب،
+            والقفل ده هيبقى نقطة التسلسل اللي بتحدّد سقف السيرفر كله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">SemaphoreSlim(1,1)</span>
+          <div class="trace__body">
+            لما المدى يخلص، السيمافور بيضمن إن <em>خيط واحد بس</em> هو اللي ينزل يحجز مدى جديد.
+            <br>لولاه، 500 طلب متزامن هيبعتوا <strong>500 طلب حجز في نفس اللحظة</strong> ⇒
+            نحرق 500 مدى ونضغط على قاعدة البيانات في أسوأ لحظة ممكنة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Double-Checked Locking</span>
+          <div class="trace__body">
+            الخيط اللي دخل القفل بيفحص تاني: هل حد تاني حجز مدى جديد وأنا كنت مستني؟
+            <br>من غير الفحص التاني، كل خيط كان واقف في الطابور هيحجز مدى جديد بعد ما الأول
+            حجز خلاص ⇒ <strong>هدر ضخم في الأرقام</strong> وقفزات كبيرة في العدّاد كل مرة
+            السيرفر يزحم.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">UPDATE … OUTPUT deleted.NextValue</span>
+          <div class="trace__body">
+            <strong>ده جوهر الحل كله.</strong> عملية واحدة ذرّية بتحدّث العدّاد وترجّع
+            <em>القيمة القديمة</em> في نفس الوقت.
+            <br>لو فصلناها لـ <code>SELECT</code> ثم <code>UPDATE</code>، سيرفرين ممكن يقروا نفس
+            القيمة ⇒ ياخدوا <strong>نفس المدى</strong> ⇒ نفس الأكواد تتولّد مرتين.
+            وده أخطر نوع باج: ما بيظهرش في الاختبار، وبيظهر تحت الضغط بس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">ToCode — Multiply &amp; Mask</span>
+          <div class="trace__body">
+            بنضرب المعرّف في رقم فردي كبير وناخد أول 42 بت، وبعدين نرمّزه Base62.
+            <br>الضرب في رقم فردي مع القناع ده <strong>تحويل عكوس</strong>: كل مدخل بيدّي مخرج
+            فريد، فمفيش تصادم أبدًا. والمكسب إن الأرقام المتتالية بتطلّع أكواد
+            <em>مبعثرة تمامًا</em> — من غير الخطوة دي، أي حد ياخد كود واحد يقدر يخمّن
+            كل الأكواد اللي قبله وبعده.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        لاحظ إن خطوة واحدة بس من الخمسة (<code>UPDATE … OUTPUT</code>) بتلمس قاعدة البيانات،
+        ومرة كل <span class="ltr">1,000</span> كود. الأربعة التانيين كلهم في الذاكرة —
+        وده اللي بيخلّي خدمة توليد المعرّفات مش عنق زجاجة.
+      </div>
     </div>
 
     <div class="example fragment">
@@ -2180,7 +2285,7 @@
         <tbody>
           <tr><td>قراءة بمفتاح واحد</td><td class="td-ok">ممتاز</td><td class="td-ok">ممتاز</td><td>تعادل</td></tr>
           <tr><td>التوسّع لـ 182 مليار صف</td><td class="td-bad">تقسيم يدوي مؤلم</td><td class="td-ok">مدمج ومؤتمت</td><td class="td-ok">NoSQL</td></tr>
-          <tr><td>إعادة التقسيم عند النمو</td><td class="td-bad">توقف أو هجرة معقّدة</td><td class="td-ok">إضافة عقدة وخلاص</td><td class="td-ok">NoSQL</td></tr>
+          <tr><td>إعادة التقسيم عند النمو</td><td class="td-bad">توقف أو هجرة معقّدة</td><td class="td-ok">إضافة <span class="term">node</span> وخلاص</td><td class="td-ok">NoSQL</td></tr>
           <tr><td>النسخ عبر المناطق</td><td class="td-mid">ممكن بجهد</td><td class="td-ok">مدمج (multi-region)</td><td class="td-ok">NoSQL</td></tr>
           <tr><td>المعاملات والـ JOIN</td><td class="td-ok">قوي</td><td class="td-bad">محدود</td><td class="td-mid">مش محتاجينها</td></tr>
           <tr><td>خبرة الفريق (.NET)</td><td class="td-ok">عالية عادة</td><td class="td-mid">أقل</td><td class="td-mid">اعتبار حقيقي</td></tr>
@@ -2197,7 +2302,7 @@
           <span class="decode__tok">PARTITION KEY</span>
           <div class="decode__exp">
             <b>مفتاح التقسيم</b> — العمود اللي قاعدة البيانات بتستخدمه عشان تقرّر
-            <strong>الصف ده هيتخزّن على أي عقدة</strong>.
+            <strong>الصف ده هيتخزّن على أي <span class="term">node</span></strong>.
             <br>ده <em>أهم قرار</em> في أي قاعدة بيانات موزّعة، وأصعب حاجة تغيّرها بعدين.
           </div>
         </div>
@@ -2206,23 +2311,26 @@
           <div class="decode__exp">
             <b>دالة تجزئة</b> بتحوّل النص لرقم <strong>موزّع بانتظام</strong>.
             <br>ليه نعمل تجزئة بدل ما نستخدم الكود نفسه؟ عشان لو الأكواد متقاربة
-            (زي <code>aaa1</code>, <code>aaa2</code>) كلها هتروح لنفس العقدة ⇒ عقدة محترقة والباقي فاضي.
+            (زي <code>aaa1</code>, <code>aaa2</code>) كلها هتروح لنفس الـ <span class="term">node</span>
+            ⇒ <span class="term">node</span> محترقة والباقي فاضي.
           </div>
         </div>
         <div class="decode__row">
           <span class="decode__tok">% N</span>
           <div class="decode__exp">
-            <b>الباقي من القسمة على عدد العقد</b>.
+            <b>الباقي من القسمة على عدد الـ <span class="term">node</span></b>.
             <br><strong>الفخ:</strong> لو غيّرت <span class="ltr">N</span> من 10 لـ 11،
-            <em>كل الصفوف تقريبًا</em> بتتغيّر عقدتها ⇒ هجرة كاملة.
+            <em>كل الصفوف تقريبًا</em> بتتغيّر الـ <span class="term">node</span> بتاعتها ⇒ هجرة كاملة.
             <br>الحل: <span class="term term--r">Consistent Hashing</span> أو
-            <strong>دلاء منطقية ثابتة</strong> (مثلاً 1024 دلو بتتوزّع على العقد الفعلية).
+            <strong>دلاء منطقية ثابتة</strong> (مثلاً 1024 دلو بتتوزّع على الـ
+            <span class="term">node</span> الفعلية).
           </div>
         </div>
       </div>
       <div class="decode__sum">
-        بنوزّع الروابط على العقد حسب <b>تجزئة الكود القصير</b> —
-        فبيبقى التوزيع متساوي تمامًا، وأي قراءة بتعرف على طول تروح لأنهي عقدة.
+        بنوزّع الروابط على الـ <span class="term">node</span> حسب <b>تجزئة الكود القصير</b> —
+        فبيبقى التوزيع متساوي تمامًا، وأي قراءة بتعرف على طول تروح لأنهي
+        <span class="term">node</span>.
       </div>
     </div>
 
@@ -2292,10 +2400,68 @@
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          التطبيق هو المسؤول عن الكاش، مش الكاش:
-          <br><strong>1)</strong> دوّر في الكاش. <strong>2)</strong> لقيته ⇒ رجّعه.
-          <strong>3)</strong> ملقتوش ⇒ اقرا من قاعدة البيانات، <strong>4)</strong> حطّه في الكاش،
-          <strong>5)</strong> رجّعه.
+          التطبيق هو المسؤول عن الكاش، مش الكاش. يعني الكود بتاعك هو اللي بيقرّر
+          إمتى يسأل الكاش، وإمتى ينزل لقاعدة البيانات، وإمتى يملّي الكاش تاني.
+
+          <div class="trace mt">
+            <div class="trace__head">تتبّع قراءة واحدة في Cache-Aside: من الطلب لحد الرد</div>
+            <ol class="trace__steps">
+
+              <li class="trace__step trace__step--outer">
+                <span class="trace__layer">Redirect Service</span>
+                <div class="trace__body">
+                  الطلب بيوصل، وأول حاجة الكود بيعملها إنه <strong>يسأل الكاش</strong> مش قاعدة البيانات.
+                  <br>الترتيب ده هو كل الفكرة: <em>أرخص مصدر للحقيقة الأول</em>.
+                  من غيره كل طلب هيبدأ من القرص، وقاعدة البيانات هتشوف
+                  <span class="ltr">10,000</span> استعلام في الثانية بدل <span class="ltr">2,000</span>.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--adapt">
+                <span class="trace__layer">Redis — Cache HIT</span>
+                <div class="trace__body">
+                  لقى القيمة ⇒ يرجّعها فورًا و<strong>يخرج من المسار خالص</strong>.
+                  <br>ده المسار اللي بيحصل في <span class="ltr">80%</span> من الطلبات، وتمنه
+                  <span class="ltr">~1ms</span> ذهاب وعودة داخل نفس مركز البيانات.
+                  من غير الخروج المبكر ده، كنت هتدفع تكلفة قاعدة البيانات على كل قراءة.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--core">
+                <span class="trace__layer">URL Store — Cache MISS</span>
+                <div class="trace__body">
+                  ملقهاش ⇒ ينزل يقرا من قاعدة البيانات (<span class="ltr">~5–10ms</span>).
+                  <br><strong>الكاش هنا مش مصدر الحقيقة، هو نسخة مؤقتة بس.</strong>
+                  ولو الكاش وقع بالكامل، الخطوة دي لوحدها كفاية إن النظام يفضل
+                  <em>صحيح</em> — أبطأ، بس صحيح. وده الفرق بين تدهور وانهيار.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--data">
+                <span class="trace__layer">Redis — Cache Fill</span>
+                <div class="trace__body">
+                  يكتب النتيجة في الكاش بمدة صلاحية، عشان الطلب الجاي على نفس الكود
+                  يقف عند الخطوة التانية وما ينزلش تاني.
+                  <br>من غير الخطوة دي الكاش هيفضل فاضي للأبد وكل قراءة هتضرب قاعدة البيانات —
+                  يعني عندك كاش بالاسم بس، من غير أي مكسب.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--out">
+                <span class="trace__layer">HTTP 302 Response</span>
+                <div class="trace__body">
+                  يرجّع الرد للمستخدم. المستخدم <strong>ما بيفرقش</strong> بين المسار السريع
+                  والمسار البطيء غير في الملّي ثانية — وده بالظبط اللي بيخلّي الكاش قرار
+                  معماري مش تفصيلة تنفيذ.
+                </div>
+              </li>
+
+            </ol>
+            <div class="trace__key">
+              الخمس خطوات دول مكتوبين في <em>كودك انت</em>، مش جوّه Redis.
+              وده معنى «الكاش الجانبي»: الكاش مخزن غبي، والذكاء كله في التطبيق.
+            </div>
+          </div>
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🏪 — رفّ الكاشير</span>
@@ -2381,7 +2547,7 @@
 <section class="slide" data-title="Hot Key وكاش الطبقتين">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 06 · كود</span>
-    <h2 class="slide__title"><span class="term term--r">Hot Key</span> — لما رابط واحد يقدر يقتل عقدة كاملة</h2>
+    <h2 class="slide__title"><span class="term term--r">Hot Key</span> — لما رابط واحد يقدر يقتل <span class="term">node</span> كاملة</h2>
     <div class="rule"></div>
   </div>
 
@@ -2391,12 +2557,14 @@
       <div class="callout__body">
         <span class="callout__title">المشكلة: التقسيم مش بيحل المفتاح الساخن</span>
         رابط بتاع إعلان في مباراة كبيرة بياخد <span class="ltr">200,000</span> ضغطة في الثانية.
-        <br>عندك <span class="term">Redis Cluster</span> من 20 عقدة، فتقول «تمام، الحمل هيتوزّع».
-        <br><strong>غلط.</strong> المفتاح الواحد بيتحدّد له <em>خانة واحدة</em> على <em>عقدة واحدة</em>.
+        <br>عندك <span class="term">Redis Cluster</span> من 20 <span class="term">node</span>،
+        فتقول «تمام، الحمل هيتوزّع».
+        <br><strong>غلط.</strong> المفتاح الواحد بيتحدّد له <em>خانة واحدة</em> على
+        <em><span class="term">node</span> واحدة</em>.
         <div class="math sm mt mb0" style="border-color:var(--rose)">
 <span class="lbl">سعة عقدة Redis</span> <span class="eq">≈</span> <span class="n">100,000</span> <span class="cmt">عملية/ثانية</span>
 <span class="lbl">الطلب على المفتاح</span> <span class="eq">=</span> <span class="n">200,000</span> <span class="cmt">عملية/ثانية</span>
-<span class="lbl">النتيجة</span> <span class="eq">=</span> <span class="res">العقدة اتحرقت · والـ 19 التانيين فاضيين 😐</span>
+<span class="lbl">النتيجة</span> <span class="eq">=</span> <span class="res">الـ node اتحرقت · والـ 19 التانيين فاضيين 😐</span>
         </div>
       </div>
     </div>
@@ -2481,20 +2649,58 @@ builder.Services.<span class="f">AddHybridCache</span>(o <span class="p">=&gt;</
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">إيه اللي بيحصل في الكود ده بالظبط</span>
-      <strong>1.</strong> <code>HybridCache</code> (جديد في <span class="ltr">.NET 9</span>)
-      بيدمج كاش الذاكرة (<span class="ltr">L1</span>) مع الكاش الموزّع (<span class="ltr">L2</span>) في واجهة واحدة.
-      بيدوّر في L1 الأول، بعدين L2، وبعدين ينادي الـ <code>factory</code>.
-      <br><strong>2.</strong> <code>LocalCacheExpiration = 2 دقيقة</code> — قصيرة عن قصد.
-      طويلة كفاية إنها تمتص المفتاح الساخن (200 ألف طلب في دقيقتين = 24 مليون طلب اتخدموا محليًا)،
-      وقصيرة كفاية إن تعطيل رابط يوصل لكل السيرفرات في دقيقتين كحد أقصى.
-      <br><strong>3. حماية التدفّق (<span class="term term--e">Stampede Protection</span>)</strong> —
-      دي الميزة القاتلة. لو 5000 طلب على نفس المفتاح المفقود وصلوا في نفس اللحظة،
-      <strong>استعلام واحد بس</strong> هيروح للـ DB والباقي هيستنى نتيجته.
-      من غيرها كان هيروح 5000 استعلام دفعة واحدة.
-      <br><strong>4.</strong> <code>MaximumPayloadBytes</code> — حماية: أي قيمة أكبر من الحد ده
-      ما بتتكاشش، عشان مفتاح واحد ضخم ما ياكلش الذاكرة.
+    <div class="trace">
+      <div class="trace__head">تتبّع قراءة واحدة جوّه <span class="ltr">HybridCache</span>: L1 ⟵ L2 ⟵ DB</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">HybridCache</span>
+          <div class="trace__body">
+            الواجهة الجديدة في <span class="ltr">.NET 9</span> بتدمج كاش الذاكرة
+            (<span class="ltr">L1</span>) مع الكاش الموزّع (<span class="ltr">L2</span>) في نداء واحد:
+            بيدوّر في L1 الأول، بعدين L2، وبعدين بس بينادي الـ <code>factory</code>.
+            <br><strong>من غيرها كنت هتكتب الترتيب ده بإيدك</strong> في كل مكان في الكود —
+            وأي مكان تنساه فيه بيبقى ثقب بيسرّب طلبات لقاعدة البيانات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">LocalCacheExpiration — L1</span>
+          <div class="trace__body">
+            دقيقتين بس، وده رقم مقصود من الاتجاهين.
+            <br><em>طويلة كفاية</em> إنها تمتص المفتاح الساخن: 200 ألف طلب في الدقيقة يبقى
+            24 مليون طلب اتخدموا من ذاكرة السيرفر من غير أي شبكة.
+            <br><em>وقصيرة كفاية</em> إن تعطيل رابط خبيث يوصل لكل السيرفرات في دقيقتين كحد أقصى.
+            لو خلّيتها ساعة، هتبقى بتخدم رابط تصيّد لساعة كاملة بعد ما قفلته.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Stampede Protection</span>
+          <div class="trace__body">
+            الميزة القاتلة: لو 5000 طلب على نفس المفتاح المفقود وصلوا في نفس اللحظة،
+            <strong>استعلام واحد بس</strong> هيروح لقاعدة البيانات والباقي هيستنّى نتيجته.
+            <br>من غيرها كان هيروح 5000 استعلام دفعة واحدة على صف واحد —
+            وده بالظبط سيناريو <span class="term term--r">Cache Stampede</span> اللي بيوقّع
+            قواعد بيانات سليمة تمامًا لحظة ما مفتاح مشهور تنتهي صلاحيته.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">MaximumPayloadBytes</span>
+          <div class="trace__body">
+            سقف على حجم القيمة الواحدة: أي حاجة أكبر من الحد ما بتتكاشش أصلاً.
+            <br><strong>ليه ده موجود؟</strong> عشان مفتاح واحد ضخم ما ياكلش ذاكرة السيرفر
+            ويطرد آلاف المفاتيح الصغيرة المفيدة. من غيره، طلب واحد خبيث (أو باج)
+            يقدر يفضّي الكاش المحلي بالكامل.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الأربع إعدادات دول مش «ضبط ناعم» — كل واحد فيهم بيمنع نوع عطل مختلف:
+        تسريب طلبات · رابط خبيث بيفضل شغّال · تدافع على قاعدة البيانات · انفجار ذاكرة.
+      </div>
     </div>
   </div>
 </section>
@@ -2595,20 +2801,72 @@ app.<span class="f">MapGet</span>(<span class="s">"/{code:length(4,32)}"</span>,
 .<span class="f">RequireRateLimiting</span>(<span class="s">"redirect"</span>);</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">أهم 5 نقط في الكود ده</span>
-      <strong>1.</strong> <code>Results.Redirect(url, permanent: false)</code> بترجّع
-      <span class="ltr">302 Found</span>. لو حطّيت <code>permanent: true</code> بترجّع
-      <span class="ltr">301</span>. وفيه معامل تالت <code>preserveMethod</code> يحوّلهم لـ
-      <span class="ltr">307/308</span>.
-      <br><strong>2.</strong> <code>{code:length(4,32)}</code> — قيد على المسار بيرفض أي طلب
-      طوله خارج النطاق <em>قبل ما يوصل للكود أصلاً</em>. حماية مجانية من طلبات عبثية.
-      <br><strong>3.</strong> نفس الرد <span class="ltr">404</span> للرابط المفقود والمعطّل —
-      عشان المهاجم ما يعرفش الفرق بين «مش موجود» و«موجود بس متوقف».
-      <br><strong>4.</strong> <span class="ltr">410 Gone</span> للمنتهي، مش <span class="ltr">404</span>:
-      دي معلومة صحيحة دلاليًا («كان موجود وانتهى») ومفيدة لمحركات البحث.
-      <br><strong>5.</strong> ترتيب الفحوصات مقصود: الأرخص الأول (الكاش) والأغلى في الآخر.
-      وكل مسار خروج بيرجّع من غير ما يعمل شغل زيادة.
+    <div class="trace">
+      <div class="trace__head">تتبّع طلب توجيه واحد: <span class="ltr">GET sho.rt/aZ3k9Qx</span> خطوة بخطوة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Route Constraint</span>
+          <div class="trace__body">
+            <code class="ltr">{code:length(4,32)}</code> بيرفض أي طلب طوله خارج النطاق
+            <em>قبل ما يدخل الكود بتاعك أصلاً</em>.
+            <br><strong>ليه دي أول خطوة؟</strong> لأن أرخص طلب هو اللي بترفضه بدري.
+            من غير القيد ده، أي زحف عشوائي على المسار الرئيسي هيولّد استعلام كاش
+            (وربما استعلام قاعدة بيانات) لكل هراء بيتبعت لك.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">UrlLookup — L1 ⟵ L2 ⟵ DB</span>
+          <div class="trace__body">
+            سطر واحد بيمشي على الطبقات بالترتيب: ذاكرة السيرفر، بعدين Redis،
+            وبعدين قاعدة البيانات.
+            <br><strong>ترتيب الفحوصات مقصود: الأرخص الأول والأغلى في الآخر.</strong>
+            لو قلبت الترتيب (تسأل قاعدة البيانات وبعدين تكاش) بتدفع تكلفة القرص على
+            <span class="ltr">100%</span> من الطلبات بدل <span class="ltr">20%</span>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">404 Not Found</span>
+          <div class="trace__body">
+            نفس الرد بالظبط للرابط المفقود <em>وللرابط المعطّل</em>.
+            <br>ده قرار أمني مش كسل: لو رجّعت ردّين مختلفين، المهاجم يقدر يفرّق بين
+            «الكود ده مش موجود» و«الكود ده موجود بس متوقف» — يعني إديته
+            <strong>وسيلة لاستكشاف الأكواد الحقيقية</strong> في نظامك.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">410 Gone</span>
+          <div class="trace__body">
+            للرابط المنتهي بنرجّع <span class="ltr">410</span> مش <span class="ltr">404</span>.
+            <br>دي معلومة صحيحة دلاليًا: «كان موجود فعلاً وانتهى». والفرق عملي —
+            محركات البحث بتشيل الرابط من الفهرس فورًا مع <span class="ltr">410</span>،
+            بينما مع <span class="ltr">404</span> بتفضل ترجع تجرّبه أسابيع.
+            وكمان بتوصّل للمستخدم رسالة أوضح.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Results.Redirect — 302</span>
+          <div class="trace__body">
+            <code>Results.Redirect(url, permanent: false)</code> بترجّع
+            <span class="ltr">302 Found</span>. لو حطّيت <code>permanent: true</code>
+            بترجّع <span class="ltr">301</span>، وفيه معامل تالت <code>preserveMethod</code>
+            بيحوّلهم لـ <span class="ltr">307/308</span>.
+            <br>اخترنا <span class="ltr">302</span> عشان كل ضغطة تفضل تعدّي علينا —
+            ومعاه <code>Cache-Control</code> صريح، لأن <span class="ltr">302</span> لوحده
+            المتصفح ممكن يكاشه.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل مسار خروج في المسار ده بيرجّع <strong>من غير ما يعمل شغل زيادة</strong>.
+        ده اللي بيخلّي متوسط الطلب <span class="ltr">~10ms</span> مع إن الميزانية
+        <span class="ltr">50ms</span>.
+      </div>
     </div>
   </div>
 </section>
@@ -3102,22 +3360,78 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
 }</code></pre>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">القرارات المهمة في الكود ده</span>
-      <strong>1. <code>CreateBounded</code> مش <code>CreateUnbounded</code></strong> —
-      الطابور غير المحدود بيبدو أأمن، لكنه في الحقيقة قنبلة: لو المستهلك بطؤ،
-      الطابور بيكبر لحد ما الذاكرة تخلص و<strong>السيرفر كله يموت</strong>.
-      المحدود بيفشل بشكل متوقّع ومحسوب.
-      <br><strong>2. <code>DropOldest</code></strong> — قرار منتَج مش قرار تقني:
-      إحنا قررنا إن <em>فقدان تحليلات أرحم من إبطاء التوجيه</em>.
-      لو كنا بنعدّ فلوس، كان القرار هيبقى العكس تمامًا.
-      <br><strong>3. <code>TryWrite</code></strong> — العملية دي أقل من ميكروثانية ومفيهاش
-      أي انتظار. ده اللي بيخلّي إضافة التحليلات <strong>مجانية عمليًا</strong> على مسار التوجيه.
-      <br><strong>4. <code>PeriodicTimer</code> ثانية واحدة</strong> — بيضمن إن الأحداث ما تقعدش
-      في الطابور أكتر من ثانية حتى لو الحمل خفيف. من غيره، آخر 50 حدث ممكن يستنوا دقايق.
-      <br><strong>5. <code>catch</code> جوّه اللوب</strong> — لو الاستثناء طلع لبرّه،
-      الـ <code>BackgroundService</code> بيتوقف نهائيًا في .NET وما بيرجعش لوحده.
-      <br><strong>6. التفريغ عند الإغلاق</strong> — عشان النشر الجديد ما يضيّعش آخر دفعة.
+    <div class="trace">
+      <div class="trace__head">تتبّع حدث ضغطة واحد: من مسار التوجيه لحد <span class="term term--e">Kafka</span></div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Bounded Channel</span>
+          <div class="trace__body">
+            الطابور بيتعمل بـ <code>CreateBounded</code> مش <code>CreateUnbounded</code>.
+            <br>الطابور غير المحدود بيبدو أأمن، لكنه في الحقيقة قنبلة: لو الـ
+            <span class="term">consumer</span> (الطرف اللي بيقرا ويبعت) بطؤ، الطابور بيكبر
+            لحد ما الذاكرة تخلص و<strong>السيرفر كله يموت</strong> —
+            يعني عطل تحليلات بقى عطل توجيه. المحدود بيفشل بشكل متوقّع ومحسوب.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">DropOldest</span>
+          <div class="trace__body">
+            لما الطابور يمتلي، بنرمي الأقدم بدل ما نوقف الكاتب.
+            <br>ده <strong>قرار منتَج مش قرار تقني</strong>: إحنا قررنا إن
+            <em>فقدان تحليلات أرحم من إبطاء التوجيه</em>.
+            لو كنا بنعدّ فلوس، كان القرار هيبقى العكس تمامًا — كنا هنعمل ضغط عكسي
+            ونبطّئ الطلب بدل ما نضيّع حدث.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">TryWrite</span>
+          <div class="trace__body">
+            الكتابة في الطابور أقل من ميكروثانية ومفيهاش أي <code>await</code>.
+            <br>ده اللي بيخلّي إضافة التحليلات <strong>مجانية عمليًا</strong> على مسار التوجيه.
+            لو حطينا <code>await</code> لكتابة في قاعدة بيانات هنا، كنا هنضيف
+            <span class="ltr">5–20ms</span> على كل توجيه — من ميزانية إجمالية
+            <span class="ltr">50ms</span>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">PeriodicTimer</span>
+          <div class="trace__body">
+            العامل الخلفي بيفضى الطابور كل ثانية، حتى لو الدفعة لسه مش كاملة.
+            <br>من غيره الأحداث بتستنّى لحد ما الدفعة تتملّى — وتحت حمل خفيف
+            (بالليل مثلاً) آخر 50 حدث ممكن يقعدوا <strong>دقايق</strong> في الذاكرة
+            ويضيعوا لو السيرفر اتقفل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">try / catch داخل اللوب</span>
+          <div class="trace__body">
+            أي استثناء بيتمسك <em>جوّه</em> اللوب مش بره.
+            <br><strong>ليه ده حرج؟</strong> لأن الاستثناء لو طلع لبرّه، الـ
+            <code>BackgroundService</code> في .NET <strong>بيتوقف نهائيًا وما بيرجعش لوحده</strong> —
+            والخدمة تفضل شغّالة وبتخدم توجيهات عادي، وانت مش واخد بالك إن التحليلات
+            وقفت من ساعات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Graceful Flush</span>
+          <div class="trace__body">
+            عند الإغلاق بنفضّي اللي فاضل في الطابور قبل ما العملية تموت.
+            <br>من غيرها كل نشر نسخة جديدة (وده بيحصل كذا مرة في اليوم)
+            بيضيّع آخر دفعة أحداث في كل سيرفر — <em>خسارة صامتة ومتكرّرة</em>.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        المسار ده كله مبني على مبدأ واحد: <strong>التحليلات مواطن درجة تانية</strong>.
+        كل قرار فيه بيختار حماية التوجيه على حساب دقة العد.
+      </div>
     </div>
   </div>
 </section>
@@ -3494,16 +3808,69 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">الدفاعات بالترتيب</span>
-          <strong>1.</strong> امنع أي مخطّط غير <code>http/https</code> —
-          <code>javascript:</code> و<code>data:</code> بينفّذوا كود في متصفح الضحية.
-          <br><strong>2.</strong> امنع الوجهات لعناوين داخلية
-          (<code>127.0.0.1</code> · <code>169.254.169.254</code> · شبكات خاصة) —
-          دي بتفتح ثغرة <span class="term term--r">SSRF</span> عن طريق الفاحص بتاعك.
-          <br><strong>3.</strong> افحص الوجهة عند الإنشاء <em>و</em> أعد الفحص دوريًا —
-          الرابط النظيف النهارده ممكن يتخترق بكرة.
-          <br><strong>4.</strong> للنطاقات غير المعروفة: <strong>صفحة وسيطة</strong>
-          بتوري المستخدم رايح فين قبل ما يكمّل.
-          <br><strong>5.</strong> سمعة لكل حساب: حساب اتبلّغ عليه مرتين ⇒ كل روابطه تدخل مراجعة.
+
+          <div class="trace">
+            <div class="trace__head">تتبّع رابط مشبوه: خمس بوابات من لحظة الإنشاء لحد الضغطة</div>
+            <ol class="trace__steps">
+
+              <li class="trace__step trace__step--outer">
+                <span class="trace__layer">Scheme Allowlist</span>
+                <div class="trace__body">
+                  عند الإنشاء: امنع أي مخطّط غير <code>http/https</code>.
+                  <br><code>javascript:</code> و<code>data:</code> <strong>بينفّذوا كود
+                  في متصفح الضحية</strong> لحظة ما يضغط على رابطك.
+                  من غير البوابة دي، نطاقك بقى وسيلة توصيل لكود خبيث مباشرة —
+                  ودي أرخص خطوة في القايمة كلها.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--adapt">
+                <span class="trace__layer">SSRF / Private IP Block</span>
+                <div class="trace__body">
+                  امنع الوجهات لعناوين داخلية: <code>127.0.0.1</code> ·
+                  <code>169.254.169.254</code> · الشبكات الخاصة.
+                  <br>من غيرها بتفتح ثغرة <span class="term term--r">SSRF</span>
+                  <em>عن طريق الفاحص بتاعك انت</em>: المهاجم بيسجّل رابط لعنوان الميتاداتا
+                  الداخلي، وسيرفرك هو اللي بيروح يجيب المفاتيح ويسلّمها له.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--app">
+                <span class="trace__layer">Re-scan Job</span>
+                <div class="trace__body">
+                  افحص الوجهة عند الإنشاء <em>وأعد الفحص دوريًا</em>.
+                  <br><strong>الرابط النظيف النهارده ممكن يتخترق بكرة.</strong>
+                  ودي بالظبط اللعبة المفضّلة عند المهاجمين: يسجّلوا وجهة سليمة تعدّي
+                  الفحص، وبعد أسبوع يحطّوا عليها صفحة تصيّد. فحص مرة واحدة = حماية مؤقتة.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--data">
+                <span class="trace__layer">Interstitial Page</span>
+                <div class="trace__body">
+                  للنطاقات غير المعروفة: صفحة وسيطة بتوري المستخدم رايح فين قبل ما يكمّل.
+                  <br>دي آخر فرصة يتوقّف فيها <em>الإنسان</em> لما الأتمتة تفشل.
+                  وتمنها زمن استجابة أعلى، عشان كده بنطبّقها على النطاقات المجهولة بس
+                  مش على كل الروابط.
+                </div>
+              </li>
+
+              <li class="trace__step trace__step--out">
+                <span class="trace__layer">Account Reputation</span>
+                <div class="trace__body">
+                  سمعة لكل حساب: حساب اتبلّغ عليه مرتين ⇒ كل روابطه تدخل مراجعة.
+                  <br>الخطوة دي بتنقل الدفاع من مستوى «الرابط» لمستوى «الفاعل» —
+                  وده الفرق العملي بين إنك تلاحق آلاف الروابط أو تقفل حساب واحد.
+                  من غيرها المهاجم بيولّد روابط جديدة أسرع من ما تحظرها.
+                </div>
+              </li>
+
+            </ol>
+            <div class="trace__key">
+              الترتيب هنا مش عشوائي: كل بوابة أغلى من اللي قبلها،
+              والهدف إن أرخص فحص يشيل أكبر نسبة من الشر قبل ما توصل للفحوصات الغالية.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -3749,11 +4116,11 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
     <div class="math">
 <span class="cmt">// ═══ كام عقدة نحتاج؟ ═══</span>
 <span class="lbl">التخزين المطلوب</span>   <span class="eq">=</span> <span class="n">142 TB</span>  <span class="cmt">(5 سنين، بالنسخ والفهارس)</span>
-<span class="lbl">قرص العقدة</span>        <span class="eq">=</span> <span class="n">8 TB</span> <span class="var">NVMe</span>
+<span class="lbl">قرص الـ node</span>        <span class="eq">=</span> <span class="n">8 TB</span> <span class="var">NVMe</span>
 <span class="lbl">الاستغلال الآمن</span>   <span class="eq">=</span> <span class="n">60%</span>  <span class="eq">→</span> <span class="n">4.8 TB</span> <span class="cmt">مفيدة</span>
 <span class="lbl">عدد العقد</span>         <span class="eq">=</span> <span class="n">142</span> / <span class="n">4.8</span> <span class="eq">=</span> <span class="res">30 عقدة</span>
 
-<span class="cmt">// ═══ الحمل على العقدة الواحدة ═══</span>
+<span class="cmt">// ═══ الحمل على الـ node الواحدة ═══</span>
 <span class="lbl">قراءات للـ DB</span>      <span class="eq">=</span> <span class="n">6,000 QPS</span> <span class="cmt">(الذروة بعد الكاش)</span>
 <span class="lbl">لكل عقدة</span>          <span class="eq">=</span> <span class="n">6,000</span> / <span class="n">30</span> <span class="eq">=</span> <span class="res">200 QPS</span>
 <span class="lbl">كتابات لكل عقدة</span>   <span class="eq">=</span> <span class="n">3,000</span> / <span class="n">30</span> <span class="eq">=</span> <span class="res">100 QPS</span>
@@ -3761,7 +4128,7 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
 
     <div class="plain">
       <span class="plain__label">اقرا الأرقام دي كويس — فيها مفاجأة</span>
-      <strong class="ltr">200 QPS</strong> على العقدة الواحدة؟ ده رقم <em>تافه</em>.
+      <strong class="ltr">200 QPS</strong> على الـ <span class="term">node</span> الواحدة؟ ده رقم <em>تافه</em>.
       أي قاعدة بيانات بتعمل <span class="ltr">10,000</span> بسهولة.
       <br><strong>يعني إحنا مش بنقسّم عشان الأداء — إحنا بنقسّم عشان <em>المساحة</em>.</strong>
       <br><br>
@@ -3783,20 +4150,20 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
           </div>
           <strong>قارن بلو استخدمنا Snowflake:</strong> الوقت في أول المعرّف ⇒
           كل الأكواد المتولّدة النهارده بتبدأ بنفس الحروف ⇒
-          <em>كل الكتابات على عقدة واحدة</em> ⇒ <span class="term term--r">Hot Shard</span>.
+          <em>كل الكتابات على <span class="term">node</span> واحدة</em> ⇒ <span class="term term--r">Hot Shard</span>.
         </p>
       </div>
       <div class="card card--a">
         <div class="card__icon">🪣</div>
         <h3 class="card__title">الدلاء المنطقية — عشان إعادة التقسيم ما تبقاش كابوس</h3>
         <p class="card__body sm">
-          ما تربطش الكود بالعقدة مباشرة. اربطه بـ <strong>دلو منطقي</strong>،
+          ما تربطش الكود بالـ <span class="term">node</span> مباشرة. اربطه بـ <strong>دلو منطقي</strong>،
           والدلاء هي اللي بتتوزّع على العقد.
           <div class="math sm mb0 mt" style="border-color:var(--amber)">
 <span class="lbl">bucket</span> <span class="eq">=</span> <span class="var">hash(code) % 1024</span>
 <span class="lbl">node</span>   <span class="eq">=</span> <span class="var">bucketMap[bucket]</span>
           </div>
-          <strong>لما تضيف عقدة (30 ⟵ 40):</strong>
+          <strong>لما تضيف <span class="term">node</span> (30 ⟵ 40):</strong>
           تنقل <span class="ltr">1024/40 ≈ 25</span> دلو بس بدل ما تعيد تجزئة كل حاجة.
           <br><em>وده الفرق بين ترقية في ساعة وترقية في أسبوع توقف.</em>
         </p>
@@ -3995,7 +4362,8 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
         <p>
           الساعة <span class="ltr">9</span> مساءً، رابط لبث مباراة بقى فيروسي:
           <span class="ltr">400,000</span> ضغطة/ثانية على <strong>كود واحد</strong>.
-          في نفس اللحظة عقدة <span class="term">Redis</span> اللي المفتاح ده عليها وقعت.
+          في نفس اللحظة الـ <span class="term">node</span> بتاعة <span class="term">Redis</span>
+          اللي المفتاح ده عليها وقعت.
           <br>إيه اللي هيحصل بالترتيب؟ وهل النظام هيصمد؟ احسب.
         </p>
         <details class="solution">
@@ -4023,7 +4391,7 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
                 <strong>النظام هيصمد بدون أي أثر يُذكر.</strong>
                 <br>الـ <span class="ltr">400,000 QPS</span> على مفتاح واحد
                 <em>ما وصلوش لـ Redis أصلاً</em> — الكاش المحلي أكلهم كلهم.
-                <br>وسقوط عقدة Redis أضاف <span class="ltr">0.1 QPS</span> بس على الـ DB.
+                <br>وسقوط <span class="term">node</span> من Redis أضاف <span class="ltr">0.1 QPS</span> بس على الـ DB.
               </div>
             </div>
             <p class="sm"><strong>بس استنى — إيه اللي ممكن يكسر فعلاً؟</strong></p>
@@ -4074,7 +4442,7 @@ app.<span class="f">UseRateLimiter</span>();</code></pre>
         <li>إيه أخطر <span class="term term--r">SPOF</span> في النظام كله؟ وليه؟</li>
         <li>إزاي حسبنا إن النظام يستحمل <span class="ltr">16</span> دقيقة من توقف الـ <span class="term term--v">KGS</span>؟</li>
         <li>ليه بنقسّم قاعدة البيانات هنا — للأداء ولا للمساحة؟ والفرق بيأثر إزاي؟</li>
-        <li>إيه الدلاء المنطقية وليه بتخلّي إضافة عقدة سهلة؟</li>
+        <li>إيه الدلاء المنطقية وليه بتخلّي إضافة <span class="term">node</span> سهلة؟</li>
         <li>لو <span class="term">Redis</span> وقع بالكامل، إيه الخطوات بالترتيب؟</li>
         <li>ليه بنشغّل كل منطقة على <span class="ltr">40%</span> استغلال بس؟</li>
         <li>إزاي «الرابط ما يتعدّلش» بسّط التوزيع الجغرافي؟</li>

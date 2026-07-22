@@ -571,7 +571,8 @@
         </div>
       </div>
       <div class="decode__sum">
-        <b class="ltr">2 TB</b> ذاكرة موزّعة على <b>90 عقدة</b>. ده مش كاش «تحسين» —
+        <b class="ltr">2 TB</b> ذاكرة موزّعة على <b>90</b>
+        <span class="term">node</span> (سيرفر واحد جوّه المجموعة). ده مش كاش «تحسين» —
         ده <b>مخزن البيانات الأساسي للـ Feed</b>، والقرص بقى نسخة الاحتياط.
       </div>
     </div>
@@ -1302,21 +1303,87 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
 .<span class="f">RequireAuthorization</span>();</code></pre>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">الكود ده بيعمل إيه سطر سطر؟</span>
-      <strong>1.</strong> بيرفض النوع والحجم <em>قبل</em> ما يوقّع أي حاجة — أرخص فحص هو اللي بيحصل بدري.
-      <br><strong>2.</strong> <code>Guid.CreateVersion7()</code> بيدّي معرّف عشوائي بس <strong>مرتّب زمنيًا</strong>،
-      فالمفاتيح المتقاربة زمنيًا بتتخزّن متقاربة ⇒ أداء كتابة أحسن بكتير من <code>v4</code>.
-      <br><strong>3.</strong> مفتاح البلوب بيبدأ بـ <code class="ltr">u/{userId}/</code> —
-      ده بيضمن إن أي تذكرة تخص مستخدم مستحيل تكتب فوق ملف مستخدم تاني، حتى لو حصل خطأ في الكود.
-      <br><strong>4.</strong> <code>GetUserDelegationKeyAsync</code> بيوقّع بهوية التطبيق مش بمفتاح الحساب —
-      يعني لو التوقيع اتسرّب تقدر تلغي الهوية فورًا بدل ما تدوّر كل مفاتيح التخزين.
-      <br><strong>5.</strong> في <code>commit</code> بنعمل <code>ExistsAsync</code> +
-      <code>GetPropertiesAsync</code> — دي الحقيقة الوحيدة اللي نصدّقها، مش كلام العميل.
-      <br><strong>6.</strong> الفحص على <code>BlobKey</code> (وهو <span class="term">UNIQUE</span> في القاعدة)
-      بيخلّي إعادة النداء ترجّع نفس النتيجة بدل ما تعمل صورة مكرّرة.
-      <br><strong>7.</strong> الصف + رسالة الـ <span class="term">Outbox</span> في
-      <code>SaveChangesAsync</code> واحد ⇒ مستحيل تلاقي صورة من غير حدث، ولا حدث من غير صورة.
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع رفع صورة واحدة: من طلب التذكرة لحد رسالة الـ Outbox</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Upload Service — Validation</span>
+          <div class="trace__body">
+            بيرفض النوع والحجم <em>قبل</em> ما يوقّع أي حاجة.
+            <br><strong>أرخص فحص هو اللي بيحصل بدري.</strong> لو وقّعنا الأول وفحصنا بعدين،
+            كنا هنبقى إدّينا العميل إذن كتابة فعلي على تخزيننا قبل ما نتأكد إنه مسموح له أصلاً.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Guid.CreateVersion7()</span>
+          <div class="trace__body">
+            بيدّي معرّف عشوائي بس <strong>مرتّب زمنيًا</strong>.
+            <br>فالمفاتيح المتقاربة زمنيًا بتتخزّن متقاربة على القرص ⇒ أداء كتابة أحسن بكتير من
+            <code>v4</code>. مع <code>v4</code> كل إدخال بيهبط في مكان عشوائي في الفهرس
+            ⇒ <em>تشظّي في الصفحات</em> وكتابات قرص أكتر بمراحل على حجمنا.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Blob Key Namespacing</span>
+          <div class="trace__body">
+            مفتاح البلوب بيبدأ دايمًا بـ <code class="ltr">u/{userId}/</code>، والسيرفر هو اللي بيولّده.
+            <br>ده بيضمن إن أي تذكرة تخص مستخدم <strong>مستحيل تكتب فوق ملف مستخدم تاني</strong>،
+            حتى لو حصل خطأ في الكود. من غيره، مفتاح جاي من العميل زي
+            <code class="ltr">../../other-user/avatar</code> بيبقى كارثة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Pre-signed URL — User Delegation Key</span>
+          <div class="trace__body">
+            <code>GetUserDelegationKeyAsync</code> بيوقّع <strong>بهوية التطبيق</strong>
+            مش بمفتاح الحساب.
+            <br>الفرق يظهر يوم ما يتسرّب توقيع: مع هوية التطبيق بتلغيها في ثواني.
+            مع مفتاح الحساب لازم تدوّر <em>كل</em> مفاتيح التخزين — وده بيوقّف كل خدمة
+            بتستخدمه في نفس اللحظة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Commit — ExistsAsync + GetPropertiesAsync</span>
+          <div class="trace__body">
+            في نداء الـ <code>commit</code> بنسأل التخزين نفسه: البلوب موجود فعلاً؟ وحجمه كام؟
+            <br><strong>دي الحقيقة الوحيدة اللي نصدّقها — مش كلام العميل.</strong>
+            من غير الخطوة دي، أي عميل يقدر يقول «رفعت» من غير ما يرفع، فتفضل عندك
+            صفوف ميتاداتا بتشاور على ملفات مش موجودة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">BlobKey UNIQUE — Idempotency</span>
+          <div class="trace__body">
+            الفحص على <code>BlobKey</code> (وهو <span class="term">UNIQUE</span> في القاعدة)
+            بيخلّي إعادة نداء نفس الـ <code>commit</code> ترجّع نفس النتيجة.
+            <br>من غيره، شبكة الموبايل اللي قطعت وأعادت المحاولة بتنتج <strong>صورتين
+            في الـ Feed</strong> من رفع واحد. والعميل هيعيد المحاولة — ده مضمون مش احتمال.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Outbox — نفس المعاملة</span>
+          <div class="trace__body">
+            الصف + رسالة الـ <span class="term">Outbox</span> بيتكتبوا في
+            <code>SaveChangesAsync</code> واحد.
+            <br>⇒ <strong>مستحيل تلاقي صورة من غير حدث، ولا حدث من غير صورة.</strong>
+            لو بعتنا الرسالة للطابور بره المعاملة، فشل بسيط في الطابور معناه صورة
+            <em>عمرها ما هتتعالج ولا هتوصل لمتابعين</em> — وما فيش أي حاجة في النظام
+            هتلاحظ ده.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        كل بايت من الصورة عدّى <strong>من العميل للتخزين مباشرة</strong>.
+        الخدمة بتاعتنا شافت الميتاداتا بس — ودي السبب إن سيرفر واحد يقدر يخدم آلاف الرفعات.
+      </div>
     </div>
   </div>
 </section>
@@ -1601,7 +1668,8 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
             </div>
             <div class="plain mt">
               <span class="plain__label">القاعدة اللي تاخدها معاك</span>
-              في أي مستهلك رسائل: <strong>اكتب حالة نهائية، ما تكتبش فرق</strong>.
+              في أي <span class="term">consumer</span> (الطرف اللي بيقرا الرسايل وينفّذها):
+              <strong>اكتب حالة نهائية، ما تكتبش فرق</strong>.
               <br><code class="ltr">SET x = 5</code> آمن للتكرار · <code class="ltr">SET x = x + 1</code> مش آمن.
               <br>ولو محتاج تجمع فعلاً (زي عدّاد لايكات)، لازم تخزّن <em>معرّف العملية</em> وتتأكد
               إنها ما اتحسبتش قبل كده — وهنشوف ده بالتفصيل في سلايد العدّادات.
@@ -2521,21 +2589,69 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
 }</code></pre>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">الكود ده بيعمل إيه بالظبط؟</span>
-      <strong>1.</strong> بيكتب البوست في <code class="ltr">timeline:{owner}</code> <em>دايمًا</em> —
-      مشهور أو عادي. ده مصدر الحقيقة للسحب ولصفحة البروفايل، وكمان اللي بنعيد بناء الفيد منه.
-      <br><strong>2.</strong> بيسأل عن عدد المتابعين. لو ≥ 10,000 ⇒ <strong>يخرج فورًا</strong>.
-      سطرين كود بيمنعوا 50 مليون عملية كتابة.
-      <br><strong>3.</strong> <code>StreamAsync</code> بيرجّع المتابعين على دفعات
-      (<span class="ltr">IAsyncEnumerable</span>) — مستخدم بـ 9,999 متابع مش هيتحمّل في الذاكرة مرة واحدة.
-      <br><strong>4.</strong> <code>CreateBatch</code> بيجمّع الأوامر ويبعتهم في رحلة شبكة واحدة.
-      الفرق ضخم: 1,500 أمر فردي = 1,500 × <span class="ltr">0.5ms</span> =
-      <span class="ltr">750ms</span>، وبالدفعة = <span class="ltr">~5ms</span>.
-      <strong class="ltr">أسرع 150 مرة.</strong>
-      <br><strong>5.</strong> <code>Task.Delay(20)</code> كل 10 آلاف كتابة = كبح ذاتي
-      (<span class="term">Self-throttling</span>) عشان عامل التوزيع ما ياكلش قدرة Redis
-      ويخلّي القراءات تبطأ. <em>الشغل الخلفي دايمًا مواطن درجة تانية.</em>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع بوست واحد داخل الـ Fan-out Worker: من الحدث لحد Feeds المتابعين</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Fan-out Worker — timeline:{owner}</span>
+          <div class="trace__body">
+            أول حاجة: بيكتب البوست في <code class="ltr">timeline:{owner}</code>
+            <em>دايمًا</em> — مشهور أو عادي.
+            <br>ده مصدر الحقيقة للسحب ولصفحة البروفايل، وكمان اللي بنعيد بناء الفيد منه لما
+            مفتاح مستخدم يضيع. <strong>لو تخطّينا الخطوة دي للمشاهير، مكانش هيبقى فيه
+            حاجة نسحب منها أصلاً.</strong>
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Celebrity Cut-off — 10,000</span>
+          <div class="trace__body">
+            بيسأل عن عدد المتابعين. لو ≥ 10,000 ⇒ <strong>يخرج فورًا</strong> ويسيب الباقي
+            لمسار السحب.
+            <br>سطرين كود بيمنعوا 50 مليون عملية كتابة على بوست واحد.
+            من غير الحد ده، حساب واحد بـ 50 مليون متابع يقدر <em>يجمّد عنقود Redis
+            كله</em> لدقايق، وكل مستخدمين المنصة يحسّوا.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">StreamAsync — IAsyncEnumerable</span>
+          <div class="trace__body">
+            بيرجّع المتابعين على دفعات بدل ما يحمّلهم كلهم في الذاكرة.
+            <br>مستخدم بـ 9,999 متابع ما ينفعش يتحوّل لـ <code>List</code> في الذاكرة
+            في كل عملية — اضربها في مئات العمّال الشغّالين بالتوازي تلاقي
+            <strong>الذاكرة بتنفجر على حمل عادي تمامًا</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">CreateBatch — Redis Pipelining</span>
+          <div class="trace__body">
+            بيجمّع الأوامر ويبعتهم في رحلة شبكة واحدة.
+            <br>الفرق ضخم: 1,500 أمر فردي = 1,500 × <span class="ltr">0.5ms</span> =
+            <span class="ltr">750ms</span>، وبالدفعة = <span class="ltr">~5ms</span>.
+            <strong class="ltr">أسرع 150 مرة.</strong>
+            التكلفة الحقيقية هنا مش Redis — هي <em>زمن الشبكة المتكرّر</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Task.Delay(20) — Self-throttling</span>
+          <div class="trace__body">
+            كل 10 آلاف كتابة بياخد نفس صغير.
+            <br>الكبح الذاتي ده بيمنع عامل التوزيع من إنه ياكل قدرة Redis ويخلّي
+            <strong>قراءات المستخدمين الحقيقيين تبطأ</strong>.
+            <em>الشغل الخلفي دايمًا مواطن درجة تانية</em> — من غير الكبح ده، تأخّر بسيط
+            في الطابور بيتحوّل لموجة كتابات تضرب مسار القراءة في وقت الذروة.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        العامل ده هو المكان اللي بيتحوّل فيه «بوست واحد» لآلاف الكتابات —
+        وكل خطوة فيه موجودة عشان تحدّد <strong>سقف الضرر</strong> اللي البوست الواحد يقدر يعمله.
+      </div>
     </div>
 
     <div class="decode fragment">
@@ -2966,14 +3082,14 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
 <span class="lbl">كتابات (متابعة جديدة)</span> <span class="eq">≈</span> <span class="res">2K/s</span>
     </div>
 
-    <p class="sm mute">الأرقام دي بتقول: الجراف نفسه مش ضخم بشكل مخيف (<span class="ltr">19 TB</span> موزّعين على 100 جزء = <span class="ltr">190 GB</span> لكل جزء)، لكن <strong>معدّل القراءة عالي جدًا</strong> ونوعها بسيط جدًا: «هات جيران عُقدة واحدة».</p>
+    <p class="sm mute">الأرقام دي بتقول: الجراف نفسه مش ضخم بشكل مخيف (<span class="ltr">19 TB</span> موزّعين على 100 جزء = <span class="ltr">190 GB</span> لكل جزء)، لكن <strong>معدّل القراءة عالي جدًا</strong> ونوعها بسيط جدًا: «هات جيران <span class="term">node</span> واحدة».</p>
 
     <div class="vs fragment">
       <div class="card card--v">
         <div class="card__icon">🕸️</div>
         <h4 class="card__title">قاعدة بيانات جراف <span class="term term--v">Graph DB</span></h4>
         <p class="card__body sm">
-          بتخزّن العلاقات كمؤشرات مباشرة، فالتنقّل بين العُقد مجاني تقريبًا.
+          بتخزّن العلاقات كمؤشرات مباشرة، فالتنقّل بين الـ <span class="term">node</span> مجاني تقريبًا.
         </p>
         <ul class="pc pc--pro sm">
           <li>ممتازة في التنقّل <strong>متعدّد القفزات</strong>: «أصحاب أصحابي»، «أقصر طريق بين شخصين».</li>
@@ -3375,7 +3491,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
     <span class="k">private</span> <span class="k">static</span> <span class="t">RedisKey</span> <span class="f">Key</span>(<span class="k">long</span> photoId, <span class="k">int</span> shard)
         <span class="p">=&gt;</span> <span class="s">$"likes:{{{photoId}}}:{shard}"</span>;
     <span class="c">// لاحظ الأقواس {} حوالين photoId: دي «Hash Tag» في Redis Cluster</span>
-    <span class="c">// بتضمن إن الـ 64 مفتاح كلهم على نفس العقدة ⇒ MGET واحد يجيبهم كلهم</span>
+    <span class="c">// بتضمن إن الـ 64 مفتاح كلهم على نفس الـ node ⇒ MGET واحد يجيبهم كلهم</span>
 
     <span class="c">// ═══ الزيادة: توزيع الحمل على 64 مفتاح ═══</span>
     <span class="k">public</span> <span class="t">Task</span> <span class="f">IncrementAsync</span>(<span class="k">long</span> photoId, <span class="k">int</span> by <span class="p">=</span> <span class="n">1</span>)
@@ -3620,7 +3736,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
         <tbody>
           <tr><td><strong>1. المتصفح/التطبيق</strong></td><td>صور شافها المستخدم قريّب</td><td class="ltr">200 MB/جهاز</td><td class="ltr td-ok">~60%</td><td class="td-ok">حمل أعلى على الـ CDN</td></tr>
           <tr><td><strong>2. CDN</strong></td><td>كل ملفات الصور</td><td class="ltr">بيتابايتات</td><td class="ltr td-ok">≥ 97%</td><td class="td-bad">فاتورة ×8 وانهيار المصدر</td></tr>
-          <tr><td><strong>3. كاش محلي في الخدمة</strong></td><td>مفاتيح ساخنة جدًا (المشاهير)</td><td class="ltr">2 GB/عقدة</td><td class="ltr td-mid">~30%</td><td class="td-ok">حمل أعلى على Redis</td></tr>
+          <tr><td><strong>3. كاش محلي في الخدمة</strong></td><td>مفاتيح ساخنة جدًا (المشاهير)</td><td class="ltr">2 GB/<span class="term">node</span></td><td class="ltr td-mid">~30%</td><td class="td-ok">حمل أعلى على Redis</td></tr>
           <tr><td><strong>4. Redis — الفيد</strong></td><td>ZSET لكل مستخدم نشط</td><td class="ltr">1.9 TB</td><td class="ltr td-ok">≥ 95%</td><td class="td-bad">إعادة بناء جماعي + خطر تدافع</td></tr>
           <tr><td><strong>5. Redis — الميتاداتا</strong></td><td>تفاصيل الصور والمستخدمين</td><td class="ltr">100 GB</td><td class="ltr td-ok">≥ 99%</td><td class="td-bad">ضغط ×100 على قاعدة البيانات</td></tr>
         </tbody>
@@ -3667,7 +3783,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
       <div class="callout__body">
         <span class="callout__title">الكاش المحلي: قوي بس ليه تمن خفي</span>
         <code>HybridCache</code> في .NET 9 بيدّيك طبقة في الذاكرة فوق Redis بسطرين.
-        <br><strong>التمن:</strong> عندك <span class="ltr">400</span> عقدة، يعني
+        <br><strong>التمن:</strong> عندك <span class="ltr">400</span> <span class="term">node</span>، يعني
         <strong class="ltr">400</strong> نسخة ممكن تختلف عن بعض.
         <br>لو مستخدم عدّل الوصف، فيه عقد لسه شايفة القديم لحد ما مدة الصلاحية تخلص.
         <br><strong>الحل:</strong> مدة قصيرة جدًا (<span class="ltr">2–10</span> ثانية) للبيانات
@@ -3695,7 +3811,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
           <tr><td>توزيع الفيد</td><td class="td-bad">50 مليون كتابة لبوست واحد</td><td class="td-ok">Pull بدل Push فوق عتبة</td></tr>
           <tr><td>جدول المتابعين</td><td class="td-bad">جزء واحد فيه 50 مليون صف</td><td class="td-ok">تقسيم فرعي + صفحات مؤشّرة</td></tr>
           <tr><td>عدّاد اللايكات</td><td class="td-bad">قفل صف واحد تحت 50K/ثانية</td><td class="td-ok">عدّاد مقسّم 64 مفتاح</td></tr>
-          <tr><td>كاش الميتاداتا</td><td class="td-bad">مفتاح ساخن على عقدة واحدة</td><td class="td-ok">كاش محلي + نسخ متعددة للمفتاح</td></tr>
+          <tr><td>كاش الميتاداتا</td><td class="td-bad">مفتاح ساخن على <span class="term">node</span> واحدة</td><td class="td-ok">كاش محلي + نسخ متعددة للمفتاح</td></tr>
           <tr><td>الـ CDN</td><td class="td-mid">تدافع عند أول نشر (كل الطلبات في نفس الثانية)</td><td class="td-ok">دمج الطلبات على الحافة + تسخين مسبق</td></tr>
           <tr><td>الإشعارات</td><td class="td-bad">50 مليون إشعار دفع لبوست واحد</td><td class="td-ok">تجميع + إرسال متدرّج + تخصيص</td></tr>
           <tr><td>التعليقات</td><td class="td-bad">10K تعليق/ثانية على نفس البوست</td><td class="td-ok">كتابة في طابور + عرض جزئي مرتّب</td></tr>
@@ -3767,7 +3883,8 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
         <h4 class="card__title">🧱 التصميم</h4>
         <div class="math sm mb0" style="border-color:var(--amber)">
 <span class="cmt">// الستوري نفسها</span>
-<span class="lbl">KEY</span> <span class="eq">=</span> <span class="var">story:{storyId}</span>  <span class="lbl">EXPIRE</span> <span class="eq">=</span> <span class="n">86400</span>
+<span class="lbl">KEY</span>    <span class="eq">=</span> <span class="var">story:{storyId}</span>
+<span class="lbl">EXPIRE</span> <span class="eq">=</span> <span class="n">86400</span> <span class="cmt">// 24 ساعة</span>
 
 <span class="cmt">// ستوريهات المستخدم</span>
 <span class="lbl">KEY</span> <span class="eq">=</span> <span class="var">stories:{userId}</span> <span class="cmt">// ZSET</span>
@@ -3942,7 +4059,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
       <br><strong>2. الدفعات أسرع بمراحل.</strong> فهرسة 1000 مستند مع بعض أسرع
       <span class="ltr">50–100</span> مرة من فهرستهم واحد واحد.
       <br><strong>3. إعادة البناء الكامل ممكنة.</strong> غيّرت شكل الفهرس؟
-      شغّل المستهلك من أول التيار وابني فهرس جديد على الجنب،
+      شغّل الـ <span class="term">consumer</span> من أول التيار وابني فهرس جديد على الجنب،
       وبدّل المؤشّر لما يخلص — <em>من غير أي توقف</em>.
       <br><strong>التمن:</strong> الصورة بتظهر في البحث بعد <span class="ltr">2–10</span> ثانية.
       <em>ومحدش بيلاحظ ده أصلاً.</em>
@@ -3986,7 +4103,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
         <thead><tr><th>المكوّن</th><th>SPOF؟</th><th>لو وقع</th><th>الحماية والتدهور المخطّط</th></tr></thead>
         <tbody>
           <tr>
-            <td>عنقود Redis (الفيد)</td><td class="td-bad">آه لو عقدة واحدة</td>
+            <td>عنقود Redis (الفيد)</td><td class="td-bad">آه لو <span class="term">node</span> واحدة</td>
             <td class="td-bad">كل الفيدات ضاعت</td>
             <td class="td-ok">نسخة لكل جزء + إعادة بناء عند الطلب + تدهور لأحدث 20 بوست من أنشط 10 حسابات</td>
           </tr>
@@ -4008,7 +4125,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
           <tr>
             <td>عمّال التوزيع</td><td class="td-ok">لأ</td>
             <td class="td-mid">تراكم في الطابور</td>
-            <td class="td-ok">مجموعة مستهلكين + توسّع تلقائي حسب طول الطابور</td>
+            <td class="td-ok"><span class="term">consumer</span> group + توسّع تلقائي حسب طول الطابور</td>
           </tr>
           <tr>
             <td>مزوّد الـ CDN</td><td class="td-bad">آه!</td>
@@ -4018,7 +4135,7 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
           <tr>
             <td>خدمة الفيد</td><td class="td-ok">لأ</td>
             <td class="td-mid">الفيد مش بيفتح</td>
-            <td class="td-ok">نسخ متعددة في 3 مناطق · قاطع دائرة · تدهور لوضع السحب</td>
+            <td class="td-ok">نسخ متعددة في 3 مناطق · <span class="term">circuit breaker</span> · تدهور لوضع السحب</td>
           </tr>
           <tr>
             <td>خدمة البحث</td><td class="td-ok">لأ</td>
@@ -4036,7 +4153,9 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
         <ol class="sm" style="color:var(--text-dim)">
           <li><strong>الكشف (خلال 15 ثانية).</strong> نسبة الإخفاق قفزت من
             <span class="ltr">5%</span> لـ <span class="ltr">50%</span> ⟵ تنبيه.</li>
-          <li><strong>الحماية التلقائية الأولى.</strong> قاطع الدائرة في خدمة الفيد بيفتح ناحية العقد الميتة
+          <li><strong>الحماية التلقائية الأولى.</strong> الـ <span class="term">circuit breaker</span>
+            (اللي بيقطع النداءات على مكوّن واقع) في خدمة الفيد بيفتح ناحية الـ
+            <span class="term">node</span> الميتة
             ⟵ بطّل تضيّع <span class="ltr">2</span> ثانية مهلة على كل طلب.</li>
           <li><strong>التدهور المخطّط.</strong> الطلبات اللي ملقتش فيد بتتحوّل لوضع
             <em>السحب المحدود</em>: أحدث 20 بوست من أنشط <span class="ltr">10</span> حسابات
@@ -4164,7 +4283,9 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
 
 <span class="cmt">// ═══ 4. سيرفرات التطبيق ═══</span>
 <span class="lbl">Peak Feed QPS</span> <span class="eq">=</span> <span class="n">150,000</span> ÷ <span class="n">2,000</span> <span class="cmt">RPS/سيرفر</span> <span class="eq">=</span> <span class="n">75</span>
-<span class="lbl">÷ 60% استغلال</span> <span class="eq">=</span> <span class="n">125</span>  <span class="lbl">× 3 مناطق</span> <span class="eq">=</span> <span class="n">375</span> <span class="eq">+</span> <span class="cmt">هامش</span> <span class="eq">=</span> <span class="n">400</span>
+<span class="lbl">÷ 60% استغلال</span> <span class="eq">=</span> <span class="n">75</span> / <span class="n">0.6</span> <span class="eq">=</span> <span class="n">125</span>
+<span class="lbl">× 3 مناطق</span>     <span class="eq">=</span> <span class="n">125</span> × <span class="n">3</span> <span class="eq">=</span> <span class="n">375</span>
+<span class="lbl">+ هامش</span>        <span class="eq">=</span> <span class="res">400 سيرفر</span>
 <span class="lbl">التكلفة</span> <span class="eq">=</span> <span class="n">400</span> × <span class="n">$260</span> <span class="eq">=</span> <span class="res">$104,000</span>
 
 <span class="cmt">// ═══ 5. معالجة الصور ═══</span>
@@ -4414,9 +4535,9 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
       <div class="card card--e"><span class="card__num">05</span>
         <h4 class="card__title">التكرار مش استثناء — هو القاعدة</h4>
         <p class="card__body sm">
-          أي مستهلك رسائل هيشوف نفس الرسالة مرتين. اكتب حالة نهائية مش فروق.
+          أي <span class="term">consumer</span> رسائل هيشوف نفس الرسالة مرتين. اكتب حالة نهائية مش فروق.
           <br><strong>في نظامك:</strong> راجع كل <span class="term term--e">Webhook</span>
-          وكل مستهلك طابور — فيه <code class="ltr">+= </code> فين؟
+          وكل <span class="term">consumer</span> طابور — فيه <code class="ltr">+= </code> فين؟
         </p>
       </div>
       <div class="card card--b"><span class="card__num">06</span>

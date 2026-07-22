@@ -690,7 +690,7 @@ retry: 3000</div>
     <div class="termcard">
       <div class="termcard__head">
         <span class="termcard__en">WebSocket</span>
-        <span class="termcard__ar">مقبس الويب</span>
+        <span class="termcard__ar">قناة مفتوحة في الاتجاهين</span>
         <span class="badge badge--muted" style="margin-inline-start:auto">RFC 6455</span>
       </div>
       <div class="termcard__body">
@@ -1294,7 +1294,7 @@ Sec-WebSocket-Version: 13
           <strong>1) التوسّع الأفقي:</strong> إضافة سيرفر جديد <em>ما بتخفّفش</em> عن القدامى —
           الاتصالات القديمة فاضلة مكانها. السيرفر الجديد بياخد الاتصالات <em>الجديدة</em> بس.
           <br><strong>2) النشر:</strong> كل <span class="term term--r">Deploy</span> =
-          قطع كل الاتصالات على العقدة دي = <strong>عاصفة إعادة اتصال</strong>.
+          قطع كل الاتصالات على الـ <span class="term">node</span> دي = <strong>عاصفة إعادة اتصال</strong>.
           <br><strong>3) التوجيه:</strong> رسالة جاية للمستخدم <span class="ltr">X</span> —
           <em>أنهي سيرفر من الخمسين ماسك اتصاله؟</em> محتاج سجل.
           <br><strong>4) الذاكرة بقت مورد نادر:</strong> بدل ما تحسب
@@ -1423,7 +1423,7 @@ Sec-WebSocket-Version: 13
   <div class="slide__head">
     <span class="eyebrow">الحسبة 01</span>
     <h2 class="slide__title">كام جيجا ذاكرة عشان مليون <span class="term">WebSocket</span>؟</h2>
-    <p class="slide__sub">دي الحسبة اللي بتحدّد عدد العقد وشكل النشر والفاتورة كلها.</p>
+    <p class="slide__sub">دي الحسبة اللي بتحدّد عدد الـ <span class="term">nodes</span> وشكل النشر والفاتورة كلها.</p>
     <div class="rule"></div>
   </div>
 
@@ -1465,8 +1465,8 @@ Sec-WebSocket-Version: 13
         <div class="decode__row">
           <span class="decode__tok">6 nodes</span>
           <div class="decode__exp">
-            مش <span class="ltr">54GB ÷ 64GB = 1</span> عقدة!
-            <br>بنحط <b>سقف لكل عقدة = 250 ألف اتصال</b> لأسباب مالهاش علاقة بالذاكرة:
+            مش <span class="ltr">54GB ÷ 64GB = 1</span> <span class="term">node</span>!
+            <br>بنحط <b>سقف لكل <span class="term">node</span> = 250 ألف اتصال</b> لأسباب مالهاش علاقة بالذاكرة:
             نطاق الانفجار، ووقت التفريغ عند النشر، وطول توقف الـ GC، وحد المنافذ.
             <br><span class="ltr">1M ÷ 250K = 4</span> عقد + <b>2 احتياطي</b> للنشر والفشل ⇒ <b>6</b>.
           </div>
@@ -1476,13 +1476,13 @@ Sec-WebSocket-Version: 13
           <div class="decode__exp">
             لو مليت الذاكرة لآخرها، جامع القمامة هيشتغل باستمرار وتوقفاته هتوصل
             <b>مئات المللي ثانية</b> — وده كارثة في نظام لحظي.
-            <br>القاعدة: خلّي <b>الاستخدام الفعلي تحت 65%</b> من ذاكرة العقدة.
+            <br>القاعدة: خلّي <b>الاستخدام الفعلي تحت 65%</b> من ذاكرة الـ <span class="term">node</span>.
           </div>
         </div>
       </div>
       <div class="decode__sum">
         مليون اتصال متزامن = <b>6 عقد بذاكرة 64 جيجا</b> لو ضبطت الإعدادات.
-        نفس المليون <b>بإعدادات افتراضية</b> = أكتر من 30 عقدة. الفرق كله في الضبط، مش في الكود.
+        نفس المليون <b>بإعدادات افتراضية</b> = أكتر من 30 <span class="term">node</span>. الفرق كله في الضبط، مش في الكود.
       </div>
     </div>
 
@@ -1491,10 +1491,10 @@ Sec-WebSocket-Version: 13
       <div class="callout__body">
         <span class="callout__title">القيد اللي بيفاجئ الناس أكتر من الذاكرة — المنافذ المؤقتة</span>
         الاتصال بيتعرّف بأربع قيم: <span class="ltr">(src IP, src port, dst IP, dst port)</span>.
-        من <strong>موازِن واحد</strong> بعنوان واحد لـ <strong>عقدة واحدة</strong> على منفذ واحد،
+        من <strong>موازِن واحد</strong> بعنوان واحد لـ <strong><span class="term">node</span> واحدة</strong> على منفذ واحد،
         عدد المنافذ المؤقتة المتاحة = <strong class="ltr">~64,000</strong>.
-        <br>⇒ <strong>الموازِن مش هيقدر يفتح أكتر من 64 ألف اتصال للعقدة دي — مهما كانت الذاكرة فاضية.</strong>
-        <br>الحلول: خلّي العقدة تسمع على <span class="ltr">8</span> منافذ ·
+        <br>⇒ <strong>الموازِن مش هيقدر يفتح أكتر من 64 ألف اتصال للـ <span class="term">node</span> دي — مهما كانت الذاكرة فاضية.</strong>
+        <br>الحلول: خلّي الـ <span class="term">node</span> تسمع على <span class="ltr">8</span> منافذ ·
         أو ادّي الموازِن أكتر من عنوان (<span class="ltr">SNAT pool</span>) ·
         أو استخدم موازِن طبقة 4 بيحافظ على عنوان العميل.
         <br><em>ده أشهر «سقف خفي» بيوقف التوسّع عند رقم غريب زي 63,800 اتصال.</em>
@@ -1502,14 +1502,14 @@ Sec-WebSocket-Version: 13
     </div>
 
     <div class="exercise fragment">
-      <div class="exercise__head">تمرين 3 — احسب العقد<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__head">تمرين 3 — احسب الـ <span class="term">nodes</span><span class="exercise__level">متوسط</span></div>
       <div class="exercise__body">
         <p>
           منصة تداول: <span class="ltr">400,000</span> اتصال متزامن وقت الذروة.
-          العقدة عندك <span class="ltr">32 GB</span> ذاكرة. كل اتصال بياخد
+          الـ <span class="term">node</span> عندك <span class="ltr">32 GB</span> ذاكرة. كل اتصال بياخد
           <span class="ltr">40 KB</span> (عندك طابور أكبر لأن الأسعار كتيرة).
-          <br>احسب: العقد المطلوبة، مع سقف <span class="ltr">150,000</span> اتصال للعقدة
-          وهامش <span class="ltr">35%</span> للذاكرة. وقول عايز كام عقدة زيادة وليه.
+          <br>احسب: الـ <span class="term">nodes</span> المطلوبة، مع سقف <span class="ltr">150,000</span> اتصال للـ <span class="term">node</span>
+          وهامش <span class="ltr">35%</span> للذاكرة. وقول عايز كام <span class="term">node</span> زيادة وليه.
         </p>
         <details class="solution">
           <summary>شوف الحل</summary>
@@ -1520,7 +1520,7 @@ Sec-WebSocket-Version: 13
 <span class="lbl">اتصالات لكل عقدة (ذاكرة)</span>  <span class="eq">=</span> <span class="n">20.8 GB</span> / <span class="n">40 KB</span> <span class="eq">=</span> <span class="res">~520,000</span>
 
 <span class="cmt">// ═══ 2) القيد التاني: السقف التشغيلي ═══</span>
-<span class="lbl">سقف العقدة</span> <span class="eq">=</span> <span class="res">150,000</span>  <span class="cmt">← ده الأصغر، فهو الحاكم</span>
+<span class="lbl">سقف الـ node</span> <span class="eq">=</span> <span class="res">150,000</span>  <span class="cmt">← ده الأصغر، فهو الحاكم</span>
 
 <span class="cmt">// ═══ 3) العقد الأساسية ═══</span>
 <span class="lbl">عقد</span> <span class="eq">=</span> <span class="n">400,000</span> / <span class="n">150,000</span> <span class="eq">=</span> <span class="n">2.67</span> <span class="eq">→</span> <span class="res">3 عقد</span>
@@ -1531,20 +1531,20 @@ Sec-WebSocket-Version: 13
             </div>
             <ul class="pc pc--pro sm mt">
               <li><strong>ليه <span class="ltr">N+2</span> مش <span class="ltr">N+1</span>؟</strong>
-                لأن في نظام لحظي بيحصل الاتنين <em>مع بعض</em>: عقدة بتتحدّث (نشر متدرّج)
-                وعقدة تانية ممكن تقع. <span class="ltr">N+1</span> بيغطي حالة واحدة بس.</li>
+                لأن في نظام لحظي بيحصل الاتنين <em>مع بعض</em>: <span class="term">node</span> بتتحدّث (نشر متدرّج)
+                و<span class="term">node</span> تانية ممكن تقع. <span class="ltr">N+1</span> بيغطي حالة واحدة بس.</li>
               <li><strong>لاحظ إن الذاكرة ما كانتش القيد الحاكم أصلاً</strong> —
                 <span class="ltr">520K</span> مقابل سقف <span class="ltr">150K</span>.
                 القيد كان <em>تشغيلي</em>: نطاق الانفجار ووقت التفريغ.</li>
               <li><strong>وقت التفريغ:</strong> 150 ألف اتصال بيرجعوا يتصلوا خلال 30 ثانية =
-                <span class="ltr">5,000</span> مصافحة/ثانية على العقد الباقية.
+                <span class="ltr">5,000</span> مصافحة/ثانية على الـ <span class="term">nodes</span> الباقية.
                 جرّب ده في اختبار الحمل — مش وقت الحادثة.</li>
             </ul>
             <div class="plain mt">
               <span class="plain__label">الدرس</span>
-              في الأنظمة اللحظية <strong>عدد العقد بيتحدّد بسيناريو الفشل مش بحمل الذروة</strong>.
-              السؤال الصح مش «كام عقدة تكفّي 400 ألف؟» — السؤال
-              <strong>«كام عقدة تكفّي 400 ألف <em>وواحدة منهم واقعة والتانية بتتحدّث</em>؟»</strong>
+              في الأنظمة اللحظية <strong>عدد الـ <span class="term">nodes</span> بيتحدّد بسيناريو الفشل مش بحمل الذروة</strong>.
+              السؤال الصح مش «كام <span class="term">node</span> تكفّي 400 ألف؟» — السؤال
+              <strong>«كام <span class="term">node</span> تكفّي 400 ألف <em>وواحدة منهم واقعة والتانية بتتحدّث</em>؟»</strong>
             </div>
           </div>
         </details>
@@ -1593,7 +1593,7 @@ Sec-WebSocket-Version: 13
           البوابة بتتوسّع بـ <em>عدد الاتصالات</em>، وخدمة الرسائل بـ <em>عدد الرسائل</em>.
           مليون متفرّج ساكت في بث مباشر = ضغط ضخم على البوابة و<strong>صفر</strong> ضغط على المنطق.
           <br><strong>3) أجهزة مختلفة.</strong> البوابة عايزة ذاكرة وشبكة (رخيص).
-          المنطق عايز معالج وقرب من قاعدة البيانات (غالي). من غير الفصل بتدفع الاتنين لكل عقدة.
+          المنطق عايز معالج وقرب من قاعدة البيانات (غالي). من غير الفصل بتدفع الاتنين لكل <span class="term">node</span>.
           <br><strong>4) نطاق انفجار محدود.</strong> باگ في منطق العمل بيرمي استثناء —
           مش بيقطع مليون سوكت.
         </div>
@@ -1688,7 +1688,7 @@ Sec-WebSocket-Version: 13
 
     <span class="k">public</span> <span class="k">override</span> <span class="k">async</span> <span class="t">Task</span> <span class="f">OnConnectedAsync</span>()
     {
-        <span class="c">// سجّل: المستخدم ده موجود دلوقتي على العقدة دي</span>
+        <span class="c">// سجّل: المستخدم ده موجود دلوقتي على الـ node دي</span>
         <span class="k">await</span> presence.<span class="f">MarkOnlineAsync</span>(UserId, Context.ConnectionId, <span class="t">NodeInfo</span>.Id);
 
         <span class="c">// ضيفه لمجموعة لكل محادثة — «المجموعة» = قايمة اتصالات في الذاكرة</span>
@@ -1833,23 +1833,69 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
 });</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">النقط الخمسة المهمة في الكود ده</span>
-      <strong>1)</strong> <code>KeepAliveInterval</code> بيبعت إطار <code>Ping</code> على مستوى
-      البروتوكول. من غيره الـ <span class="term">NAT</span> بتاع شركة الموبايل بيقفل الاتصال بعد
-      <span class="ltr">30–60</span> ثانية سكوت — <em>ومن غير ما أي طرف يعرف</em>.
-      <br><strong>2)</strong> ربط <code>ApplicationStopping</code> بالإلغاء هو اللي بيخلّي التفريغ
-      السلس ممكن أصلاً. من غيره الـ <span class="ltr">Pod</span> بيتقتل والسوكتات بتموت بعنف
-      (<span class="ltr">RST</span>) والعملاء بيرجعوا كلهم في نفس اللحظة.
-      <br><strong>3)</strong> <code>ArrayPool</code> بدل <code>new byte[4096]</code>:
-      على <span class="ltr">250,000</span> اتصال ده الفرق بين
-      <strong><span class="ltr">1 GB</span> بتضغط على جامع القمامة</strong> وبين إعادة استخدام مخازن جاهزة.
-      <br><strong>4)</strong> فحص <code>EndOfMessage</code> إجباري. من غيره لو حد بعت رسالة
-      <span class="ltr">10MB</span> هتقراها على أجزاء وتعاملها كأنها رسائل منفصلة ⇒ فساد بيانات،
-      أو تحاول تجمّعها في ذاكرة غير محدودة ⇒ <strong>ثغرة استنزاف ذاكرة</strong>.
-      <br><strong>5)</strong> أكواد الإغلاق مهمة للعميل: <code>1001</code> (بيمشي) و<code>1012</code>
-      (إعادة تشغيل) معناها «ارجع بسرعة»، لكن <code>1008</code> (مخالفة سياسة) معناها
-      <strong>«ما ترجعش — التوكن بتاعك باظ»</strong>. لو ما فرّقتش، عميلك هيفضل يحاول للأبد ضد سيرفر رافضه.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع دورة حياة اتصال واحد: من الترقية لحد كود الإغلاق</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">KeepAliveInterval</span>
+          <div class="trace__body">
+            بيبعت إطار <code>Ping</code> على مستوى البروتوكول كل فترة.
+            <br>من غيره الـ <span class="term">NAT</span> بتاع شركة الموبايل بيقفل الاتصال بعد
+            <span class="ltr">30–60</span> ثانية سكوت — <em>ومن غير ما أي طرف يعرف</em>.
+            النتيجة: السيرفر فاكر العميل موجود، والعميل فاكر إنه متصل،
+            و<strong>الرسايل بتروح في الفاضي</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">ApplicationStopping</span>
+          <div class="trace__body">
+            ربط <code>ApplicationStopping</code> بالإلغاء هو اللي بيخلّي التفريغ السلس ممكن أصلاً.
+            <br>من غيره الـ <span class="ltr">Pod</span> بيتقتل والـ
+            <span class="term">socket</span>s بتموت بعنف (<span class="ltr">RST</span>)
+            والعملاء بيرجعوا كلهم في نفس اللحظة — <strong>وده بالظبط سيناريو عاصفة إعادة الاتصال</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">ArrayPool</span>
+          <div class="trace__body">
+            <code>ArrayPool</code> بدل <code>new byte[4096]</code> لكل قراءة.
+            <br>على <span class="ltr">250,000</span> اتصال ده الفرق بين
+            <strong><span class="ltr">1 GB</span> بتضغط على جامع القمامة</strong>
+            وبين إعادة استخدام مخازن جاهزة. توقّفات الجمع بتظهر عند المستخدم
+            كتقطيع في البث اللحظي مش كخطأ.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">EndOfMessage</span>
+          <div class="trace__body">
+            فحص <code>EndOfMessage</code> إجباري.
+            <br>من غيره لو حد بعت رسالة <span class="ltr">10MB</span> هتقراها على أجزاء
+            وتعاملها كأنها رسائل منفصلة ⇒ <strong>فساد بيانات</strong>،
+            أو تحاول تجمّعها في ذاكرة غير محدودة ⇒ <strong>ثغرة استنزاف ذاكرة</strong>
+            أي عميل يقدر يستغلها بسطر واحد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Close Codes</span>
+          <div class="trace__body">
+            أكواد الإغلاق مهمة للعميل: <code>1001</code> (بيمشي) و<code>1012</code>
+            (إعادة تشغيل) معناها «ارجع بسرعة»، لكن <code>1008</code> (مخالفة سياسة) معناها
+            <strong>«ما ترجعش — التوكن بتاعك باظ»</strong>.
+            <br>لو ما فرّقتش، عميلك هيفضل يحاول للأبد ضد سيرفر رافضه —
+            وهيبان عندك كحمل شبح ما بيهدّاش أبدًا.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الاتصال الدائم مش «افتح واقرا» — هو <strong>دورة حياة كاملة ليها نبض وإغلاق ومعنى للإغلاق</strong>.
+        كل خطوة فوق بتغطّي لحظة معيّنة فيها.
+      </div>
     </div>
   </div>
 </section>
@@ -1924,7 +1970,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
         <div class="decode__row">
           <span class="decode__tok">n17</span>
           <div class="decode__exp">
-            <b>القيمة = رقم العقدة</b> اللي ماسكة الاتصال.
+            <b>القيمة = رقم الـ <span class="term">node</span></b> اللي ماسكة الاتصال.
             ده مش بس بيقول «موجود» — بيقول <b>«موجود، وعلى البوابة 17»</b>.
             وده اللي بيخلّي التوجيه ممكن من غير بحث إضافي.
           </div>
@@ -1948,7 +1994,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
         </div>
       </div>
       <div class="decode__sum">
-        «سجّل إن المستخدم 9812 موجود على العقدة 17، واعتبره مشي لو ما بعتش نبضة خلال 90 ثانية،
+        «سجّل إن المستخدم 9812 موجود على الـ <span class="term">node</span> 17، واعتبره مشي لو ما بعتش نبضة خلال 90 ثانية،
         وقوللي لو ده كان رجوع بعد غياب.»
       </div>
     </div>
@@ -1957,7 +2003,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
       <div class="callout__icon">🌩️</div>
       <div class="callout__body">
         <span class="callout__title">عاصفة إعادة الاتصال بعد النشر — بالأرقام</span>
-        عقدة فيها <span class="ltr">250,000</span> اتصال اتحدّثت. كل العملاء رجعوا خلال 5 ثواني:
+        <span class="term">node</span> فيها <span class="ltr">250,000</span> اتصال اتحدّثت. كل العملاء رجعوا خلال 5 ثواني:
         <div class="math sm mt" style="border-color:var(--rose)">
 <span class="lbl">مصافحات TLS</span>   <span class="eq">=</span> <span class="n">250,000</span> / <span class="n">5</span> <span class="eq">=</span> <span class="res">50,000/ثانية</span>
 <span class="lbl">تحقق من التوكن</span> <span class="eq">=</span> <span class="res">50,000/ثانية</span> <span class="cmt">// على خدمة الهوية</span>
@@ -1998,7 +2044,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
           <span class="tblock__label">المشكلة اللي بيحلها</span>
           المستخدم <strong>أ</strong> متصل بالبوابة 1، والمستخدم <strong>ب</strong> متصل بالبوابة 7.
           أ بعت رسالة. البوابة 1 <em>ما تعرفش</em> ب أصلاً — هو مش في ذاكرتها.
-          <br>الـ <span class="term term--v">Backplane</span> هو الوسيط اللي بينقل الرسالة بين العقد.
+          <br>الـ <span class="term term--v">Backplane</span> هو الـ <span class="term">broker</span> اللي بينقل الرسالة بين الـ <span class="term">nodes</span>.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 📢</span>
@@ -2009,16 +2055,16 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
         </div>
         <div class="tblock tblock--net">
           <span class="tblock__label">تطبيق .NET</span>
-          <code>AddStackExchangeRedis()</code> بيحوّل SignalR من عقدة واحدة لعنقود في سطر واحد.
+          <code>AddStackExchangeRedis()</code> بيحوّل SignalR من <span class="term">node</span> واحدة لعنقود في سطر واحد.
           البدائل: <span class="term term--v">Azure SignalR Service</span> (مُدار — بياخد
           الاتصالات نفسها منك)، أو <span class="term term--v">Kafka</span> لو محتاج ثبات وإعادة تشغيل.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">الفخ الكبير ⚠️ — الانهيار عند التوسّع</span>
-          الـ Backplane الافتراضي <strong>بيذيع لكل العقد</strong>. كل عقدة بتستقبل
+          الـ Backplane الافتراضي <strong>بيذيع لكل الـ <span class="term">nodes</span></strong>. كل <span class="term">node</span> بتستقبل
           <em>كل</em> رسالة في النظام كله وتفلترها محليًا.
-          <br>⇒ الحمل على العقدة الواحدة بيكبر <strong>مع نمو النظام كله</strong>، مش مع عدد مستخدميها.
-          <br>⇒ إضافة عقدة جديدة <strong>بتزوّد</strong> الحمل الكلي بدل ما تخفّفه.
+          <br>⇒ الحمل على الـ <span class="term">node</span> الواحدة بيكبر <strong>مع نمو النظام كله</strong>، مش مع عدد مستخدميها.
+          <br>⇒ إضافة <span class="term">node</span> جديدة <strong>بتزوّد</strong> الحمل الكلي بدل ما تخفّفه.
           <em>ده عكس التوسّع الأفقي بالظبط.</em>
         </div>
       </div>
@@ -2047,7 +2093,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
 
     <div class="plain fragment">
       <span class="plain__label">النتيجة معناها إيه؟</span>
-      الإذاعة للكل بتخلّي حمل الـ Backplane = <strong>الرسائل × عدد العقد</strong>.
+      الإذاعة للكل بتخلّي حمل الـ Backplane = <strong>الرسائل × عدد الـ <span class="term">nodes</span></strong>.
       التوجيه بالوجهة بيخلّيه = <strong>الرسائل × متوسط المستقبلين</strong>.
       <br>الأولى بتكبر لما تكبر بنيتك التحتية (كارثة). التانية بتكبر لما يكبر
       <em>استخدام المنتج</em> (طبيعي وصحي).
@@ -2058,34 +2104,34 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
       <div class="card card--r"><span class="card__num">01</span>
         <h4 class="card__title">إذاعة للكل ❌</h4>
         <p class="card__body sm">
-          قناة واحدة <code>chat:all</code>. كل عقدة مشتركة فيها.
+          قناة واحدة <code>chat:all</code>. كل <span class="term">node</span> مشتركة فيها.
           <br><strong>يكسب لحد:</strong> ~5 عقد.
-          <br><strong>يقع عند:</strong> 20+ عقدة.</p></div>
+          <br><strong>يقع عند:</strong> 20+ <span class="term">node</span>.</p></div>
       <div class="card card--a"><span class="card__num">02</span>
         <h4 class="card__title">تقسيم بالموضوع ⚠️</h4>
         <p class="card__body sm">
-          قناة لكل محادثة <code>conv:8812</code>. العقدة بتشترك في المحادثات النشطة عندها بس.
+          قناة لكل محادثة <code>conv:8812</code>. الـ <span class="term">node</span> بتشترك في المحادثات النشطة عندها بس.
           <br><strong>الفخ:</strong> ملايين الاشتراكات النشطة، وكل إعادة اتصال بتعيد الاشتراك.</p></div>
       <div class="card card--e"><span class="card__num">03</span>
-        <h4 class="card__title">توجيه بالعقدة ✅</h4>
+        <h4 class="card__title">توجيه بالـ <span class="term">node</span> ✅</h4>
         <p class="card__body sm">
-          قناة لكل عقدة <code>node:17</code>. المُرسِل بيسأل السجل «فين المستقبِل؟» وينشر هناك بس.
-          <br><strong>الاشتراكات:</strong> واحد لكل عقدة. <strong>الحمل:</strong> بيتناسب مع الاستخدام.</p></div>
+          قناة لكل <span class="term">node</span> <code>node:17</code>. المُرسِل بيسأل السجل «فين المستقبِل؟» وينشر هناك بس.
+          <br><strong>الاشتراكات:</strong> واحد لكل <span class="term">node</span>. <strong>الحمل:</strong> بيتناسب مع الاستخدام.</p></div>
     </div>
 
     <div class="callout callout--warn fragment">
       <div class="callout__icon">🧠</div>
       <div class="callout__body">
         <span class="callout__title">تفصيلة مهمة جدًا في <span class="ltr">Redis Cluster</span></span>
-        الـ <code>PUBLISH</code> العادي في وضع العنقود <strong>بيتذاع على كل العقد عبر ناقل العنقود</strong>
-        — حتى لو المشترك على عقدة واحدة! يعني التقسيم اللي عملته في التطبيق
+        الـ <code>PUBLISH</code> العادي في وضع العنقود <strong>بيتذاع على كل الـ <span class="term">nodes</span> عبر ناقل العنقود</strong>
+        — حتى لو المشترك على <span class="term">node</span> واحدة! يعني التقسيم اللي عملته في التطبيق
         <em>بيتبهدل على مستوى البنية التحتية</em>.
         <br><strong>الحل:</strong> استخدم <code>SPUBLISH</code> / <code>SSUBSCRIBE</code>
         (النشر المجزّأ في <span class="ltr">Redis 7+</span>) — بيحصر الرسالة في الشريحة
         اللي بيخصّها المفتاح بس.
         <br>أو استخدم <span class="term term--v">Kafka</span> بتقسيم على
-        <code>nodeId</code> ⇒ كل عقدة بتقرا قسمها بس، وبميزة إضافية:
-        <strong>الرسائل بتفضل موجودة</strong> فالعقدة اللي رجعت بعد سقوط تقدر تكمّل من مكانها.
+        <code>nodeId</code> ⇒ كل <span class="term">node</span> بتقرا قسمها بس، وبميزة إضافية:
+        <strong>الرسائل بتفضل موجودة</strong> فالـ <span class="term">node</span> اللي رجعت بعد سقوط تقدر تكمّل من مكانها.
       </div>
     </div>
   </div>
@@ -2095,7 +2141,7 @@ app.<span class="f">Map</span>(<span class="s">"/ws/track"</span>, <span class="
 <section class="slide" data-title="كود: Backplane وضبط SignalR">
   <div class="slide__head">
     <span class="eyebrow">كود 03</span>
-    <h2 class="slide__title">SignalR على أكتر من عقدة — الضبط اللي بيفرق فعليًا</h2>
+    <h2 class="slide__title">SignalR على أكتر من <span class="term">node</span> — الضبط اللي بيفرق فعليًا</h2>
     <div class="rule"></div>
   </div>
 
@@ -2199,7 +2245,7 @@ app.<span class="f">Run</span>();</code></pre>
 <section class="slide" data-title="توجيه الرسالة للعقدة الصح">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 08 و 09</span>
-    <h2 class="slide__title">إزاي توصل الرسالة للعقدة الصح؟</h2>
+    <h2 class="slide__title">إزاي توصل الرسالة للـ <span class="term">node</span> الصح؟</h2>
     <div class="rule"></div>
   </div>
 
@@ -2226,18 +2272,18 @@ app.<span class="f">Run</span>();</code></pre>
         </div>
         <div class="tblock tblock--net">
           <span class="tblock__label">التنفيذ العملي</span>
-          العقدة بتكتب المدخل عند الاتصال، وبتجدّده مع كل نبضة، وبتمسحه عند القطع.
+          الـ <span class="term">node</span> بتكتب المدخل عند الاتصال، وبتجدّده مع كل نبضة، وبتمسحه عند القطع.
           <br>والـ <span class="term term--r">TTL</span> هو <strong>شبكة الأمان</strong>:
-          لو العقدة ماتت فجأة ما نظّفتش، المدخلات بتختفي لوحدها بعد 90 ثانية.
+          لو الـ <span class="term">node</span> ماتت فجأة ما نظّفتش، المدخلات بتختفي لوحدها بعد 90 ثانية.
           <br>⚠️ <strong>ما تعتمدش على التنظيف عند القطع أبدًا</strong> —
-          العقدة اللي انقتلت بـ <span class="ltr">SIGKILL</span> مش بتنظّف حاجة.
+          الـ <span class="term">node</span> اللي انقتلت بـ <span class="ltr">SIGKILL</span> مش بتنظّف حاجة.
         </div>
         <div class="tblock tblock--trap">
           <span class="tblock__label">فخ ⚠️</span>
           السجل بيتقرا <strong>مرة على الأقل لكل رسالة</strong>.
           على <span class="ltr">100,000</span> رسالة/ثانية × <span class="ltr">2.5</span> مستقبل =
           <strong class="ltr">250,000</strong> قراءة/ثانية.
-          <br>الحل: كاش محلي في ذاكرة العقدة بـ <span class="ltr">TTL</span> قصير
+          <br>الحل: كاش محلي في ذاكرة الـ <span class="term">node</span> بـ <span class="ltr">TTL</span> قصير
           (<span class="ltr">5–10</span> ثواني). نسبة الإصابة عادةً فوق
           <span class="ltr">90%</span> لأن المحادثة الواحدة بتبقى نشطة لدقايق.
         </div>
@@ -2253,9 +2299,9 @@ app.<span class="f">Run</span>();</code></pre>
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
           بدل <code>node = hash(userId) % N</code> (اللي بتخرّب كل حاجة لما
-          <span class="ltr">N</span> تتغيّر)، بنحط العقد والمستخدمين على
+          <span class="ltr">N</span> تتغيّر)، بنحط الـ <span class="term">nodes</span> والمستخدمين على
           <strong>حلقة</strong> من 0 لـ <span class="ltr">2³²</span>،
-          وكل مستخدم بيروح لأول عقدة قدامه على الحلقة.
+          وكل مستخدم بيروح لأول <span class="term">node</span> قدامه على الحلقة.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه ⭕</span>
@@ -2267,13 +2313,13 @@ app.<span class="f">Run</span>();</code></pre>
         </div>
         <div class="tblock tblock--net">
           <span class="tblock__label">فين بنستخدمها هنا بالظبط</span>
-          <strong>1)</strong> توجيه المستخدم للبوابة «بتاعته» ⇒ عملاؤه بيرجعوا لنفس العقدة بعد إعادة الاتصال
+          <strong>1)</strong> توجيه المستخدم للبوابة «بتاعته» ⇒ عملاؤه بيرجعوا لنفس الـ <span class="term">node</span> بعد إعادة الاتصال
           ⇒ الكاش الدافي بتاعهم لسه موجود.
           <br><strong>2)</strong> تقسيم عمّال الانتشار: كل عامل ياخد نطاق من الحلقة
           ⇒ رسائل نفس المحادثة بتتعالج بالترتيب.
           <br>ولازم <strong><span class="term">Virtual Nodes</span></strong>
-          (100–200 نقطة وهمية لكل عقدة) عشان التوزيع يبقى متساوي —
-          من غيرهم عقدة ممكن تاخد 3 أضعاف نصيبها.
+          (100–200 نقطة وهمية لكل <span class="term">node</span>) عشان التوزيع يبقى متساوي —
+          من غيرهم <span class="term">node</span> ممكن تاخد 3 أضعاف نصيبها.
         </div>
         <div class="tblock tblock--win">
           <span class="tblock__label">المكسب بالرقم</span>
@@ -2287,13 +2333,13 @@ app.<span class="f">Run</span>();</code></pre>
     </div>
 
     <div class="example fragment">
-      <div class="example__head">مثال محلول: رحلة رسالة من أ لـ ب على عقدتين مختلفتين</div>
+      <div class="example__head">مثال محلول: رحلة رسالة من أ لـ ب على اتنين <span class="term">nodes</span> مختلفتين</div>
       <div class="example__body">
         <ol class="steps">
           <li style="--accent:var(--cyan)"><h4>1 — الاستقبال</h4>
-            <p>أ (على العقدة 3) بيبعت إطار <span class="ltr">WebSocket</span> فيه
+            <p>أ (على الـ <span class="term">node</span> 3) بيبعت إطار <span class="ltr">WebSocket</span> فيه
               <code>{conv: 8812, body: "…", clientMsgId: "x9f"}</code>.
-              العقدة 3 بتتحقق من الحدود وبس — <strong>ما بتلمسش قاعدة بيانات</strong>.</p></li>
+              الـ <span class="term">node</span> 3 بتتحقق من الحدود وبس — <strong>ما بتلمسش قاعدة بيانات</strong>.</p></li>
           <li style="--accent:var(--violet)"><h4>2 — الترقيم والحفظ</h4>
             <p>خدمة الرسائل بتنادي <code>INCR seq:conv:8812</code> ⇒ رقم <span class="ltr">4,213</span>،
               وبتكتب الصف. الترقيم <strong>ذري ولكل محادثة على حدة</strong> —
@@ -2303,11 +2349,11 @@ app.<span class="f">Run</span>();</code></pre>
               <br><code>HGETALL sess:u:ب</code> ⇒ <code>{conn:k2 → n17}</code>
               <br><code>HGETALL sess:u:ج</code> ⇒ <em>فاضي</em> ⇒ ج مش موجود.</p></li>
           <li style="--accent:var(--emerald)"><h4>4 — النشر الموجّه</h4>
-            <p><code>SPUBLISH node:17 {…}</code> — <strong>العقدة 17 بس</strong> هي اللي هتستقبل.
-              الـ 48 عقدة التانية ما حستش بحاجة.
+            <p><code>SPUBLISH node:17 {…}</code> — <strong>الـ <span class="term">node</span> 17 بس</strong> هي اللي هتستقبل.
+              الـ 48 <span class="term">node</span> التانية ما حستش بحاجة.
               <br>ولـ ج: مهمة في طابور الإشعارات (<span class="ltr">APNs</span>).</p></li>
           <li style="--accent:var(--rose)"><h4>5 — التسليم والتأكيد</h4>
-            <p>العقدة 17 بتلاقي الاتصال في ذاكرتها وتدفع الإطار. جهاز ب بيرد بـ
+            <p>الـ <span class="term">node</span> 17 بتلاقي الاتصال في ذاكرتها وتدفع الإطار. جهاز ب بيرد بـ
               <span class="ltr">ACK</span> فيه <code>seq: 4213</code> ⇒
               إيصال «تم التسليم» بيرجع لـ أ بنفس المسار بالعكس.</p></li>
         </ol>
@@ -2382,10 +2428,10 @@ app.<span class="f">Run</span>();</code></pre>
           <span class="callout__title">التوجيه اللزج — الحقيقة اللي محدش بيقولها</span>
           الناس بتفتكر إن الـ <span class="ltr">WebSocket</span> محتاج توجيه لزج.
           <strong>مش صحيح.</strong> بعد ما الاتصال يتفتح، هو مربوط باتصال TCP واحد
-          بطبيعته — مفيش «طلب تاني» يروح لعقدة تانية.
+          بطبيعته — مفيش «طلب تاني» يروح ل<span class="term">node</span> تانية.
           <br><strong>اللزوجة محتاجة في حالة واحدة بس:</strong> لما تستخدم
           <span class="ltr">SignalR</span> بالتفاوض (<code>/negotiate</code>) —
-          لأن ده طلبين منفصلين لازم يوصلوا لنفس العقدة.
+          لأن ده طلبين منفصلين لازم يوصلوا لنفس الـ <span class="term">node</span>.
           <br><strong>الحل الأنضف:</strong>
           <code>Transports = WebSockets</code> + <code>skipNegotiation: true</code>
           على العميل ⇒ <em>ما بقاش محتاج لزوجة خالص</em>، وتقدر تستخدم موازِن L4 بسيط ورخيص.
@@ -2408,20 +2454,67 @@ app.<span class="f">Run</span>();</code></pre>
       </div>
     </div>
 
-    <div class="callout callout--key fragment">
-      <div class="callout__icon">🚰</div>
-      <div class="callout__body">
-        <span class="callout__title">التفريغ السلس عند النشر — الخمس خطوات بالترتيب</span>
-        <strong>1)</strong> علّم العقدة «بتتفرّغ» ⇒ فحص الصحة يرجّع <span class="ltr">503</span>
-        ⇒ الموازِن يوقف يديها اتصالات جديدة (<em>ما بيقطعش القديمة</em>).
-        <br><strong>2)</strong> ابعت رسالة تطبيق <code>Drain(reconnectAfterMs)</code> لكل عميل،
-        <strong>بقيمة مختلفة لكل واحد</strong> (مثلاً عشوائي بين 0 و 30 ثانية) ⇒ توزيع مقصود للعاصفة.
-        <br><strong>3)</strong> استنى <span class="ltr">30–60</span> ثانية —
-        معظم العملاء هينتقلوا لوحدهم بهدوء.
-        <br><strong>4)</strong> اقفل الباقي بكود <span class="ltr">1012 Service Restart</span>.
-        <br><strong>5)</strong> في <span class="ltr">Kubernetes</span>:
-        <code>preStop</code> بينفّذ الخطوات دي، و<code>terminationGracePeriodSeconds: 180</code>
-        بيدّي الوقت الكافي. <strong>الافتراضي 30 ثانية — وده أقل من اللازم بكتير للبوابات.</strong>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع نشر واحد: التفريغ السلس — الخمس خطوات بالترتيب</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Health Check</span>
+          <div class="trace__body">
+            علّم الـ node «بتتفرّغ» ⇒ فحص الصحة يرجّع <span class="ltr">503</span> ⇒
+            الموازِن يوقف يديها اتصالات جديدة (<em>ما بيقطعش القديمة</em>).
+            <br>الخطوة دي الأولى عشان <strong>ما تجيش اتصالات جديدة وانت بتقفل</strong>.
+            من غيرها هتفضل تستقبل عملاء جدد طول ما بتفرّغ القدامى — لعبة ما بتخلصش.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">WebSocket Gateway · Drain Message</span>
+          <div class="trace__body">
+            ابعت رسالة تطبيق <code>Drain(reconnectAfterMs)</code> لكل عميل،
+            <strong>بقيمة مختلفة لكل واحد</strong> (مثلاً عشوائي بين
+            <span class="ltr">0</span> و<span class="ltr">30</span> ثانية).
+            <br>ده <em>توزيع مقصود للعاصفة</em>. من غير القيمة العشوائية، كل الـ
+            <span class="ltr">250,000</span> عميل هيرجعوا في نفس الثانية على الـ nodes الباقية
+            ⇒ <strong>حوّلت نشر عادي لحادثة</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Reconnect Window</span>
+          <div class="trace__body">
+            استنى <span class="ltr">30–60</span> ثانية — معظم العملاء هينتقلوا لوحدهم بهدوء.
+            <br>الانتظار ده هو الفرق بين «انتقال» و«انقطاع»: العميل اللي بيسيب الاتصال
+            <strong>بإرادته</strong> بيفتح واحد جديد على طول، أما اللي بيتقطع فبيدخل في
+            حلقة التراجع الأسّي ويقعد ثواني قبل ما يحاول.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Close Code 1012</span>
+          <div class="trace__body">
+            اقفل الباقي بكود <span class="ltr">1012 Service Restart</span>.
+            <br>الكود مهم مش شكليات: <code>1012</code> بيقول للعميل «ارجع بسرعة».
+            لو قفلت بكود عام أو قطعت الـ TCP بعنف، العميل ما بيعرفش هل يرجع فورًا ولا
+            التوكن بتاعه باظ — <strong>وأغلب المكتبات بتتصرّف بأسوأ الافتراضين</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Kubernetes preStop</span>
+          <div class="trace__body">
+            <code>preStop</code> بينفّذ الخطوات دي،
+            و<code>terminationGracePeriodSeconds: 180</code> بيدّي الوقت الكافي.
+            <br><strong>الافتراضي <span class="ltr">30</span> ثانية — وده أقل من اللازم
+            بكتير للبوابات.</strong> لو سيبته، الـ Pod بيتقتل في نص التفريغ وكل اللي فوق ده
+            بيبقى كلام على ورق.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        النشر بدون تفريغ سلس = <strong>انقطاع كامل لكل عملاء الـ node</strong> في نفس اللحظة.
+        الخمس خطوات دي هي الفرق بين نشر يومي غير محسوس وبين نشر أسبوعي بيخوّف الفريق.
       </div>
     </div>
 
@@ -2481,8 +2574,8 @@ app.<span class="f">Run</span>();</code></pre>
     <div class="checkpoint">
       <div class="checkpoint__title">لازم تقدر تشرح دول لحد تاني</div>
       <ul>
-        <li>ليه إضافة عقدة جديدة <strong>ما بتخفّفش</strong> عن العقد القديمة في نظام اتصالات دائمة؟</li>
-        <li>إيه القيد اللي بيوقف التوسّع عند <span class="ltr">~64,000</span> اتصال للعقدة الواحدة؟</li>
+        <li>ليه إضافة <span class="term">node</span> جديدة <strong>ما بتخفّفش</strong> عن الـ <span class="term">nodes</span> القديمة في نظام اتصالات دائمة؟</li>
+        <li>إيه القيد اللي بيوقف التوسّع عند <span class="ltr">~64,000</span> اتصال للـ <span class="term">node</span> الواحدة؟</li>
         <li>اذكر <strong>تلات فوايد</strong> لفصل بوابة الاتصالات عن منطق العمل.</li>
         <li>ليه <span class="ltr">TTL</span> الحضور بيكون <span class="ltr">3×</span> فترة النبض؟</li>
         <li>إزاي الـ <span class="term">Backplane</span> الساذج بيخلّي التوسّع الأفقي <em>يزوّد</em> الحمل؟</li>
@@ -2854,7 +2947,7 @@ app.<span class="f">Run</span>();</code></pre>
       <div class="callout__body">
         <span class="callout__title">وإيه حكاية <span class="ltr">Snowflake IDs</span> إذن؟</span>
         <span class="term">Snowflake ID</span> = رقم <span class="ltr">64</span> بت مكوّن من
-        (طابع زمني <span class="ltr">41</span> بت + معرّف عقدة <span class="ltr">10</span> بت +
+        (طابع زمني <span class="ltr">41</span> بت + معرّف <span class="term">node</span> <span class="ltr">10</span> بت +
         عدّاد <span class="ltr">12</span> بت). بيدّيك <strong>معرّف فريد وقابل للترتيب زمنيًا تقريبًا</strong>
         من غير تنسيق مركزي.
         <br><strong>وهو مكمّل مش بديل:</strong> استخدم <span class="ltr">Snowflake</span>
@@ -3038,7 +3131,7 @@ app.<span class="f">Run</span>();</code></pre>
           <code>node:17</code> بس. المستخدم ج مش موجود ⇒ مهمة في طابور الإشعارات
           بتأخير 4 ثواني (لو رجع في خلالهم بنلغيها).</p></li>
       <li style="--accent:var(--rose)"><h4>8 — التسليم والإيصالات (t = 96ms)</h4>
-        <p>العقدة 17 بتلاقي السوكت وتدفع الإطار. جهاز ب بيرد <span class="ltr">ACK</span>
+        <p>الـ <span class="term">node</span> 17 بتلاقي السوكت وتدفع الإطار. جهاز ب بيرد <span class="ltr">ACK</span>
           ⇒ إيصال «مُسلَّمة» بيرجع لـ أ. الواجهة عند أ بتحوّل ⏳ لـ ✓✓.
           <br>لما ب يفتح المحادثة ⇒ <code>MarkRead(8812, 4213)</code> ⇒ ✓✓ زرقا.</p></li>
     </ol>
@@ -3779,7 +3872,7 @@ seg_01204.m4s
           <span class="decode__tok">1M drivers</span>
           <div class="decode__exp">
             <b>مليون سائق نشط</b> — يعني مفتوح عندهم التطبيق ومتصلين، مش مسجّلين.
-            <br>⇒ ده كمان معناه <b>مليون اتصال WebSocket مفتوح</b> ⇒ رجعنا لحسبة العقد
+            <br>⇒ ده كمان معناه <b>مليون اتصال WebSocket مفتوح</b> ⇒ رجعنا لحسبة الـ <span class="term">nodes</span>
             اللي عملناها قبل كده: ~6 بوابات.
           </div>
         </div>
@@ -4226,7 +4319,7 @@ seg_01204.m4s
         <ul class="clean sm mb0" style="color:var(--text-dim)">
           <li><strong>أعِد المحاولة:</strong> <span class="ltr">429</span> (تجاوز حد) ·
             <span class="ltr">500/503</span> · انقطاع شبكة.</li>
-          <li><strong>ما تعيدش أبدًا:</strong> <span class="ltr">400</span> (حمولة غلط) ·
+          <li><strong>ما تعيدش أبدًا:</strong> <span class="ltr">400</span> (<span class="term">payload</span> غلط) ·
             <span class="ltr">403</span> (توكن خدمة غلط) · <span class="ltr">410</span> (الجهاز مشي).
             <br><em>إعادة المحاولة على دول = حرق موارد بلا فايدة للأبد.</em></li>
           <li><strong>مع <span class="ltr">429</span>:</strong> احترم ترويسة
@@ -4257,7 +4350,7 @@ seg_01204.m4s
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          الإشارة اللي بترجع من المستهلك البطيء للمنتج السريع بتقول:
+          الإشارة اللي بترجع من الـ <span class="term">consumer</span> البطيء للـ <span class="term">producer</span> السريع بتقول:
           <strong>«بالراحة، مش لاحق»</strong>.
           <br>في الشبكات ده موجود على مستوى <span class="ltr">TCP</span>
           (نافذة الاستقبال بتوصل صفر) — لكن المشكلة إنه بيظهرلك على شكل
@@ -4266,7 +4359,7 @@ seg_01204.m4s
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🚰</span>
           خرطوم مياه في دلو. لو الدلو اتملى والمياه مقفلتش ⇒ بتفيض.
-          <br>عندك تلات خيارات بس: <strong>تقفل الحنفية</strong> (توقف المنتج) ·
+          <br>عندك تلات خيارات بس: <strong>تقفل الحنفية</strong> (توقف الـ <span class="term">producer</span>) ·
           <strong>تجيب دلو أكبر</strong> (تخزّن) ·
           <strong>تسيبها تفيض</strong> (ترمي بيانات).
           <br><em>مفيش خيار رابع. والتصميم هو اختيارك بين التلاتة — بوعي.</em>
@@ -4279,7 +4372,7 @@ seg_01204.m4s
           <br>⇒ حلقة الانتشار كلها واقفة
           <br>⇒ <strong>الـ 499 التانيين مستنيينه</strong>
           <br>⇒ الطوابير بتتراكم ⇒ الذاكرة بتزيد ⇒ الـ GC بيشتغل ⇒ الكل بقى بطيء
-          <br><strong>عميل واحد على شبكة وحشة وقّع عقدة فيها 250 ألف اتصال.</strong>
+          <br><strong>عميل واحد على شبكة وحشة وقّع <span class="term">node</span> فيها 250 ألف اتصال.</strong>
           <br><em>وده بيحصل فعلاً — وبيبان في المراقبة كأنه «مشكلة ذاكرة».</em>
         </div>
         <div class="tblock tblock--win">
@@ -4394,21 +4487,66 @@ seg_01204.m4s
 }</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">إيه اللي الكود ده بيمنعه بالظبط؟</span>
-      <strong>1)</strong> <code>TryPush</code> بترجّع <em>فورًا</em> —
-      حلقة الانتشار عمرها ما بتقف على عميل. ده بيقتل انتشار البطء من جذوره.
-      <br><strong>2)</strong> <code>DropOldest</code> بيخلّي العميل البطيء يشوف
-      <em>آخر</em> الحالات مش أقدمها. لو كنت استخدمت <code>Wait</code>
-      كنت رجعت لنفس المشكلة، ولو استخدمت <code>DropWrite</code> كان العميل
-      هيفضل شايف حالة قديمة للأبد.
-      <br><strong>3)</strong> <code>itemDropped</code> بيدّيك <strong>مقياس</strong>.
-      «عدد الإطارات المرمية لكل اتصال» مؤشر ممتاز على جودة شبكة المستخدم —
-      ولما ترتفع فجأة على منطقة كاملة، ده تنبيه مبكر لمشكلة شبكة.
-      <br><strong>4)</strong> مهلة 5 ثواني على الإرسال الواحد بتحوّل «عميل زومبي»
-      لقرار واضح: اقفله. من غيرها بيفضل ماسك ذاكرة وسوكت للأبد.
-      <br><strong>5)</strong> <code>DisposeAsync</code> بتستنى المضخّة تخلص ⇒
-      آخر الرسائل بتوصل بدل ما تتقطع في النص.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع إطار واحد لعميل بطيء: من حلقة الانتشار لحد الإغلاق</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">TryPush</span>
+          <div class="trace__body">
+            <code>TryPush</code> بترجّع <em>فورًا</em> — حلقة الانتشار عمرها ما بتقف على عميل.
+            <br>ده بيقتل انتشار البطء من جذوره: من غيره عميل واحد على شبكة
+            <span class="ltr">2G</span> يقدر <strong>يوقّف التوزيع على كل باقي العملاء</strong>،
+            لأن الحلقة بتستنى الـ <code>await</code> بتاعه يخلص.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">DropOldest</span>
+          <div class="trace__body">
+            <code>DropOldest</code> بيخلّي العميل البطيء يشوف <em>آخر</em> الحالات مش أقدمها.
+            <br>لو استخدمت <code>Wait</code> كنت رجعت لنفس مشكلة الخطوة الأولى،
+            ولو استخدمت <code>DropWrite</code> كان العميل <strong>هيفضل شايف حالة قديمة للأبد</strong>
+            وهو متصل — وده أسوأ من إنه يتقطع، لأنه ما يعرفش إن اللي قدامه بايت.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">itemDropped Metric</span>
+          <div class="trace__body">
+            <code>itemDropped</code> بيدّيك <strong>مقياس</strong> بدل رمي صامت.
+            <br>«عدد الإطارات المرمية لكل اتصال» مؤشر ممتاز على جودة شبكة المستخدم،
+            ولما ترتفع فجأة على منطقة كاملة ده <strong>تنبيه مبكر لمشكلة شبكة</strong>
+            هتوصلك قبل الشكاوى بساعة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Send Timeout</span>
+          <div class="trace__body">
+            مهلة <span class="ltr">5</span> ثواني على الإرسال الواحد بتحوّل «عميل زومبي»
+            لقرار واضح: اقفله.
+            <br>من غيرها بيفضل ماسك ذاكرة و<span class="term">socket</span> للأبد —
+            وعلى مقياس ربع مليون اتصال، <strong>الزومبيهات دي بتاكل السيرفر
+            من غير ما تظهر في أي عدّاد</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">DisposeAsync</span>
+          <div class="trace__body">
+            <code>DisposeAsync</code> بتستنى المضخّة تخلص ⇒ آخر الرسائل بتوصل بدل ما
+            تتقطع في النص.
+            <br>ودي اللي بتخلّي الإغلاق «سلس» بجد: العميل بيستلم آخر حالة صحيحة
+            <em>قبل</em> ما الاتصال يتقفل، فلما يرجع ما يحتاجش يعيد تحميل كل حاجة من الأول.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        القاعدة: <strong>الطرف البطيء يتحمّل بطأه لوحده</strong>.
+        أي تصميم بيخلّي حلقة الانتشار تنتظر عميل واحد هو تصميم بينهار عند أول شبكة سيئة.
+      </div>
     </div>
   </div>
 </section>
@@ -4522,25 +4660,76 @@ app.<span class="f">MapGet</span>(<span class="s">"/sse/drivers/{rideId:long}"</
 <section class="slide" data-title="عاصفة إعادة الاتصال والتراجع الأسّي">
   <div class="slide__head">
     <span class="eyebrow">المفهوم 24</span>
-    <h2 class="slide__title">عقدة وقعت ⟵ عاصفة إعادة اتصال ⟵ إزاي تنجو</h2>
+    <h2 class="slide__title"><span class="term">node</span> وقعت ⟵ عاصفة إعادة اتصال ⟵ إزاي تنجو</h2>
     <div class="rule"></div>
   </div>
 
   <div class="slide__body">
-    <div class="callout callout--danger">
-      <div class="callout__icon">💥</div>
-      <div class="callout__body">
-        <span class="callout__title">تسلسل الانهيار — خطوة بخطوة</span>
-        <strong>1)</strong> عقدة فيها <span class="ltr">250,000</span> اتصال بتقع.
-        <br><strong>2)</strong> كل العملاء بيحاولوا فورًا (لأن الكود اللي معظم الناس بتكتبه:
-        <code>onclose → connect()</code>).
-        <br><strong>3)</strong> العقد الباقية بتستقبل الحمل الزيادة ⟵ بتبقى أبطأ.
-        <br><strong>4)</strong> البطء بيخلّي فحص الصحة يفشل ⟵ <strong>عقدة تانية تتشال</strong>.
-        <br><strong>5)</strong> <span class="ltr">500,000</span> عميل بيحاولوا دلوقتي…
-        <br><strong>6)</strong> <strong class="ltr">انهيار متتالي — العنقود كله مات.</strong>
-        <br><br>
-        <em>لاحظ إن العطل الأصلي كان عقدة واحدة من 6. اللي قتل النظام مش العطل —
-        اللي قتله هو <strong>رد فعل العملاء على العطل</strong>.</em>
+    <div class="trace">
+      <div class="trace__head">تتبّع انهيار واحد: node واحدة وقعت — إزاي العنقود كله مات؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Gateway Node</span>
+          <div class="trace__body">
+            node فيها <span class="ltr">250,000</span> اتصال بتقع.
+            <br>لحد هنا ده <strong>عطل عادي متوقّع</strong> — عندك 6 nodes، وقعت واحدة،
+            المفروض النظام يمتصّها ومحدش يحس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Client Reconnect Logic</span>
+          <div class="trace__body">
+            كل العملاء بيحاولوا <strong>فورًا</strong> — لأن الكود اللي معظم الناس بتكتبه هو
+            <code>onclose → connect()</code>.
+            <br>ودي الخطوة اللي حوّلت العطل لكارثة. من غير تراجع أسّي وعشوائية،
+            <span class="ltr">250,000</span> طلب اتصال بيوصلوا في <em>نفس المللي ثانية</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Surviving Nodes</span>
+          <div class="trace__body">
+            الـ nodes الباقية بتستقبل الحمل الزيادة ⟵ بتبقى أبطأ.
+            <br>وخد بالك: فتح اتصال جديد <strong>أغلى بكتير</strong> من إبقاء اتصال قايم
+            (مصافحة TLS + مصادقة + تحميل الحالة)، فالحمل اللي جالهم مش
+            <span class="ltr">1/5</span> — هو أضعاف كده في اللحظة دي.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Health Check</span>
+          <div class="trace__body">
+            البطء بيخلّي فحص الصحة يفشل ⟵ <strong>node تانية تتشال</strong>.
+            <br>دي أخطر خطوة في السلسلة كلها: <em>آلية الحماية بقت هي آلية الهدم</em>.
+            الـ node دي كانت لسه قادرة تخدم جزئيًا، بس الفحص ما بيفرّقش بين «ميتة» و«مضغوطة».
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Load Balancer</span>
+          <div class="trace__body">
+            <span class="ltr">500,000</span> عميل بيحاولوا دلوقتي على nodes أقل…
+            <br>وكل دورة بتضاعف الحمل على اللي فاضل. الحلقة دي
+            <strong>ما فيهاش أي حاجة توقّفها من جوّه</strong> —
+            محتاجة تدخّل من برّه أو منطق عميل مختلف.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Cluster</span>
+          <div class="trace__body">
+            <strong class="ltr">انهيار متتالي — العنقود كله مات.</strong>
+            <br>وأسوأ حاجة: حتى لما ترجّع السيرفرات، العملاء لسه بيضربوا بنفس الشراسة ⇒
+            بيموتوا تاني وهما بيقوموا. <em>التعافي نفسه بيبقى مستحيل من غير ما تهدّي العملاء الأول.</em>
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        لاحظ إن العطل الأصلي كان node واحدة من 6. اللي قتل النظام مش العطل —
+        اللي قتله هو <strong>رد فعل العملاء على العطل</strong>.
       </div>
     </div>
 
@@ -4737,7 +4926,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
       </div>
       <div class="flow__vert">↓</div>
       <div class="flow__tier">
-        <div class="node node--a"><span class="node__ico">🚪</span>Connection Gateway ×96<span class="node__sub">250K اتصال/عقدة · طابور محدود</span></div>
+        <div class="node node--a"><span class="node__ico">🚪</span>Connection Gateway ×96<span class="node__sub">250K اتصال/<span class="term">node</span> · طابور محدود</span></div>
       </div>
       <div class="flow__vert">↓ gRPC (داخل) · ↑ SPUBLISH node:{id} (خارج)</div>
       <div class="flow__tier">
@@ -4795,7 +4984,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
           البوابة لما تتحدّث: علّم draining ⟵ ابعت <code>Drain(jittered)</code> ⟵
           استنى ⟵ اقفل <span class="ltr">1012</span>.</p></li>
       <li style="--accent:var(--emerald)"><h4>8 — لما حاجة تقع</h4>
-        <p>عقدة ماتت ⟵ مدخلات السجل بتنتهي صلاحيتها لوحدها بعد 90s ⟵
+        <p><span class="term">node</span> ماتت ⟵ مدخلات السجل بتنتهي صلاحيتها لوحدها بعد 90s ⟵
           العملاء بيرجعوا بتراجع أُسّي وعشوائية ⟵ بيستأنفوا بالمؤشّر.
           <br><strong>مفيش رسالة ضاعت لأن Kafka و Cassandra هما مصدر الحقيقة — مش السوكت.</strong></p></li>
     </ol>
@@ -4814,7 +5003,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
         <div class="callout__icon">📊</div>
         <div class="callout__body sm">
           <span class="callout__title">الأربع مقاييس اللي تراقبها</span>
-          اتصالات نشطة/عقدة · إطارات مرمية/دقيقة ·
+          اتصالات نشطة/<span class="term">node</span> · إطارات مرمية/دقيقة ·
           زمن <span class="ltr">p95</span> من الإرسال للـ <span class="ltr">ACK</span> ·
           معدل إعادة الاتصال.
           <br><strong>الرابع هو أفضل مؤشر مبكر</strong> — بيرتفع قبل أي عطل بدقايق.
@@ -4826,7 +5015,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
           <span class="callout__title">المبدأ اللي يجمع كل ده</span>
           <strong>السوكت قناة توصيل — مش مخزن للحقيقة.</strong>
           كل حاجة مهمة موجودة في <span class="ltr">Kafka</span> و<span class="ltr">Cassandra</span>.
-          <br>لو صمّمت على المبدأ ده، أي عقدة تقدر تموت في أي لحظة من غير ما تفقد بايت.
+          <br>لو صمّمت على المبدأ ده، أي <span class="term">node</span> تقدر تموت في أي لحظة من غير ما تفقد بايت.
         </div>
       </div>
     </div>
@@ -4852,7 +5041,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
                 <strong>مفيش فقد بيانات</strong>، بس تأخير تسليم.
                 <br><em>الحماية:</em> العميل هيستأنف بالمؤشّر لما يرجع ⇒ الرسائل هتظهر متأخرة.
                 <br><em>الناقص:</em> <strong>وضع تدهور مخطط</strong> — لو السجل مش متاح،
-                ارجع للإذاعة على كل العقد مؤقتًا. أبطأ بكتير، بس التسليم بيكمّل.
+                ارجع للإذاعة على كل الـ <span class="term">nodes</span> مؤقتًا. أبطأ بكتير، بس التسليم بيكمّل.
                 وكمان كاش محلي في كل بوابة بيغطي أول 5-10 ثواني من العطل.</li>
               <li><strong>2) قناة بمليونين مشترك.</strong>
                 <br><em>بيحصل:</em> لو الانتشار عند الكتابة ⇒ <strong class="ltr">2,000,000</strong>
@@ -4919,7 +5108,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
           <li><span class="ltr">~32KB</span> لكل اتصال بعد الضبط</li>
           <li>السقف الخفي: <span class="ltr">64K</span> منفذ مؤقت</li>
           <li>وجّه بالوجهة — <strong>ما تذيعش للكل</strong></li>
-          <li>العقد بتتحدّد بسيناريو الفشل مش بالذروة</li>
+          <li>الـ <span class="term">nodes</span> بتتحدّد بسيناريو الفشل مش بالذروة</li>
         </ul>
       </div>
       <div class="card card--e">
@@ -4972,7 +5161,7 @@ connection.<span class="f">On</span>&lt;<span class="t">int</span>&gt;(<span cla
       <div class="checkpoint__title">الاختبار النهائي — لو قدرت تجاوب على دول، الموديول اتحقق</div>
       <ul>
         <li>خُد ميزة لحظية في نظامك دلوقتي: أي نموذج اتصال الصح ليها؟ وليه اللي مستخدمه دلوقتي؟</li>
-        <li>لو عقدة من عقدك وقعت في الذروة — <strong>ارسم بالأرقام</strong> اللي هيحصل في الـ 60 ثانية اللي بعدها.</li>
+        <li>لو <span class="term">node</span> من الـ <span class="term">nodes</span> بتاعتك وقعت في الذروة — <strong>ارسم بالأرقام</strong> اللي هيحصل في الـ 60 ثانية اللي بعدها.</li>
         <li>هل عندك <code>seq</code> بيخلّي العميل يعرف إنه فاته حاجة؟ لو لأ — إزاي بيعرف؟</li>
         <li>لو عميل واحد بقى بطيء جدًا، هل ده بيأثر على باقي المستخدمين؟ إزاي تتأكد؟</li>
         <li>كام رسالة <span class="term">Backplane</span> بتتولّد من رسالة مستخدم واحدة عندك؟</li>

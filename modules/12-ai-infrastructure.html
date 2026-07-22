@@ -2882,26 +2882,84 @@ app.<span class="f">Run</span>();
 <span class="k">public</span> <span class="k">sealed</span> <span class="k">record</span> <span class="t">ChatRequest</span>(<span class="k">string</span> Prompt);</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">الكود ده بيعمل إيه سطر سطر؟</span>
-      <strong>(1)</strong> بنسجّل <code>AnthropicClient</code> مرة واحدة كـ <span class="term">Singleton</span> —
-      هو <span class="term">thread-safe</span> وبيدير مجمّع اتصالاته لوحده.
-      <code>MaxRetries=3</code> بيعيد المحاولة تلقائيًا على <span class="ltr">429</span> و<span class="ltr">5xx</span>
-      بتراجع أسّي. و<code>Timeout=5min</code> لأن المهلة الافتراضية للـ <span class="ltr">HTTP</span> في
-      <span class="ltr">.NET</span> مش مصمّمة لردود بتاخد دقايق.
-      <br><strong>(2)</strong> <code>AsIChatClient</code> بيحوّل العميل لواجهة
-      <span class="term">Microsoft.Extensions.AI</span> القياسية. الفايدة: باقي كودك بيعتمد على
-      <code>IChatClient</code> بس — فتقدر تحطّ <span class="term">Middleware</span> فوقه (كاش، قياس، أدوات)
-      أو تبدّل المزوّد من غير ما تلمس منطق التطبيق.
-      <br><strong>(3)</strong> التلات ترويسات دول هما الفرق بين بث حقيقي و«الرد كله جه مرة واحدة».
-      <code>X-Accel-Buffering: no</code> تحديدًا بينقذك من <span class="ltr">nginx</span> اللي بيجمّع افتراضيًا.
-      <br><strong>(4)</strong> <code>GetStreamingResponseAsync</code> بيرجّع
-      <code>IAsyncEnumerable&lt;ChatResponseUpdate&gt;</code> — تعداد كسول، يعني الحلقة بتلفّ
-      كل ما قطعة توصل من الشبكة، مش بعد ما الكل يخلص.
-      <br><strong>(5)</strong> بنجمّع النص كامل عشان نسجّله ونفوتر عليه — لأن لو المستخدم قطع في النص،
-      انت لسه دفعت تمن اللي اتولّد.
-      <br><strong>(6)</strong> <code>FlushAsync</code> بعد كل قطعة. من غيره <span class="ltr">Kestrel</span>
-      هيجمّع في مخزن الاستجابة ويبعت في الآخر — <em>وهتقعد تدوّر على الباج ساعتين</em>.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع طلب بث واحد: من تسجيل العميل لحد وصول أول حرف للمستخدم</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">AnthropicClient (Singleton)</span>
+          <div class="trace__body">
+            بنسجّله <strong>مرة واحدة</strong> كـ <span class="term">Singleton</span> —
+            هو <span class="term">thread-safe</span> وبيدير مجمّع اتصالاته لوحده.
+            <code>MaxRetries=3</code> بيعيد المحاولة تلقائيًا على <span class="ltr">429</span>
+            و<span class="ltr">5xx</span> بتراجع أسّي، و<code>Timeout=5min</code> لأن المهلة
+            الافتراضية للـ <span class="ltr">HTTP</span> في <span class="ltr">.NET</span>
+            مش مصمّمة لردود بتاخد دقايق.
+            <br>لو عملته <em>لكل طلب</em>، هتفتح اتصال جديد في كل نداء ⇒ استنفاد المنافذ
+            (<span class="term">Socket Exhaustion</span>) تحت الحمل، وهي مشكلة بتظهر في الإنتاج بس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">IChatClient Adapter</span>
+          <div class="trace__body">
+            <code>AsIChatClient</code> بيحوّل العميل لواجهة
+            <span class="term">Microsoft.Extensions.AI</span> القياسية.
+            <br>الفايدة المعمارية: باقي كودك بيعتمد على <code>IChatClient</code> <strong>بس</strong> —
+            فتقدر تحطّ <span class="term">Middleware</span> فوقه (كاش، قياس، أدوات) أو تبدّل المزوّد
+            من غير ما تلمس منطق التطبيق. من غير الطبقة دي، اسم المزوّد بيتسرّب لكل ملف في المشروع،
+            وأي تغيير بيبقى تعديل في مية مكان.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">SSE Response Headers</span>
+          <div class="trace__body">
+            التلات ترويسات دول هما الفرق بين بث حقيقي و«الرد كله جه مرة واحدة».
+            <code>X-Accel-Buffering: no</code> تحديدًا بينقذك من <span class="ltr">nginx</span>
+            اللي بيجمّع افتراضيًا.
+            <br>ودي أشهر حالة «الكود شغّال على جهازي وواقف على السيرفر»: محليًا مفيش وكيل عكسي،
+            فالبث بيشتغل. على الإنتاج الوكيل بيمسك القطع وبيبعتها كلها في الآخر —
+            <strong>والمستخدم بيستنّى 18 ثانية قدام شاشة فاضية</strong> رغم إن الكود ما اتغيّرش.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">GetStreamingResponseAsync</span>
+          <div class="trace__body">
+            بيرجّع <code>IAsyncEnumerable&lt;ChatResponseUpdate&gt;</code> — <strong>تعداد كسول</strong>،
+            يعني الحلقة بتلفّ كل ما قطعة توصل من الشبكة، مش بعد ما الكل يخلص.
+            <br>ده الفرق بين <span class="term term--a">TTFT</span> بمية مللي ثانية و
+            <span class="term">TTFT</span> بعشرين ثانية. النموذج بيولّد توكِن توكِن أصلاً —
+            فالانتظار لحد ما الرد يكتمل معناه إنك <em>بترمي</em> ميزة موجودة عندك ببلاش.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Usage Accounting</span>
+          <div class="trace__body">
+            بنجمّع النص كامل عشان نسجّله ونفوتر عليه.
+            <br>ليه لازم نجمّعه لو إحنا بنبعته للمستخدم أول بأول؟ لأن لو المستخدم قطع في النص،
+            <strong>انت لسه دفعت تمن اللي اتولّد</strong>. من غير الخطوة دي، الطلبات المقطوعة
+            بتختفي من حساباتك تمامًا — وتلاقي فاتورة المزوّد أعلى من تقديرك ومش عارف السبب.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Response FlushAsync</span>
+          <div class="trace__body">
+            <code>FlushAsync</code> بعد كل قطعة.
+            <br>من غيره <span class="ltr">Kestrel</span> هيجمّع في مخزن الاستجابة ويبعت في الآخر —
+            يعني كل الشغل اللي فات في الخطوات دي بيتلغي بسطر ناقص واحد.
+            <em>وهتقعد تدوّر على الباج ساعتين</em>، لأن مفيش خطأ ولا لوج: الرد صحيح، بس وصل متأخر.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        البث مش خاصية واحدة — هو <strong>سلسلة</strong> من العميل للوكيل العكسي لسيرفر الويب،
+        وأي حلقة بتجمّع بتلغي السلسلة كلها بصمت.
+      </div>
     </div>
 
     <div class="callout callout--tip fragment">
@@ -3656,21 +3714,69 @@ app.<span class="f">Run</span>();
 }</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">القرارات المهمة في الكود ده</span>
-      <strong>1) نفس <code>AnthropicClient</code> لتلات نماذج.</strong> <code>AsIChatClient</code>
-      بياخد معرّف النموذج، فمش محتاج تلات عملاء ولا تلات مجمّعات اتصالات.
-      <br><strong>2) النموذج الصغير بيقيّم نفسه في نفس النداء.</strong> بدل ما تعمل نداء تاني للتصنيف
-      (وتدفع مرتين)، بتطلب الإجابة والثقة مع بعض. <em>التصنيف ببلاش عمليًا.</em>
-      <br><strong>3) عند التصعيد بنبعت السؤال الأصلي مش الإجابة الضعيفة.</strong>
-      لو بعتّ إجابة الصغير، النموذج الكبير هيتأثّر بيها (وده اسمه
-      <span class="term">Anchoring</span>) وممكن يوافق على غلط.
-      <br><strong>4) فشل التفكيك بيصعّد مش بيرمي خطأ.</strong> لو النموذج الصغير رجّع
-      <span class="ltr">JSON</span> بايظ، معناها إنه اتلخبط أصلاً — يبقى الطلب صعب عليه.
-      <em>الفشل الآمن بيروح للأقوى.</em>
-      <br><strong>5) بنسجّل أنهي نموذج خدم كل طلب.</strong> من غير السطر ده مش هتعرف
-      إن نسبة التصعيد زحفت من <span class="ltr">5%</span> لـ <span class="ltr">40%</span>
-      وفاتورتك اتضاعفت.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع طلب واحد جوّه موجّه النماذج: مين هيخدمه، وليه؟</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Shared AnthropicClient</span>
+          <div class="trace__body">
+            نفس العميل لتلات نماذج — <code>AsIChatClient</code> بياخد معرّف النموذج،
+            فمش محتاج تلات عملاء ولا تلات مجمّعات اتصالات.
+            <br>ليه ده يفرق؟ لأن كل عميل بيجرّ وراه مجمّع اتصالات وإعدادات مهلة وإعادة محاولة
+            منفصلة. تلات نسخ معناها <strong>تلات مصادر مستقلة للأعطال</strong> وتلات أماكن
+            تنسى تظبط واحد منها — وكل ده من غير أي مكسب.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Self-Scored Response</span>
+          <div class="trace__body">
+            النموذج الصغير بيقيّم نفسه <strong>في نفس النداء</strong>: بيرجّع الإجابة والثقة مع بعض.
+            <br>البديل إنك تعمل نداء تاني مخصّص للتصنيف — يعني تدفع مرتين وتضيف رحلة شبكة كاملة
+            على مسار كل طلب. هنا التصنيف <em>ببلاش عمليًا</em>، لأنه توكِنات قليلة جوّه رد
+            كان هيتولّد أصلاً.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Escalation Prompt</span>
+          <div class="trace__body">
+            عند التصعيد بنبعت <strong>السؤال الأصلي</strong> مش الإجابة الضعيفة.
+            <br>لو بعتّ إجابة الصغير، النموذج الكبير هيتأثّر بيها — وده اسمه
+            <span class="term">Anchoring</span> — وممكن يوافق على غلط بدل ما يحلّ من الأول.
+            يعني هتدفع تمن النموذج الغالي وتاخد جودة النموذج الرخيص،
+            <strong>وهي أسوأ نقطة ممكن تقف عندها</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Parse Failure Path</span>
+          <div class="trace__body">
+            فشل التفكيك بيصعّد، مش بيرمي خطأ. لو النموذج الصغير رجّع
+            <span class="ltr">JSON</span> بايظ، معناها إنه <em>اتلخبط أصلاً</em> —
+            يبقى الطلب صعب عليه.
+            <br>ودي قاعدة تصميم أوسع من الحالة دي: <strong>الفشل الآمن بيروح للأقوى</strong>.
+            لو رميت استثناء، المستخدم بياخد خطأ في حالة كان فيها حلّ متاح على بُعد نداء واحد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Model Attribution</span>
+          <div class="trace__body">
+            بنسجّل <strong>أنهي نموذج خدم كل طلب</strong>.
+            <br>من غير السطر ده مش هتعرف إن نسبة التصعيد زحفت من <span class="ltr">5%</span>
+            لـ <span class="ltr">40%</span> وفاتورتك اتضاعفت. والزحف ده بيحصل من غير أي نشر
+            ومن غير أي خطأ — نوعية أسئلة المستخدمين بتتغيّر لوحدها،
+            والمقياس ده هو إنذارك الوحيد.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        التوجيه بين النماذج مش «اختار الأرخص» — هو <strong>حلقة قرار</strong> لازم تقيس نفسها،
+        وإلا بتتحوّل بهدوء لأغلى شكل ممكن.
+      </div>
     </div>
 
     <div class="callout callout--tip fragment">
@@ -4160,7 +4266,7 @@ builder.Services.<span class="f">AddChatClient</span>(sp <span class="p">=&gt;</
         <div class="decode__row">
           <span class="decode__tok">M=16</span>
           <div class="decode__exp">
-            <b>عدد الوصلات لكل عقدة في الرسم البياني</b>.
+            <b>عدد الوصلات لكل <span class="term">node</span> (عقدة) في الرسم البياني</b>.
             أعلى = دقة أفضل + ذاكرة أكبر + بناء أبطأ.
             <div class="math" style="margin:.4rem 0">
 <span class="lbl">Memory/vector</span> <span class="eq">≈</span> <span class="var">dim</span>×<span class="n">4</span> <span class="eq">+</span> <span class="var">M</span>×<span class="n">2</span>×<span class="n">4</span> <span class="var">bytes</span>
@@ -4339,22 +4445,97 @@ builder.Services.<span class="f">AddChatClient</span>(sp <span class="p">=&gt;</
       </div>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">نمشي مع سؤال واحد جوّه المسار ده</span>
-      <ol class="sm" style="color:var(--text-dim)">
-        <li>المستخدم بيسأل: «إيه سياسة استرجاع المنتج <code>SKU-88421</code>؟»</li>
-        <li>السؤال بيتحوّل لمتجه (<span class="ltr">20ms</span>) <em>و</em> بيتبعت كاستعلام كلمات مفتاحية بالتوازي.</li>
-        <li>البحث الدلالي بيرجّع <span class="ltr">50</span> مقطع عن «سياسات الاسترجاع» عمومًا.
-          البحث النصّي بيرجّع المقاطع اللي فيها <code>SKU-88421</code> حرفيًا.</li>
-        <li>الـ <span class="ltr">RRF</span> بيدمج: المقطع اللي فيه الرقم <em>و</em> بيتكلّم عن الاسترجاع بيطلع الأول.</li>
-        <li>الـ <span class="term">Reranker</span> بيقرا الـ <span class="ltr">50</span> مع السؤال
-          ويختار <span class="ltr">4</span> بس.</li>
-        <li>بنبني الطلب: رسالة النظام (مكاشة) + الـ <span class="ltr">4</span> مقاطع + السؤال.</li>
-        <li>النموذج بيجاوب <em>من المقاطع دي بس</em>، وبيرجّع معرّفات المصادر.</li>
+    <div class="trace mt">
+      <div class="trace__head">تتبّع سؤال واحد جوّه مسار الـ <span class="ltr">RAG</span> من أوله لآخره</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">User Query</span>
+          <div class="trace__body">
+            المستخدم بيسأل: «إيه سياسة استرجاع المنتج <code>SKU-88421</code>؟»
+            <br>لاحظ إن السؤال ده فيه <strong>نوعين مختلفين تمامًا من المعلومة</strong>:
+            مفهوم عام («سياسة الاسترجاع») ورمز حرفي دقيق (<code>SKU-88421</code>).
+            وده بالظبط سبب كل خطوة جاية — نظام بيتعامل مع نوع واحد بس هيفشل في نص الأسئلة الحقيقية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Embedding Model · BM25 Query</span>
+          <div class="trace__body">
+            السؤال بيتحوّل لمتجه (<span class="ltr">~20ms</span>) <em>و</em> بيتبعت كاستعلام
+            كلمات مفتاحية <strong>بالتوازي</strong> — مش واحد بعد التاني.
+            <br>التوازي هنا مش تحسين شكلي: لو مشّيتهم بالتسلسل، هتدفع
+            <span class="ltr">28ms</span> بدل <span class="ltr">20ms</span> من ميزانية
+            <span class="term term--a">TTFT</span> ضيّقة أصلاً — من غير أي فايدة،
+            لأن الاتنين مستقلين تمامًا عن بعض.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Vector DB · Keyword Index</span>
+          <div class="trace__body">
+            البحث الدلالي بيرجّع <span class="ltr">50</span> مقطع عن «سياسات الاسترجاع» عمومًا.
+            البحث النصّي بيرجّع المقاطع اللي فيها <code>SKU-88421</code> <em>حرفيًا</em>.
+            <br>ليه الاتنين؟ لأن المتجهات بتفشل مع الرموز الدقيقة (رقم منتج، اسم دالة، كود خطأ) —
+            المتجه بيلخّص المعنى مش الحروف. ومن غير البحث النصّي،
+            <strong>المقطع اللي فيه الرقم بالظبط ممكن ما يطلعش خالص</strong>
+            وانت فاكر إن المعلومة مش موجودة في الفهرس.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">RRF Fusion</span>
+          <div class="trace__body">
+            الـ <span class="term">RRF</span> بيدمج القايمتين: المقطع اللي فيه الرقم
+            <em>و</em> بيتكلّم عن الاسترجاع بيطلع الأول.
+            <br>والسبب إنه بيدمج <strong>بالترتيب مش بالدرجات</strong>: درجة الكوساين
+            (<span class="ltr">0–1</span>) ودرجة الـ <span class="ltr">BM25</span> (مفتوحة)
+            مالهمش نفس المقياس أصلاً، فجمعهم مباشرة بيدّي أرقام بلا معنى.
+            الترتيب هو الحاجة الوحيدة المشتركة بين النظامين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Reranker</span>
+          <div class="trace__body">
+            الـ <span class="term">Reranker</span> بيقرا الـ <span class="ltr">50</span> مقطع
+            <strong>مع</strong> السؤال في نفس النموذج (<span class="term term--e">Cross-Encoder</span>)
+            ويختار <span class="ltr">4</span> بس.
+            <br>الفرق الجوهري: خطوة الاسترجاع قارنت متجهين اتحسبوا <em>كل واحد لوحده</em>،
+            أما هنا فالنموذج شايف السؤال والمقطع مع بعض — فبيقدر يحكم على الصلة الحقيقية.
+            التمن <span class="ltr">~90ms</span>، والمكسب إنك بتدخّل النموذج
+            <span class="ltr">4</span> مقاطع مضبوطة بدل <span class="ltr">50</span> فيهم ضوضاء.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Prompt Assembly</span>
+          <div class="trace__body">
+            بنبني الطلب بترتيب مقصود: رسالة النظام (<strong>ثابتة عشان تتكاش</strong>)
+            + الـ <span class="ltr">4</span> مقاطع + السؤال.
+            <br>الترتيب ده هو اللي بيخلّي <span class="term">Prompt Caching</span> يشتغل:
+            الجزء الثابت في الأول، والمتغيّر في الآخر. اعكسه — تحطّ المقاطع قبل رسالة النظام —
+            و<strong>الكاش بيبطل خالص</strong>، لأن البادئة بتتغيّر مع كل سؤال.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">LLM</span>
+          <div class="trace__body">
+            النموذج بيجاوب <em>من المقاطع دي بس</em>، وبيرجّع معرّفات المصادر مع الإجابة.
+            <br>معرّفات المصادر مش زينة: هي اللي بتخلّي المستخدم يتحقّق، وبتخلّيك انت
+            تقيس <span class="term">Grounding</span> — تقارن كل جملة في الإجابة بالمصدر بتاعها.
+            من غيرها، لما النموذج يخترع معلومة <strong>مفيش أي طريقة آلية تكتشفها</strong>.
+          </div>
+        </li>
+
       </ol>
-      <strong>إجمالي التأخير قبل النموذج: <span class="ltr">~136ms</span></strong> —
-      يعني <span class="ltr">23%</span> من ميزانية <span class="ltr">TTFT</span> بتاعت <span class="ltr">600ms</span>.
-      مقبول تمامًا.
+      <div class="trace__key">
+        إجمالي التأخير قبل النموذج: <span class="ltr">~136ms</span> — يعني
+        <span class="ltr">23%</span> من ميزانية <span class="term term--a">TTFT</span> بتاعت
+        <span class="ltr">600ms</span>. <strong>مقبول تمامًا</strong>،
+        والمقابل إن النموذج بيشوف <span class="ltr">4</span> مقاطع صح بدل <span class="ltr">50</span> عشوائي.
+      </div>
     </div>
 
     <div class="grid g3 fragment">
@@ -4528,24 +4709,81 @@ builder.Services.<span class="f">AddChatClient</span>(sp <span class="p">=&gt;</
 }</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">القرارات المهمة في الكود ده</span>
-      <strong>(1) فلترة المستأجر جوّه <code>WHERE</code>.</strong> لو فلترت بعد ما تجيب النتايج،
-      ممكن تطلب <span class="ltr">12</span> وترجعلك <span class="ltr">3</span> بس بتخصّ المستأجر —
-      وتسلّم إجابة ناقصة من غير ما تعرف. وأخطر: <em>تسريب بيانات لو نسيت الفلتر خالص</em>.
-      <br><strong>(2) <code>embedding_model</code> في الشرط.</strong> ده الحارس ضد أسوأ عطل في
-      <span class="ltr">RAG</span>: إنك تحدّث نموذج التضمين وتنسى تعيد بناء الفهرس.
-      من غير الشرط ده النظام هيرجّع نتايج عشوائية <em>بصمت تام</em>.
-      <br><strong>(3) عتبة الدرجة.</strong> بنجيب <span class="ltr">12</span> ونصفّي.
-      المقطع بدرجة <span class="ltr">0.4</span> مش «أحسن من ولا حاجة» — هو <em>ضوضاء</em>
-      بتشتّت النموذج وبتكلّفك توكِنات.
-      <br><strong>(4) ميزانية توكِنات صريحة.</strong> بدل <code>top-K</code> ثابت،
-      بنملأ لحد سقف. مقاطع طويلة ⟵ عدد أقل. قصيرة ⟵ أكتر. وبنوقف عند حدود المقطع
-      عشان ما نبعتش نص مقطوع.
-      <br><strong>(5) الترتيب داخل الطلب.</strong> رسالة النظام ثابتة فبتتكاش.
-      المصادر والسؤال متغيّرين فبييجوا بعدها. عكس الترتيب ده بيلغي الكاش تمامًا.
-      <br><strong>(6) تسجيل <code>retrieval-miss</code>.</strong> السطر ده هو نظام الإنذار المبكر
-      بتاعك — تراكم الإخفاقات معناه إن الفهرس ناقص أو استراتيجية التقطيع محتاجة مراجعة.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع استعلام استرجاع واحد: كل شرط في الكود وإيه اللي بيمنعه</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Tenant Filter (WHERE)</span>
+          <div class="trace__body">
+            فلترة المستأجر بتحصل <strong>جوّه <code>WHERE</code></strong>، مش بعد ما النتايج ترجع.
+            <br>لو فلترت بعدين، ممكن تطلب <span class="ltr">12</span> وترجعلك
+            <span class="ltr">3</span> بس بتخصّ المستأجر — فتسلّم إجابة ناقصة من غير ما تعرف.
+            <strong>وأخطر من كده:</strong> لو نسيت الفلتر خالص، ده تسريب بيانات بين عملاء —
+            وهو نوع العطل اللي ما بيرجّعش خطأ، بيرجّع <em>إجابة</em>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">embedding_model Guard</span>
+          <div class="trace__body">
+            <code>embedding_model</code> في الشرط — ده الحارس ضد أسوأ عطل في
+            <span class="ltr">RAG</span>: إنك تحدّث نموذج التضمين وتنسى تعيد بناء الفهرس.
+            <br>ساعتها بتقارن متجهات من <em>فضاءين مختلفين</em>، والنتايج بتبقى عشوائية
+            <strong>بصمت تام</strong>: مفيش خطأ، مفيش لوج، مجرد إجابات بقت وحشة.
+            الشرط ده بيحوّل الكارثة الصامتة لنتيجة فاضية تقدر تشوفها.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Score Threshold</span>
+          <div class="trace__body">
+            بنجيب <span class="ltr">12</span> مقطع <strong>ونصفّي</strong> بعتبة درجة.
+            <br>الفكرة الغلط الشائعة إن «مقطع ضعيف أحسن من ولا حاجة». مش صح:
+            المقطع بدرجة <span class="ltr">0.4</span> هو <em>ضوضاء</em> —
+            بيشتّت النموذج عن المقاطع الكويسة، وبيكلّفك توكِنات في كل نداء،
+            وبيزوّد احتمال إجابة مبنية على مصدر مش ذي صلة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Token Budget</span>
+          <div class="trace__body">
+            بدل <code>top-K</code> ثابت، بنملأ لحد <strong>سقف توكِنات</strong>:
+            مقاطع طويلة ⟵ عدد أقل، قصيرة ⟵ أكتر. وبنوقف عند حدود المقطع عشان ما نبعتش نص مقطوع.
+            <br>ليه مش رقم ثابت؟ لأن <code>top-K = 5</code> ممكن يبقى
+            <span class="ltr">600</span> توكِن مرة و<span class="ltr">9,000</span> مرة تانية
+            حسب طول المقاطع — يعني <strong>تكلفتك وزمنك بيتقلبوا من غير ما تتحكّم فيهم</strong>.
+            الميزانية بتثبّت السقف بدل ما تثبّت العدد.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Prompt Ordering</span>
+          <div class="trace__body">
+            رسالة النظام ثابتة فبتتكاش، والمصادر والسؤال متغيّرين فبييجوا بعدها.
+            <br>الـ <span class="term">Prompt Caching</span> بيشتغل على <strong>البادئة</strong>:
+            أول بايت يتغيّر بيبطّل كل اللي بعده. عكس الترتيب ده — تحطّ المصادر قبل رسالة النظام —
+            بيلغي الكاش <em>تمامًا</em> لأن البادئة بتبقى مختلفة مع كل سؤال.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">retrieval-miss Metric</span>
+          <div class="trace__body">
+            تسجيل <code>retrieval-miss</code> لما مفيش مقطع يعدّي العتبة.
+            <br>السطر ده هو <strong>نظام الإنذار المبكر</strong> بتاعك: تراكم الإخفاقات معناه
+            إن الفهرس ناقص أو استراتيجية التقطيع محتاجة مراجعة.
+            من غيره، المستخدمين هما اللي هيبلّغوك — بعد شهور، وبعبارة «النظام مش بيعرف حاجة»
+            اللي مستحيل تحقّق فيها.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        دالة الاسترجاع دي فيها سطر واحد بس بيجيب البيانات — الباقي كله
+        <strong>حراسة</strong> ضد أعطال بتحصل بصمت.
+      </div>
     </div>
   </div>
 </section>
@@ -5091,26 +5329,72 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/ask"</span>, <span clas
 });</code></pre>
     </div>
 
-    <div class="plain mt">
-      <span class="plain__label">ليه التصميم ده بالذات؟</span>
-      <strong>(1) <code>CreateBounded(256)</code> مش <code>CreateUnbounded()</code>.</strong>
-      الطابور اللانهائي مش «بيستوعب الضغط» — هو بيخبّي المشكلة لحد ما الذاكرة تخلص،
-      وساعتها بتقع بـ <span class="ltr">OOM</span> وانت شايل <span class="ltr">50,000</span> طلب
-      مستخدميهم مشيوا من زمان. <strong>السعة المحدودة هي الضغط الخلفي.</strong>
-      <br><strong>(2) <code>TryWrite</code> مش <code>WriteAsync</code>.</strong>
-      عايزين إجابة فورية: فيه مكان ولا لأ. <code>WriteAsync</code> هتخلّي الطلب يستنى
-      وده بالظبط اللي بنحاول نتجنّبه.
-      <br><strong>(3) فحص الموعد النهائي قبل التنفيذ.</strong> ده أهم سطر في الكود.
-      طلب استنى <span class="ltr">22</span> ثانية في الطابور = المستخدم قفل الصفحة.
-      تشغيله معناه <em>إنك بتحرق <span class="ltr">GPU</span> على حد مش موجود</em> —
-      وبتزوّد الطابور للناس اللي لسه مستنية.
-      <br><strong>(4) <code>SemaphoreSlim(32)</code>.</strong> ليه سقف تزامن لو الطابور محدود أصلاً؟
-      لأن الطابور بيحدّد <em>الانتظار</em> والسيمافور بيحدّد <em>التنفيذ المتوازي</em>.
-      من غيره هترمي <span class="ltr">256</span> طلب على المحرّك مرة واحدة، وهو هيعمل طابور داخلي
-      انت مش شايفه ولا متحكّم فيه.
-      <br><strong>(5) <span class="ltr">503</span> بـ <code>retry_after</code>.</strong>
-      الرفض السريع مع إرشاد أفضل من <span class="ltr">504</span> بعد <span class="ltr">30</span> ثانية.
-      العميل يقدر يعيد بتراجع، وانت حافظت على استقرار النظام.
+    <div class="trace mt">
+      <div class="trace__head">تتبّع طلب واحد جوّه بوابة القبول: من الوصول لحد الرفض أو التنفيذ</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Bounded Channel</span>
+          <div class="trace__body">
+            <code>CreateBounded(256)</code> مش <code>CreateUnbounded()</code>.
+            <br>الطابور اللانهائي مش «بيستوعب الضغط» — هو بيخبّي المشكلة لحد ما الذاكرة تخلص،
+            وساعتها بتقع بـ <span class="ltr">OOM</span> وانت شايل <span class="ltr">50,000</span>
+            طلب مستخدميهم مشيوا من زمان.
+            <strong>السعة المحدودة هي الضغط الخلفي</strong> — هي الحاجة الوحيدة اللي بتخلّي
+            النظام يقول «لأ» بدل ما ينهار.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">TryWrite</span>
+          <div class="trace__body">
+            <code>TryWrite</code> مش <code>WriteAsync</code> — عايزين إجابة <strong>فورية</strong>:
+            فيه مكان ولا لأ.
+            <br><code>WriteAsync</code> هتخلّي الطلب يستنى دخول الطابور،
+            وده بالظبط اللي بنحاول نتجنّبه: بتكون بنيت طابور تاني <em>قبل</em> الطابور،
+            من غير حد ومن غير رؤية. الرفض الفوري أنضف من انتظار مخفي.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Deadline Check</span>
+          <div class="trace__body">
+            فحص الموعد النهائي <strong>قبل التنفيذ</strong> — ده أهم سطر في الكود كله.
+            <br>طلب استنى <span class="ltr">22</span> ثانية في الطابور = المستخدم قفل الصفحة.
+            تشغيله معناه <em>إنك بتحرق <span class="ltr">GPU</span> على حد مش موجود</em>،
+            وفي نفس الوقت بتزوّد الطابور للناس اللي لسه مستنية —
+            فالنظام بيدخل حلقة بيشتغل فيها بأقصى طاقته على شغل <strong>مالوش أي قيمة</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">SemaphoreSlim(32)</span>
+          <div class="trace__body">
+            ليه سقف تزامن لو الطابور محدود أصلاً؟ لأن الطابور بيحدّد <em>الانتظار</em>
+            والسيمافور بيحدّد <em>التنفيذ المتوازي</em> — دول رقمين مختلفين لحاجتين مختلفتين.
+            <br>من غيره هترمي <span class="ltr">256</span> طلب على المحرّك مرة واحدة،
+            وهو هيعمل طابور داخلي <strong>انت مش شايفه ولا متحكّم فيه</strong> —
+            يعني ضيّعت كل اللي بنيته فوق، لأن قرار الأولوية والرفض بقى عند حد تاني.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">503 + retry_after</span>
+          <div class="trace__body">
+            الرفض السريع <strong>مع إرشاد</strong> أفضل من <span class="ltr">504</span>
+            بعد <span class="ltr">30</span> ثانية.
+            <br>الفرق مش شكلي: مع <code>retry_after</code> العميل يقدر يعيد بتراجع منظّم،
+            فالحمل بيتوزّع على الزمن. من غيره كل العملاء المرفوضين بيعيدوا المحاولة
+            <em>في نفس اللحظة</em> ⇒ <span class="term term--r">Thundering Herd</span>
+            بيوقّع النظام تاني بعد ثانيتين من ما يفوق.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        بوابة القبول شغلتها مش تسريع الطلبات — شغلتها إنها <strong>تقرر بسرعة أنهي طلب
+        ما يستاهلش يدخل أصلاً</strong>، عشان الباقي يتخدم كويس.
+      </div>
     </div>
 
     <div class="callout callout--tip fragment">

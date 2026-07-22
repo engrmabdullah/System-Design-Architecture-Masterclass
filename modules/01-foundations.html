@@ -1556,8 +1556,10 @@
   <div class="slide__body">
     <div class="math">
 <span class="cmt">// ═══ منصة صور ═══</span>
-<span class="lbl">Upload QPS</span> <span class="eq">=</span> <span class="n">1,000</span>   <span class="lbl">حجم الصورة</span> <span class="eq">=</span> <span class="n">2 MB</span>
-<span class="lbl">View QPS</span>   <span class="eq">=</span> <span class="n">50,000</span>  <span class="lbl">الحجم المعروض</span> <span class="eq">=</span> <span class="n">300 KB</span>
+<span class="lbl">Upload QPS</span>       <span class="eq">=</span> <span class="n">1,000</span>
+<span class="lbl">View QPS</span>         <span class="eq">=</span> <span class="n">50,000</span>
+<span class="lbl">حجم الصورة</span>       <span class="eq">=</span> <span class="n">2 MB</span>
+<span class="lbl">الحجم المعروض</span>    <span class="eq">=</span> <span class="n">300 KB</span>
 
 <span class="lbl">Ingress</span> <span class="eq">=</span> <span class="n">1,000</span> × <span class="n">2 MB</span>   <span class="eq">=</span> <span class="res">2 GB/s</span>
 <span class="lbl">Egress</span>  <span class="eq">=</span> <span class="n">50,000</span> × <span class="n">300 KB</span> <span class="eq">=</span> <span class="res">15 GB/s</span>
@@ -2049,13 +2051,97 @@
       </div>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">تتبّع طلب واحد من أوله لآخره</span>
-      المستخدم يفتح صفحة ⟵ الملفات الثابتة تيجي من الـ <strong>CDN</strong> (من غير ما توصل لسيرفرك أصلاً)
-      ⟵ طلب البيانات يروح للـ <strong>Load Balancer</strong> ⟵ يوجّهه لسيرفر متاح
-      ⟵ الـ <strong>Gateway</strong> يتحقق من هوية المستخدم ⟵ الخدمة تدوّر في الـ <strong>Redis</strong> الأول
-      ⟵ لو ملقتش، تروح لنسخة القراءة ⟵ وتحط النتيجة في الكاش للمرة الجاية.
-      <br><br><em>جرّب تعمل التتبّع ده بنفسك على أي رسمة معمارية — هيكشفلك الثغرات فورًا.</em>
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع طلب واحد من أوله لآخره: فتح صفحة فيها بيانات</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Browser</span>
+          <div class="trace__body">
+            المستخدم يفتح الصفحة، فالمتصفح بيطلب حاجتين مختلفتين تمامًا:
+            <strong>ملفات ثابتة</strong> (صور، <span class="ltr">CSS</span>، <span class="ltr">JS</span>)
+            و<strong>بيانات</strong> (<span class="ltr">JSON</span> من الـ API).
+            <br>بنفصل بينهم من أول خطوة <strong>لأن كل نوع بياخد مسار مختلف خالص في الرسمة</strong>.
+            لو خلطتهم، هتحسب حمل ثابت على سيرفراتك وهو أصلاً مش هيوصلها.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">CDN</span>
+          <div class="trace__body">
+            الملفات الثابتة بتترد من أقرب نقطة جغرافيًا للمستخدم —
+            <em>من غير ما توصل لسيرفرك أصلاً</em>.
+            <br>الخطوة دي موجودة عشان تقصّر المسافة وتشيل الحمل الأكبر عن أصلك.
+            من غيرها، كل صورة في كل صفحة هتتحوّل لطلب على سيرفراتك،
+            وهتلاقي <strong>معظم طاقتك بتروح في تسليم ملفات ما بتتغيّرش</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Load Balancer</span>
+          <div class="trace__body">
+            طلب البيانات بيوصل للموزّع، وهو بيوجّهه لسيرفر <strong>متاح</strong> من مجموعة سيرفرات متطابقة.
+            <br>كلمة «متاح» هي بيت القصيد: الموزّع بيعرف مين سليم ومين لأ عن طريق فحص صحة دوري.
+            من غير الخطوة دي مفيش توسّع أفقي أصلاً — العميل هيبقى ماسك عنوان سيرفر بعينه،
+            وأول ما السيرفر ده يقع <strong>المستخدم يقع معاه</strong>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">API Gateway</span>
+          <div class="trace__body">
+            البوابة بتتحقق من هوية المستخدم (<span class="term">Authentication</span>)
+            وبتطبّق حدود المعدّل (<span class="term">Rate Limiting</span>) قبل ما الطلب يلمس أي خدمة.
+            <br>الخطوة دي موجودة عشان <strong>الكلام ده يتكتب مرة واحدة مش في كل خدمة</strong>.
+            من غيرها هتلاقي منطق المصادقة متكرّر في عشر خدمات، وأول مرة تنسى تحدّث واحدة منهم
+            بتبقى دي الثغرة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Application Service</span>
+          <div class="trace__body">
+            هنا كودك انت بيشتغل: بيفهم الطلب، وبيقرّر إيه البيانات المطلوبة، وبيرتّب الخطوات.
+            <br>لاحظ إن دي <strong>أول خطوة فيها منطق يخصّ شغلك</strong> — كل اللي فات كان نقل وتوجيه وحماية.
+            وده بالظبط اللي بيخلّي نفس الخدمة تقدر تشتغل ورا بوابة، أو من مهمة مجدولة، من غير تعديل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Redis</span>
+          <div class="trace__body">
+            الخدمة بتدوّر في الكاش <strong>الأول</strong> قبل أي حاجة تانية.
+            لو لقت البيانات (<span class="term term--e">Cache Hit</span>) بترجّعها فورًا وتنتهي الرحلة هنا.
+            <br>الترتيب ده مقصود: القراءة من الذاكرة أسرع من القرص بمراتب.
+            من غير الخطوة دي، <strong>كل قراءة هتضرب قاعدة البيانات</strong>،
+            وقاعدة البيانات هي أغلى وأصعب حاجة تتوسّع في النظام كله.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Read Replica</span>
+          <div class="trace__body">
+            لو الكاش ملقاش (<span class="term term--r">Cache Miss</span>)، القراءة بتروح لنسخة قراءة
+            مش للنسخة الرئيسية.
+            <br>الفصل ده موجود عشان <strong>القراءات ما تزاحمش الكتابات</strong> على نفس الماكينة.
+            من غيره، تقرير تقيل واحد يقدر يبطّئ كل عمليات الشراء في نفس اللحظة.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Response</span>
+          <div class="trace__body">
+            الخدمة بتحط النتيجة في الكاش للمرة الجاية، وبعدين بترجّع الرد للمستخدم بنفس المسار بالعكس.
+            <br>الكتابة في الكاش هنا هي اللي بتخلّي الخطوة السادسة تنجح المرة الجاية —
+            <strong>من غيرها الكاش هيفضل فاضي للأبد</strong> وكل طلب هيعمل نفس الرحلة الطويلة.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        جرّب تعمل التتبّع ده بنفسك على أي رسمة معمارية — هيكشفلك الثغرات فورًا.
+        <br>لو مش قادر تحكي رحلة طلب واحد من أوله لآخره على رسمتك، فالرسمة لسه مش مفهومة.
+      </div>
     </div>
   </div>
 </section>

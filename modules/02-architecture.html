@@ -2376,14 +2376,117 @@ order.Lines.<span class="f">Clear</span>();          <span class="c">// طلب �
       </div>
     </div>
 
-    <div class="plain fragment">
-      <span class="plain__label">تتبّع نفس العملية من مدخلين مختلفين</span>
-      <strong>من الويب:</strong> <span class="ltr">HTTP POST</span> ⟵ محوّل الويب بيحوّله لأمر ⟵
-      <code>PlaceOrderHandler</code> ⟵ بينادي منفذ التخزين ⟵ محوّل <span class="ltr">SQL</span> بيكتب في الجدول.
-      <br><strong>من الاختبار:</strong> الاختبار بينادي <code>PlaceOrderHandler</code> <em>مباشرة</em> ⟵
-      نفس المنفذ ⟵ محوّل في الذاكرة بيحط في <code>List</code>.
-      <br><br><strong>لاحظ:</strong> الخطوة الوسطانية <em>واحدة بالظبط</em> في الحالتين.
-      ده معناه إن اختباراتك بتغطّي <strong>نفس الكود</strong> اللي بيشتغل في الإنتاج، مش نسخة منه.
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع 1 — نفس العملية داخلة من الويب (الإنتاج)</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">HTTP Adapter</span>
+          <div class="trace__body">
+            <span class="ltr">HTTP POST /orders</span> بيوصل لمحوّل الويب — وده
+            <strong>محوّل قيادة</strong> (<span class="term term--c">Driving Adapter</span>).
+            <br>لاحظ إن المحوّل ده <em>برّه</em> السداسي بالكامل. الخطوة دي موجودة عشان الويب
+            يفضل تفصيلة تقدر تستبدلها؛ من غيرها هتلاقي <span class="ltr">HttpContext</span>
+            ماشي جوّه اللب، وساعتها اللب مبقاش قابل للنداء من أي مدخل تاني.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Web Adapter → Command</span>
+          <div class="trace__body">
+            المحوّل بيترجم الـ <span class="ltr">JSON</span> لأمر بلغة شغلك:
+            <code>PlaceOrderCommand</code>.
+            <br>دي <strong>الترجمة الوحيدة اللي بتحصل عند الحدود</strong> — بعدها مفيش كلمة
+            <span class="ltr">HTTP</span> في أي سطر. من غيرها كل اختبار للّب هيحتاج يبني
+            طلب ويب مزيّف عشان يشتغل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">PlaceOrderHandler</span>
+          <div class="trace__body">
+            اللب بيستلم الأمر وينفّذ حالة الاستخدام: يتحقق، يبني الطلب، ويقرّر يحفظ.
+            <br><strong>دي الخطوة الوحيدة اللي فيها قرار حقيقي</strong> في التتبّع كله،
+            وهي اللي هتلاقيها بحرفها في التتبّع التاني تحت.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Persistence Port</span>
+          <div class="trace__body">
+            اللب بينادي <strong>منفذ</strong> التخزين — واجهة
+            (<span class="term term--e">Driven Port</span>) <em>مملوكة للّب نفسه</em>،
+            مكتوبة بأنواع من عالمك مش بأنواع قاعدة البيانات.
+            <br>ملكية الواجهة هي كل الحكاية: هي اللي بتقلب اتجاه الاعتمادية.
+            من غيرها اللب هيبقى بيعتمد على مكتبة التخزين، ويبقى الكلام كله عن العزل مجرد شكل مجلدات.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">SQL Adapter</span>
+          <div class="trace__body">
+            محوّل <span class="ltr">SQL</span> — <strong>محوّل مقاد</strong>
+            (<span class="term term--a">Driven Adapter</span>) — بينفّذ المنفذ ويكتب في الجدول فعلاً.
+            <br>هنا وبس بتظهر <span class="ltr">EF Core</span> والاتصال والمعاملة.
+            وده معناه إن استبدال قاعدة البيانات = استبدال الملف ده، من غير ما تلمس سطر في اللب.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        خمس خطوات، واحدة بس منهم فيها قرار — والأربعة الباقيين ترجمة ونقل.
+      </div>
+    </div>
+
+    <div class="trace fragment">
+      <div class="trace__head">تتبّع 2 — نفس العملية داخلة من اختبار وحدة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Test Driver</span>
+          <div class="trace__body">
+            الاختبار بينادي <code>PlaceOrderHandler</code> <em>مباشرة</em> —
+            هو نفسه بقى <strong>محوّل قيادة</strong> زيه زي الويب بالظبط.
+            <br>مفيش سيرفر ويب، ولا <span class="ltr">TestServer</span>، ولا
+            <span class="ltr">HttpClient</span>. عشان كده الاختبار ده بيخلّص في ملّي ثانية
+            بدل ثواني، وتقدر تشغّل آلاف منه في كل <span class="ltr">build</span>.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">PlaceOrderHandler</span>
+          <div class="trace__body">
+            <strong>نفس الكلاس، نفس الميثود، نفس السطور</strong> اللي اتنفّذت في التتبّع الأول.
+            <br>دي النقطة اللي كل الفصل ده اتعمل عشانها: مفيش «نسخة اختبار» من المنطق
+            تروح تختلف عن نسخة الإنتاج مع الوقت.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Persistence Port</span>
+          <div class="trace__body">
+            اللب بينادي <em>نفس المنفذ</em> — ما اتغيّرش ولا حرف فيه.
+            <br>اللب أصلاً <strong>ما يعرفش</strong> مين اللي منفّذ الواجهة دي دلوقتي،
+            وده بالظبط اللي بيخلّي التبديل ممكن من غير أي شرط ولا إعداد جوّه المنطق.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">In-Memory Adapter</span>
+          <div class="trace__body">
+            محوّل في الذاكرة بيحط الطلب في <code>List</code> بدل الجدول،
+            وتقدر تسأله بعدين: اتحفظ كام طلب؟ وبأنهي قيم؟
+            <br>وده اللي بيخلّي الاختبار يتكلم عن <strong>قاعدة شغل</strong> مش عن
+            <span class="ltr">SQL</span>. من غير المحوّل ده، كل اختبار هيحتاج قاعدة بيانات حقيقية
+            ⇒ بطء، وتذبذب، وتنظيف بعد كل اختبار.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        الخطوة الوسطانية <em>واحدة بالظبط</em> في الحالتين.
+        ده معناه إن اختباراتك بتغطّي <strong>نفس الكود</strong> اللي بيشتغل في الإنتاج، مش نسخة منه.
+      </div>
     </div>
   </div>
 </section>
@@ -2774,16 +2877,19 @@ order.Lines.<span class="f">Clear</span>();          <span class="c">// طلب �
       <div class="termcard__body">
         <div class="tblock">
           <span class="tblock__label">التعريف الدقيق</span>
-          دوائر متداخلة زي البصلة: في القلب <strong>نموذج الدومين</strong>، بعده
-          <strong>خدمات الدومين</strong>، بعده <strong>خدمات التطبيق</strong>،
-          وبرّه خالص <strong>البنية التحتية والواجهات</strong>.
+          دوائر متداخلة زي البصلة: في القلب <span class="term">Entities</span> (نموذج الدومين)، بعده
+          <span class="term term--v">Domain Services</span>، بعده
+          <span class="term term--v">Application Services</span>،
+          وبرّه خالص <span class="term">Frameworks &amp; Drivers</span> (البنية التحتية والواجهات).
           <br>وكل دايرة تعرف اللي جوّاها بس.
         </div>
         <div class="tblock tblock--analogy">
           <span class="tblock__label">تشبيه 🧅</span>
-          البصلة: تقشّر الطبقة البرّانية، اللي جوّه لسه سليم وكامل.
+          البصلة: تقشّر الطبقة اللي برّه —
+          <span class="term">Frameworks &amp; Drivers</span> (المكتبات والأدوات) —
+          واللي جوّه لسه سليم وكامل.
           <br>تقدر تقشّر <span class="ltr">Web API</span> وتحط <span class="ltr">Console</span> مكانها —
-          القلب ما اتأثرش.
+          <span class="term">Entities</span> (القلب) ما اتأثرش.
         </div>
         <div class="tblock tblock--net">
           <span class="tblock__label">الفرق الوحيد اللي يستاهل الذكر</span>
