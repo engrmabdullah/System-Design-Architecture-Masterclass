@@ -5232,34 +5232,127 @@
       </div>
     </div>
 
-    <div class="plain">
-      <span class="plain__label">تتبّع عملية دفع واحدة من أولها لآخرها</span>
-      <strong>1.</strong> المتصفح بيحمّل حقول البطاقة من دومين الـ PSP جوّه
-      <span class="term">iframe</span> ⟵ سيرفرك ما شافش رقم البطاقة أصلاً.
-      <br><strong>2.</strong> الواجهة بتولّد <span class="term term--r">Idempotency Key</span>
-      وبتبعت <code>POST /payments</code> ومعاه الـ <span class="term">Token</span> والمفتاح.
-      <br><strong>3.</strong> البوابة بتتحقق من الهوية وحد المعدّل، والفلتر بيحجز المفتاح
-      بحالة <span class="ltr">InFlight</span> — لو المفتاح موجود، بيرجّع الرد المخزّن فورًا وخلاص.
-      <br><strong>4.</strong> خدمة الاحتيال بتقرا الميزات من الـ Feature Store
-      وبترجّع قرار في أقل من <span class="ltr">150ms</span>:
-      موافقة، أو تحدّي <span class="ltr">3DS</span>، أو مراجعة، أو رفض.
-      <br><strong>5.</strong> خدمة الدفع بتنشئ الدفعة بحالة <span class="ltr">Created</span>،
-      وبتنقلها لـ <span class="ltr">Pending</span> عبر <code>TryTransition</code>،
-      وبتكتب صف الانتقال في <em>نفس المعاملة</em>.
-      <br><strong>6.</strong> محوّل الـ PSP بينادي التفويض بمهلة وقاطع دائرة.
-      لو وقع ⟵ تحويل للـ PSP البديل، أو <strong>تسجيل النيّة في طابور</strong> والرد
-      «قيد التأكيد» — <em>الطلب ما بيضيعش أبدًا</em>.
-      <br><strong>7.</strong> التفويض نجح ⟵ انتقال لـ <span class="ltr">Authorized</span>،
-      وقيد الدفتر بيتكتب <strong>في نفس معاملة قاعدة البيانات</strong> مع تأكيد
-      «المدين = الدائن»، والحدث بيتحط في الـ <span class="term">Outbox</span>.
-      <br><strong>8.</strong> الفلتر بيخزّن الرد ويقفل المفتاح على <span class="ltr">Done</span>
-      ⟵ أي إعادة محاولة بعد كده بترجّع نفس الرد بالظبط.
-      <br><strong>9.</strong> بعد الشحن ⟵ <span class="term term--a">Capture</span>،
-      وبعد يومين بيوصل <span class="term">Webhook</span> بالتسوية (بتوقيع متحقّق منه ومعالجة مرة واحدة)
-      ⟵ انتقال لـ <span class="ltr">Settled</span> <span class="ltr">+</span> قيد جديد.
-      <br><strong>10.</strong> لو الـ Webhook ضاع، المستعلِم بيمسكها خلال
-      <span class="ltr">5</span> دقايق. ولو فاتت منه كمان، <strong>المطابقة اليومية</strong>
-      بتمسكها الساعة <span class="ltr">2</span> الفجر وتصنّفها وتفتحلها استثناء.
+    <div class="trace">
+      <div class="trace__head">تتبّع عملية دفع واحدة من أولها لآخرها عبر المعمارية كاملة</div>
+      <ol class="trace__steps">
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Hosted Fields · iframe</span>
+          <div class="trace__body">
+            المتصفح بيحمّل حقول البطاقة من <strong>دومين الـ PSP</strong> جوّه
+            <span class="term">iframe</span>، فالرقم بيتحوّل لـ
+            <span class="term">Token</span> من غير ما يعدّي على سيرفرك أصلاً.
+            <br>الخطوة دي بتحدّد نطاق امتثالك كله. لو الرقم لمس سيرفرك ولو لحظة،
+            بتنتقل من استبيان صغير لبرنامج امتثال كامل بتجزئة شبكة وفحوص دورية.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--outer">
+          <span class="trace__layer">Client SDK</span>
+          <div class="trace__body">
+            الواجهة بتولّد <span class="term term--r">Idempotency Key</span> فريد للمحاولة،
+            وبتبعت <code>POST /payments</code> ومعاه الـ <span class="term">Token</span> والمفتاح.
+            <br><strong>المفتاح بيتولّد عند العميل، مش عند السيرفر.</strong> لو ولّدته على السيرفر،
+            كل إعادة محاولة هتاخد مفتاح جديد — وساعتها الحماية من التكرار بتبقى بلا معنى.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">API Gateway · Idempotency Filter</span>
+          <div class="trace__body">
+            البوابة بتتحقق من الهوية وحد المعدّل، والفلتر بيحجز المفتاح بحالة
+            <span class="ltr">InFlight</span> بقيد فريد في قاعدة البيانات.
+            <br>لو المفتاح موجود ومكتمل، بيرجّع <strong>الرد المخزّن فورًا</strong> وخلاص —
+            من غير ما يلمس أي خدمة تحتها. ودي أرخص نقطة تمنع فيها خصمين على نفس العميل.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--app">
+          <span class="trace__layer">Fraud Service · Feature Store</span>
+          <div class="trace__body">
+            خدمة الاحتيال بتقرا الميزات المحسوبة مسبقًا وبترجّع قرار في أقل من
+            <span class="ltr">150ms</span>: موافقة، أو تحدّي <span class="ltr">3DS</span>،
+            أو مراجعة بشرية، أو رفض.
+            <br>بتيجي <em>قبل</em> نداء الـ PSP عشان ما تدفعش تكلفة عملية هتترفض،
+            وعشان ما تسجّلش عند الشبكة معدّل رفض عالي بيأثر على تسعيرك.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--core">
+          <span class="trace__layer">Payment Service · State Machine</span>
+          <div class="trace__body">
+            الخدمة بتنشئ الدفعة بحالة <span class="ltr">Created</span>، وبتنقلها لـ
+            <span class="ltr">Pending</span> عبر <code>TryTransition</code>،
+            وبتكتب صف الانتقال في <em>نفس المعاملة</em>.
+            <br>كتابة الحالة وسجلّها معًا هي اللي بتخلّيك تعرف بعد شهور <strong>إزاي</strong>
+            وصلت الدفعة للحالة دي، مش بس إنها فيها. من غير السجل، أي تحقيق في نزاع
+            بيتحوّل لتخمين.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">PSP Adapter</span>
+          <div class="trace__body">
+            المحوّل بينادي التفويض بمهلة قصيرة و<span class="term">Circuit Breaker</span>.
+            لو وقع، بيحوّل للـ PSP البديل، أو <strong>يسجّل النيّة في طابور</strong>
+            ويرد «قيد التأكيد» — <em>الطلب ما بيضيعش أبدًا</em>.
+            <br>من غير المهلة والقاطع، أول تباطؤ عند الـ PSP بيستهلك كل خيوطك
+            ويوقّف الخدمة كلها — مش بس الدفع.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Ledger</span>
+          <div class="trace__body">
+            التفويض نجح، فبيحصل انتقال لـ <span class="ltr">Authorized</span>،
+            وقيد الدفتر بيتكتب <strong>في نفس معاملة قاعدة البيانات</strong>
+            مع تأكيد «المدين = الدائن»، والحدث بيتحط في الـ <span class="term">Outbox</span>.
+            <br>الـ <span class="term term--v">Outbox</span> هو اللي بيمنع أسوأ حالة:
+            إن الدفعة تتسجّل عندك والحدث ما يوصلش لباقي النظام، أو العكس.
+            المعاملة الواحدة بتخلّي الاتنين ينجحوا أو يفشلوا مع بعض.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--adapt">
+          <span class="trace__layer">Idempotency Filter</span>
+          <div class="trace__body">
+            الفلتر بيخزّن الرد النهائي ويقفل المفتاح على <span class="ltr">Done</span>،
+            فأي إعادة محاولة بعد كده بترجّع <strong>نفس الرد بالظبط</strong> —
+            نفس المعرّف ونفس الحالة.
+            <br>لاحظ إن التخزين بيحصل <em>بعد</em> نجاح العملية، مش قبلها.
+            العكس هيخلّيك تخزّن رد نجاح لعملية ما تمّتش.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--data">
+          <span class="trace__layer">Capture · Settlement Webhook</span>
+          <div class="trace__body">
+            بعد الشحن بتعمل <span class="term term--a">Capture</span>، وبعد يومين بيوصل
+            <span class="term">Webhook</span> بالتسوية — بتوقيع متحقّق منه ومعالجة مرة واحدة —
+            فبيحصل انتقال لـ <span class="ltr">Settled</span> <span class="ltr">+</span> قيد جديد.
+            <br>التحقق من التوقيع <strong>قبل</strong> أي معالجة مش اختياري:
+            نقطة الـ Webhook مكشوفة للإنترنت، وأي حد يعرف عنوانها يقدر يبعتلك
+            «تمت التسوية» وهمية لو ما بتتحققش.
+          </div>
+        </li>
+
+        <li class="trace__step trace__step--out">
+          <span class="trace__layer">Poller · Daily Reconciliation</span>
+          <div class="trace__body">
+            لو الـ Webhook ضاع، المستعلِم بيمسك الحالة خلال <span class="ltr">5</span> دقايق.
+            ولو فاتت منه كمان، <strong>المطابقة اليومية</strong> بتمسكها الساعة
+            <span class="ltr">2</span> الفجر، تصنّفها، وتفتحلها استثناء.
+            <br>الطبقتين دول موجودين لأن التسليم عبر الشبكة <em>مش مضمون بأي حال</em>.
+            من غيرهم عملية واحدة ضايعة ممكن تفضل مخفية لشهور لحد ما عميل يشتكي.
+          </div>
+        </li>
+
+      </ol>
+      <div class="trace__key">
+        عدّي على العشر خطوات وشوف: مفيش ولا خطوة واحدة بتفترض إن اللي قبلها نجح.
+        <br>كل مسار حرج ليه <strong>مسار سريع</strong> ثم <strong>شبكة أمان قريبة</strong>
+        ثم <strong>شبكة أمان نهائية</strong> — وده اللي بيحوّل نظام دفع من «شغّال» لـ «موثوق».
+      </div>
     </div>
 
     <div class="callout callout--key fragment">

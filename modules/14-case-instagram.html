@@ -481,9 +481,17 @@
           بحجم أقل <span class="ltr">~35%</span>. نحسب المكسب:
         </p>
         <div class="math">
-<span class="lbl">الحجم الحالي</span> <span class="eq">=</span> <span class="n">150 KB</span>  <span class="eq">→</span>  <span class="lbl">بعد AVIF</span> <span class="eq">=</span> <span class="n">97 KB</span>
-<span class="lbl">Egress الجديد</span> <span class="eq">=</span> <span class="n">750,000</span> × <span class="n">97 KB</span> <span class="eq">=</span> <span class="res">73 GB/s</span>
-<span class="lbl">التوفير الشهري</span> <span class="eq">=</span> <span class="n">35%</span> × <span class="n">$2.93M</span> <span class="eq">=</span> <span class="res">~$1.02M / شهر</span>
+<span class="cmt">// ═══ 1. حجم الصورة المعروضة ═══</span>
+<span class="lbl">الحجم الحالي (JPEG)</span> <span class="eq">=</span> <span class="n">150 KB</span>
+<span class="lbl">بعد AVIF (−35%)</span>    <span class="eq">=</span> <span class="n">97 KB</span>
+
+<span class="cmt">// ═══ 2. أثره على الخارج (Egress) ═══</span>
+<span class="lbl">Egress الحالي</span>       <span class="eq">=</span> <span class="n">750,000</span> × <span class="n">150 KB</span> <span class="eq">=</span> <span class="n">112 GB/s</span>
+<span class="lbl">Egress الجديد</span>       <span class="eq">=</span> <span class="n">750,000</span> × <span class="n">97 KB</span>  <span class="eq">=</span> <span class="res">73 GB/s</span>
+
+<span class="cmt">// ═══ 3. أثره على الفاتورة ═══</span>
+<span class="lbl">التوفير الشهري</span>      <span class="eq">=</span> <span class="n">35%</span> × <span class="n">$2.93M</span> <span class="eq">=</span> <span class="res">~$1.02M / شهر</span>
+<span class="lbl">التوفير السنوي</span>      <span class="eq">=</span> <span class="n">$1.02M</span> × <span class="n">12</span> <span class="eq">=</span> <span class="res">~$12.3M / سنة</span>
         </div>
         <div class="plain mt">
           <span class="plain__label">الدرس</span>
@@ -1701,20 +1709,72 @@ app.<span class="f">MapPost</span>(<span class="s">"/api/photos/{photoId:guid}/c
               <li>نسخة احتياطية بتاخد يوم ⇒ الاستعادة بعد كارثة مش عملية أصلاً.</li>
               <li>الـ <span class="term term--r">Buffer Pool</span> بيتحرق ببايتات PDF بدل فهارس الفواتير.</li>
             </ul>
-            <div class="plain mt">
-              <span class="plain__label">خطة النقل التدريجي (من غير توقف)</span>
-              <strong>1.</strong> ضيف عمود <code class="ltr">blob_key</code> (يقبل NULL).
-              <br><strong>2.</strong> كل فاتورة <em>جديدة</em> تتكتب في تخزين الكائنات والعمود يتملى.
-              <br><strong>3.</strong> مهمة خلفية تنقل القديم على دفعات صغيرة (<span class="ltr">1000</span> فاتورة
-              في المرة) وتفضّي عمود الـ <code class="ltr">varbinary</code>.
-              <br><strong>4.</strong> كود القراءة يقرا: لو <code>blob_key</code> موجود ⟵ من التخزين،
-              وإلا ⟵ من القاعدة. <em>ده اللي بيخلّي النقل بدون توقف.</em>
-              <br><strong>5.</strong> بعد ما تتأكد إن كل الصفوف اتنقلت ⟵ احذف العمود
-              واعمل <span class="ltr">SHRINK</span> لاستعادة المساحة.
-              <br><br>
-              <strong>المكسب المتوقع:</strong> حجم القاعدة من <span class="ltr">17 TB</span> لـ
-              <span class="ltr">~200 GB</span>، والنسخة الاحتياطية من 24 ساعة لـ 20 دقيقة،
-              وتقدر تحط الملفات ورا CDN وتخدم العملاء أسرع.
+            <div class="trace mt">
+              <div class="trace__head">خطة النقل التدريجي (من غير توقف): إخراج الملفات من قاعدة البيانات</div>
+              <ol class="trace__steps">
+
+                <li class="trace__step trace__step--outer">
+                  <span class="trace__layer">Schema Migration</span>
+                  <div class="trace__body">
+                    ضيف عمود <code class="ltr">blob_key</code> يقبل <span class="ltr">NULL</span>.
+                    <br>بنبدأ بخطوة <strong>متوافقة مع الخلف</strong> بالكامل: الكود القديم
+                    ما بيعرفش العمود ده أصلاً وبيفضل شغّال زي ما هو.
+                    ودي القاعدة الأولى في أي نقل بدون توقف — <em>غيّر المخطط قبل ما تغيّر أي سلوك</em>.
+                  </div>
+                </li>
+
+                <li class="trace__step trace__step--adapt">
+                  <span class="trace__layer">Write Path</span>
+                  <div class="trace__body">
+                    كل فاتورة <em>جديدة</em> تتكتب في تخزين الكائنات، والعمود يتملى بمفتاحها.
+                    <br>بنوقف النزيف الأول: من غير الخطوة دي القاعدة هتفضل بتكبر
+                    <span class="ltr">12 GB</span> كل يوم وانت بتنقل القديم —
+                    يعني <strong>هتجري ورا هدف بيتحرّك</strong> ومش هتلحقه أبدًا.
+                  </div>
+                </li>
+
+                <li class="trace__step trace__step--app">
+                  <span class="trace__layer">Backfill Worker</span>
+                  <div class="trace__body">
+                    مهمة خلفية بتنقل القديم على دفعات صغيرة
+                    (<span class="ltr">1000</span> فاتورة في المرة) وتفضّي عمود الـ
+                    <code class="ltr">varbinary</code>.
+                    <br>الدفعات الصغيرة مقصودة: تحديث ملايين الصفوف في معاملة واحدة
+                    بيضخّم سجل المعاملات لحد ما يملى القرص، وبياخد أقفال طويلة
+                    توقّف العملاء الحقيقيين. <strong>النقل البطيء المتقطّع أأمن من السريع الكتلي.</strong>
+                  </div>
+                </li>
+
+                <li class="trace__step trace__step--core">
+                  <span class="trace__layer">Read Path — Dual Read</span>
+                  <div class="trace__body">
+                    كود القراءة بيشتغل بمنطق مزدوج: لو <code class="ltr">blob_key</code> موجود
+                    يجيب الملف من التخزين، وإلا يجيبه من القاعدة.
+                    <br><strong>ودي الخطوة اللي بتخلّي النقل بدون توقف فعلاً.</strong>
+                    من غيرها كنت هتحتاج «لحظة تبديل» تكون فيها كل الصفوف اتنقلت —
+                    يعني نافذة صيانة، وخطر إن أي صف فاتك يبقى عطل مباشر عند العميل.
+                  </div>
+                </li>
+
+                <li class="trace__step trace__step--out">
+                  <span class="trace__layer">Cleanup · SHRINK</span>
+                  <div class="trace__body">
+                    بعد ما تتأكد إن كل الصفوف اتنقلت، احذف العمود واعمل
+                    <span class="ltr">SHRINK</span> لاستعادة المساحة.
+                    <br>خلّي بالك: حذف العمود لوحده <em>ما بيرجّعش المساحة للقرص</em> —
+                    بيسيبها صفحات فاضية جوّه الملف. وكمان الخطوة دي
+                    <strong>مالهاش رجعة</strong>، فما تعملهاش غير بعد ما يعدّي وقت كافي
+                    على النسخ الاحتياطية الجديدة.
+                  </div>
+                </li>
+
+              </ol>
+              <div class="trace__key">
+                حجم القاعدة بينزل من <span class="ltr">17 TB</span> لـ <span class="ltr">~200 GB</span>،
+                والنسخة الاحتياطية من <span class="ltr">24</span> ساعة لـ <span class="ltr">20</span> دقيقة،
+                وتقدر تحط الملفات ورا <span class="term">CDN</span> وتخدم العملاء أسرع.
+                <br>والأهم إن كل خطوة فيهم <strong>قابلة للتراجع لوحدها</strong> لحد الخطوة الأخيرة.
+              </div>
             </div>
           </div>
         </details>
