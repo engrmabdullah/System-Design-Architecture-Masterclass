@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Design &amp; Architecture — الشرح العربي الكامل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/deck.css">
+</head>
+<body class="hub">
+
+<div class="hub-wrap">
+
+  <!-- ══════════ HERO ══════════ -->
+  <header class="hub-hero">
+    <span class="eyebrow">System Design &amp; Software Architecture</span>
+    <h1 class="slide__title">افهم تصميم الأنظمة<br>من الصفر للاحتراف</h1>
+    <p>
+      شرح عربي كامل — بنقف على <strong>كل مصطلح</strong> ونفكّكه كلمة كلمة،
+      بتشبيهات من الحياة، وأرقام حقيقية، وتمارين بحلول،
+      وتطبيقات عملية على <span class="term term--v">.NET</span> و<span class="term term--v">ASP.NET Core</span>.
+    </p>
+
+    <div class="hub-stats">
+      <div class="stat"><span class="stat__value" data-count="15">0</span><span class="stat__label">موديول</span></div>
+      <div class="stat stat--v"><span class="stat__value" data-count="600" data-suffix="+">0</span><span class="stat__label">سلايد</span></div>
+      <div class="stat stat--a"><span class="stat__value" data-count="250" data-suffix="+">0</span><span class="stat__label">مصطلح مشروح</span></div>
+      <div class="stat stat--e"><span class="stat__value" data-count="120" data-suffix="+">0</span><span class="stat__label">تمرين ومثال</span></div>
+      <div class="stat stat--r"><span class="stat__value" data-count="3">0</span><span class="stat__label">دراسة حالة</span></div>
+    </div>
+  </header>
+
+  <!-- ══════════ الميزة الأهم ══════════ -->
+  <div class="callout callout--key" style="margin-bottom:22px">
+    <div class="callout__icon">🔊</div>
+    <div class="callout__body">
+      <span class="callout__title">اضغط على أي مصطلح إنجليزي جوّه الشرح</span>
+      هتسمع <strong>نطقه الصحيح</strong> بصوت واضح وبطيء، وهتظهرلك بطاقة فيها
+      <strong>معناه بالعربي وشرحه ومثال عليه</strong>.
+      جرّب دلوقتي: <span class="term">Latency</span> ·
+      <span class="term term--v">Idempotency</span> ·
+      <span class="term term--a">Consistent Hashing</span> ·
+      <span class="term term--e">Bounded Context</span>
+      <br><span class="mute xs">اضغط على نفس المصطلح تاني بسرعة عشان ينطقه أبطأ.</span>
+    </div>
+  </div>
+
+  <!-- ══════════ كيف تستخدم ══════════ -->
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card card--c card--flat">
+      <div class="card__icon">⌨️</div>
+      <h4 class="card__title">التنقل</h4>
+      <p class="card__body xs"><kbd>←</kbd> أو <kbd>Space</kbd> للأمام · <kbd>→</kbd> للخلف · <kbd>Home</kbd>/<kbd>End</kbd> للبداية والنهاية</p>
+    </div>
+    <div class="card card--v card--flat">
+      <div class="card__icon">☰</div>
+      <h4 class="card__title">الفهرس</h4>
+      <p class="card__body xs">اضغط <kbd>T</kbd> جوّه أي موديول تفتح فهرس السلايدات وتقفز لأي نقطة.</p>
+    </div>
+    <div class="card card--a card--flat">
+      <div class="card__icon">✏️</div>
+      <h4 class="card__title">التمارين</h4>
+      <p class="card__body xs">كل مفهوم وراه تمرين. جاوب الأول، وبعدين افتح الحل — الحل بيشرح <em>ليه</em> مش بس الإجابة.</p>
+    </div>
+    <div class="card card--e card--flat">
+      <div class="card__icon">🔖</div>
+      <h4 class="card__title">حفظ التقدّم</h4>
+      <p class="card__body xs">العرض بيفتكر آخر سلايد وقفت عندها في كل موديول. اقفل وارجع في أي وقت.</p>
+    </div>
+  </div>
+
+  <!-- ══════════ الجزء 1 ══════════ -->
+  <h2 class="hub-section-title">الجزء الأول — الأساسات والمعمارية</h2>
+  <div class="mod-grid">
+
+    <a class="mod mod--c" href="modules/01-foundations.html">
+      <span class="mod__num">01</span>
+      <h3 class="mod__title">أساسيات تصميم الأنظمة</h3>
+      <span class="mod__en">System Design Foundations</span>
+      <p class="mod__desc">
+        الفرق بين المتطلبات الوظيفية وغير الوظيفية، أبعاد الجودة الثمانية،
+        حسابات القدرات خطوة بخطوة، ومنهجية التصميم بأربع خطوات.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">FR vs NFR</span><span class="mod__tag">Availability</span>
+        <span class="mod__tag">p99 Latency</span><span class="mod__tag">SLA/SLO/SLI</span>
+        <span class="mod__tag">Capacity Estimation</span><span class="mod__tag">Trade-offs</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--v" href="modules/02-architecture.html">
+      <span class="mod__num">02</span>
+      <h3 class="mod__title">معمارية البرمجيات</h3>
+      <span class="mod__en">Software Architecture Patterns</span>
+      <p class="mod__desc">
+        الموديول الأغنى في الكورس: Clean وHexagonal وVertical Slice وDDD —
+        كل واحد مفكّك بالكامل بأمثلة كود C# ومقارنة عملية بينهم.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Clean Architecture</span><span class="mod__tag">Hexagonal</span>
+        <span class="mod__tag">Vertical Slice</span><span class="mod__tag">DDD</span>
+        <span class="mod__tag">Aggregate</span><span class="mod__tag">CQRS</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--e" href="modules/03-scalability.html">
+      <span class="mod__num">03</span>
+      <h3 class="mod__title">التوسّع وموازنة الحمل</h3>
+      <span class="mod__en">Scalability &amp; Load Balancing</span>
+      <p class="mod__desc">
+        التوسّع الرأسي مقابل الأفقي، خوارزميات موزّع الأحمال، الخدمات عديمة الحالة،
+        قاطع الدائرة، تحديد المعدّل، وتحمّل الأعطال.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Scale Up/Out</span><span class="mod__tag">Load Balancer</span>
+        <span class="mod__tag">Stateless</span><span class="mod__tag">Circuit Breaker</span>
+        <span class="mod__tag">Rate Limiting</span><span class="mod__tag">YARP</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+  </div>
+
+  <!-- ══════════ الجزء 2 ══════════ -->
+  <h2 class="hub-section-title">الجزء الثاني — البيانات</h2>
+  <div class="mod-grid">
+
+    <a class="mod mod--b" href="modules/04-databases.html">
+      <span class="mod__num">04</span>
+      <h3 class="mod__title">قواعد البيانات ونمذجتها</h3>
+      <span class="mod__en">Databases &amp; Data Modeling</span>
+      <p class="mod__desc">
+        ACID ومستويات العزل، عائلات NoSQL الأربعة، نظرية CAP وPACELC،
+        نماذج الاتساق، بنية الفهارس، وتحسين الاستعلامات.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">ACID</span><span class="mod__tag">Isolation Levels</span>
+        <span class="mod__tag">CAP / PACELC</span><span class="mod__tag">B-Tree Index</span>
+        <span class="mod__tag">N+1 Problem</span><span class="mod__tag">EF Core</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--r" href="modules/05-database-scaling.html">
+      <span class="mod__num">05</span>
+      <h3 class="mod__title">توسيع قواعد البيانات</h3>
+      <span class="mod__en">Database Scaling</span>
+      <p class="mod__desc">
+        النسخ المتماثل وتأخّره، التجزئة واختيار مفتاحها، التجزئة المتسقة،
+        توليد المعرّفات الموزّع، والتوزيع الجغرافي.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Replication</span><span class="mod__tag">Sharding</span>
+        <span class="mod__tag">Consistent Hashing</span><span class="mod__tag">Snowflake ID</span>
+        <span class="mod__tag">Quorum</span><span class="mod__tag">Multi-Region</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--a" href="modules/06-caching-cdn.html">
+      <span class="mod__num">06</span>
+      <h3 class="mod__title">التخزين المؤقت وشبكات التوصيل</h3>
+      <span class="mod__en">Caching &amp; CDN</span>
+      <p class="mod__desc">
+        استراتيجيات الكاش الستة، سياسات الإخلاء، مشاكل الـ Stampede والـ Penetration،
+        معمارية Redis بالتفصيل، وPush مقابل Pull CDN.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Cache-Aside</span><span class="mod__tag">Write-Through</span>
+        <span class="mod__tag">LRU / LFU</span><span class="mod__tag">Stampede</span>
+        <span class="mod__tag">Redis Cluster</span><span class="mod__tag">HybridCache</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+  </div>
+
+  <!-- ══════════ الجزء 3 ══════════ -->
+  <h2 class="hub-section-title">الجزء الثالث — الأنظمة الموزعة</h2>
+  <div class="mod-grid">
+
+    <a class="mod mod--r" href="modules/07-microservices.html">
+      <span class="mod__num">07</span>
+      <h3 class="mod__title">الخدمات المصغّرة والأنظمة الموزعة</h3>
+      <span class="mod__en">Microservices &amp; Distributed Systems</span>
+      <p class="mod__desc">
+        رسم حدود الخدمات، gRPC وGraphQL، نمط الساجا والمعاملات التعويضية،
+        نمط الـ Outbox، الإجماع وRaft، وأنماط الصمود.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Bounded Context</span><span class="mod__tag">Saga</span>
+        <span class="mod__tag">Outbox</span><span class="mod__tag">Idempotency</span>
+        <span class="mod__tag">Raft</span><span class="mod__tag">Service Mesh</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--v" href="modules/08-messaging.html">
+      <span class="mod__num">08</span>
+      <h3 class="mod__title">الرسائل والمعمارية المدفوعة بالأحداث</h3>
+      <span class="mod__en">Messaging &amp; Event-Driven</span>
+      <p class="mod__desc">
+        الطابور مقابل Pub/Sub مقابل سجل الأحداث، ضمانات التسليم الثلاثة،
+        معمارية Kafka وRabbitMQ، الـ Outbox، وقانون Little.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Kafka</span><span class="mod__tag">RabbitMQ</span>
+        <span class="mod__tag">At-Least-Once</span><span class="mod__tag">DLQ</span>
+        <span class="mod__tag">Little's Law</span><span class="mod__tag">MassTransit</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--c" href="modules/09-realtime.html">
+      <span class="mod__num">09</span>
+      <h3 class="mod__title">الأنظمة اللحظية</h3>
+      <span class="mod__en">Real-Time Systems</span>
+      <p class="mod__desc">
+        WebSocket وSSE وLong Polling، توسيع ملايين الاتصالات المتزامنة،
+        تصميم نظام محادثة، البث المباشر، وتتبّع المواقع.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">WebSocket</span><span class="mod__tag">SSE</span>
+        <span class="mod__tag">SignalR</span><span class="mod__tag">Presence</span>
+        <span class="mod__tag">Geohash</span><span class="mod__tag">LL-HLS</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+  </div>
+
+  <!-- ══════════ الجزء 4 ══════════ -->
+  <h2 class="hub-section-title">الجزء الرابع — أنظمة متخصّصة</h2>
+  <div class="mod-grid">
+
+    <a class="mod mod--e" href="modules/10-payments.html">
+      <span class="mod__num">10</span>
+      <h3 class="mod__title">تصميم أنظمة الدفع</h3>
+      <span class="mod__en">Payment Systems</span>
+      <p class="mod__desc">
+        دورة حياة الدفعة، الـ Idempotency ومنع الخصم المزدوج، دفتر القيد المزدوج،
+        المطابقة اليومية، PCI-DSS، وكشف الاحتيال.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Idempotency Key</span><span class="mod__tag">Ledger</span>
+        <span class="mod__tag">Reconciliation</span><span class="mod__tag">3DS2</span>
+        <span class="mod__tag">Webhooks</span><span class="mod__tag">Tokenization</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--b" href="modules/11-observability.html">
+      <span class="mod__num">11</span>
+      <h3 class="mod__title">المراقبة وقابلية الملاحظة</h3>
+      <span class="mod__en">Monitoring &amp; Observability</span>
+      <p class="mod__desc">
+        الركائز الثلاث، الـ OpenTelemetry، الإشارات الذهبية الأربعة،
+        ميزانية الأخطاء والتنبيه بمعدّل الاستهلاك، وتشريح الحوادث.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">OpenTelemetry</span><span class="mod__tag">Cardinality</span>
+        <span class="mod__tag">RED / USE</span><span class="mod__tag">Tracing</span>
+        <span class="mod__tag">Error Budget</span><span class="mod__tag">Postmortem</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--v" href="modules/12-ai-infrastructure.html">
+      <span class="mod__num">12</span>
+      <h3 class="mod__title">البنية التحتية لأنظمة الذكاء الاصطناعي</h3>
+      <span class="mod__en">AI / ML Systems Infrastructure</span>
+      <p class="mod__desc">
+        التدريب مقابل الاستدلال، الـ KV Cache وPagedAttention، تخزين الـ Prompt،
+        معمارية الـ RAG وقواعد بيانات المتجهات، وحسابات تكلفة الـ GPU.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">TTFT / TPOT</span><span class="mod__tag">KV Cache</span>
+        <span class="mod__tag">RAG</span><span class="mod__tag">Vector DB</span>
+        <span class="mod__tag">Model Routing</span><span class="mod__tag">M.E.AI</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+  </div>
+
+  <!-- ══════════ الجزء 5 ══════════ -->
+  <h2 class="hub-section-title">الجزء الخامس — دراسات الحالة</h2>
+  <div class="mod-grid">
+
+    <a class="mod mod--a" href="modules/13-case-url-shortener.html">
+      <span class="mod__num">13</span>
+      <h3 class="mod__title">دراسة حالة: مختصِر الروابط</h3>
+      <span class="mod__en">Case Study: URL Shortener</span>
+      <p class="mod__desc">
+        بناء النظام من الصفر: تصميم الـ API، ترميز Base62، توليد المعرّفات الموزّع،
+        معالجة التصادم، الكاش، والتحليلات غير المتزامنة.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Base62</span><span class="mod__tag">Snowflake</span>
+        <span class="mod__tag">301 vs 302</span><span class="mod__tag">HyperLogLog</span>
+        <span class="mod__tag">Key Generation</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--r" href="modules/14-case-instagram.html">
+      <span class="mod__num">14</span>
+      <h3 class="mod__title">دراسة حالة: إنستجرام</h3>
+      <span class="mod__en">Case Study: Photo Sharing &amp; Feed</span>
+      <p class="mod__desc">
+        رفع وتخزين الصور، الروابط الموقّعة مسبقًا، توليد الـ Feed،
+        Fan-out on Write مقابل Read، والحل الهجين لمشكلة المشاهير.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Fan-out</span><span class="mod__tag">News Feed</span>
+        <span class="mod__tag">Pre-signed URL</span><span class="mod__tag">Sharded Counters</span>
+        <span class="mod__tag">Cursor Pagination</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+    <a class="mod mod--c" href="modules/15-case-youtube.html">
+      <span class="mod__num">15</span>
+      <h3 class="mod__title">دراسة حالة: يوتيوب</h3>
+      <span class="mod__en">Case Study: Video Platform</span>
+      <p class="mod__desc">
+        الرفع المتقطّع، خط أنابيب الترميز المتوازي، سلّم الجودات،
+        HLS/DASH والبث التكيّفي، معمارية الـ CDN، ونظام التوصيات.
+      </p>
+      <div class="mod__tags">
+        <span class="mod__tag">Transcoding</span><span class="mod__tag">HLS / DASH</span>
+        <span class="mod__tag">ABR</span><span class="mod__tag">Multi-CDN</span>
+        <span class="mod__tag">Recommendations</span>
+      </div>
+      <span class="mod__go">←</span>
+    </a>
+
+  </div>
+
+  <!-- ══════════ إزاي تذاكر ══════════ -->
+  <h2 class="hub-section-title">إزاي تذاكر الكورس ده صح</h2>
+  <div class="grid g2">
+    <div class="card card--e">
+      <div class="card__icon">🎯</div>
+      <h3 class="card__title">ماتعديش مفهوم من غير ما تحلّ تمرينه</h3>
+      <p class="card__body">
+        كل مفهوم وراه تمرين وحل مخفي. <strong>جاوب على ورقة الأول</strong>، وبعدين افتح الحل.
+        الحل مش بيدّيك الإجابة بس — بيشرحلك المنطق والدرس المستفاد.
+        <br><br>لو الحل فاجأك، ارجع اقرا المفهوم تاني. ده بالظبط اللي التمرين موجود عشانه.
+      </p>
+    </div>
+    <div class="card card--a">
+      <div class="card__icon">🔊</div>
+      <h3 class="card__title">اضغط على كل مصطلح مش واضح</h3>
+      <p class="card__body">
+        كل كلمة إنجليزية في الشرح قابلة للضغط. هتسمع نطقها الصحيح وتشوف معناها العربي وشرحها.
+        <br><br>ده مش زخرفة — ده جزء أساسي من طريقة المذاكرة. المصطلحات هي لغة المجال،
+        ولو ما بتعرفش تنطقها صح مش هتقدر تتناقش فيها.
+      </p>
+    </div>
+    <div class="card card--v">
+      <div class="card__icon">✍️</div>
+      <h3 class="card__title">طبّق على نظام حقيقي عندك</h3>
+      <p class="card__body">
+        بعد كل موديول، خُد نظام شغّال عندك دلوقتي وطبّق عليه: احسب الـ QPS الحقيقي،
+        حدّد الـ NFRs بالأرقام، دوّر على نقاط الفشل الوحيدة.
+        <br><br><strong>المعرفة اللي ما اتطبقتش بتتنسى خلال أسبوعين.</strong>
+      </p>
+    </div>
+    <div class="card card--r">
+      <div class="card__icon">🔁</div>
+      <h3 class="card__title">الترتيب مهم — ماتقفزش</h3>
+      <p class="card__body">
+        الموديولات مبنية فوق بعض. الموديول 01 هو الأساس اللي كل حاجة بعده بتستخدمه.
+        ماتروحش لدراسات الحالة (13–15) قبل ما تخلص من 01 لـ 06 على الأقل —
+        هتفهم «إيه» من غير ما تفهم «ليه».
+      </p>
+    </div>
+  </div>
+
+  <footer class="hub-foot">
+    <p>
+      <strong>System Design &amp; Software Architecture</strong> — شرح عربي كامل بالمصطلحات الإنجليزية
+      <br>
+      <span class="mute xs">اضغط على أي موديول عشان تبدأ · كل حاجة تشتغل بدون إنترنت</span>
+    </p>
+  </footer>
+
+</div>
+
+<script src="assets/js/glossary.js"></script>
+<script src="assets/js/deck.js"></script>
+</body>
+</html>

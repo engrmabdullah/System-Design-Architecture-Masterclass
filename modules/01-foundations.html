@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 — أساسيات تصميم الأنظمة | System Design Foundations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/deck.css">
+</head>
+<body data-deck="m01" data-module-title="01 — أساسيات تصميم الأنظمة">
+<div class="deck">
+
+<!-- ═════ 1 ═════ -->
+<section class="slide slide--center" data-title="مقدمة الموديول">
+  <div class="hero">
+    <div class="hero__module">01</div>
+    <h1 class="hero__title slide__title">أساسيات تصميم الأنظمة</h1>
+    <p class="hero__sub">
+      هنا بنبني الأدوات الذهنية اللي هتستخدمها في كل موديول بعد كده.
+      كل مصطلح هنقف عنده، نفكّكه كلمة كلمة، ونحلّ عليه أمثلة وتمارين.
+    </p>
+    <div class="hero__meta">
+      <span class="badge">Requirements</span>
+      <span class="badge badge--v">Quality Attributes</span>
+      <span class="badge badge--a">Capacity Estimation</span>
+      <span class="badge badge--e">Design Method</span>
+      <span class="badge badge--r">Trade-offs</span>
+    </div>
+    <div class="callout callout--tip mt" style="max-width:640px;text-align:start">
+      <div class="callout__icon">🔊</div>
+      <div class="callout__body">
+        <span class="callout__title">جرّب دلوقتي</span>
+        اضغط على أي مصطلح إنجليزي زي <span class="term">Latency</span> أو <span class="term">Throughput</span> —
+        هتسمع نطقه الصحيح وهتظهرلك بطاقة فيها معناه بالعربي وشرحه. اضغط تاني بسرعة ينطقه <strong>أبطأ</strong>.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 2 ═════ -->
+<section class="slide" data-title="الفرق بين تنفيذ ميزة وتصميم نظام">
+  <div class="slide__head">
+    <span class="eyebrow">البداية</span>
+    <h2 class="slide__title">إيه الفرق بين إنك «تنفّذ ميزة» و«تصمّم نظام»؟</h2>
+    <p class="slide__sub">الفرق مش في صعوبة الكود — الفرق في نوع الأسئلة اللي بتسألها لنفسك قبل ما تكتب سطر واحد.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="vs">
+      <div class="card card--b">
+        <div class="card__icon">👨‍💻</div>
+        <h3 class="card__title">لما تنفّذ ميزة</h3>
+        <ul class="pc pc--neutral">
+          <li>«إزاي أكتب الـ <span class="term">Endpoint</span> ده؟»</li>
+          <li>«إزاي أجيب البيانات من الـ Database؟»</li>
+          <li>الاختبار: اشتغل على جهازي ✅</li>
+          <li>الفشل حاجة نادرة بنتعامل معاها بـ <code>try/catch</code></li>
+        </ul>
+      </div>
+      <div class="vs__mid">≠</div>
+      <div class="card card--e">
+        <div class="card__icon">🏗️</div>
+        <h3 class="card__title">لما تصمّم نظام</h3>
+        <ul class="pc pc--pro">
+          <li>«لو مليون مستخدم طلبوا ده في نفس الثانية؟»</li>
+          <li>«الـ Database هتستحمل؟ وإيه اللي يحصل لو وقعت؟»</li>
+          <li>الاختبار: يشتغل على 50 سيرفر في 3 مناطق</li>
+          <li>الفشل <em>حتمي</em> — والتصميم مبني على إنه هيحصل</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">يعني إيه بالبلدي؟</span>
+      لما بتنفّذ ميزة، انت بتجاوب على سؤال <strong>«إزاي أخلّيها تشتغل؟»</strong>.
+      لما بتصمّم نظام، انت بتجاوب على سؤال <strong>«إزاي أخلّيها تفضل شغالة لما كل حاجة تتغير أو تقع؟»</strong>.
+      <br>الكورس ده كله عن السؤال التاني.
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">🎯</div>
+      <div class="callout__body">
+        <span class="callout__title">القاعدة اللي هتتكرر في كل موديول</span>
+        مفيش «أفضل تصميم». فيه بس تصميم <strong>مناسب لظروف معيّنة</strong>.
+        وشغلك كمهندس إنك تعرف الظروف دي بالرقم، وتقدر تبرّر كل قرار
+        بإيه اللي كسبته وإيه اللي دفعته تمن.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 3 ═════ -->
+<section class="slide" data-title="System Design مقابل Software Architecture">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 01</span>
+    <h2 class="slide__title">System Design مقابل Software Architecture</h2>
+    <p class="slide__sub">المصطلحين بيتقالوا بالتبادل كتير — وده بيلخبط. خلينا نفصلهم بوضوح.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard">
+      <div class="termcard__head">
+        <span class="termcard__en">System Design</span>
+        <span class="termcard__ar">تصميم النظام</span>
+        <span class="badge badge--muted" style="margin-inline-start:auto">النظرة الكبيرة</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف الدقيق</span>
+          تحديد <strong>المكوّنات الكبيرة</strong> للنظام وطريقة تواصلها:
+          كام خدمة؟ فين قاعدة البيانات؟ محتاجين <span class="term">Cache</span> ولا لأ؟
+          إيه اللي يحصل لو مكوّن وقع؟
+        </div>
+        <div class="tblock tblock--analogy">
+          <span class="tblock__label">تشبيه</span>
+          تصميم <strong>مدينة</strong>: فين الطرق الرئيسية، فين محطة الكهرباء، إزاي المياه توصل لكل حي،
+          وإيه خطة الطوارئ لو محطة الكهرباء وقعت.
+        </div>
+      </div>
+    </div>
+
+    <div class="termcard termcard--v fragment">
+      <div class="termcard__head">
+        <span class="termcard__en">Software Architecture</span>
+        <span class="termcard__ar">معمارية البرمجيات</span>
+        <span class="badge badge--muted" style="margin-inline-start:auto">النظرة الداخلية</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف الدقيق</span>
+          تنظيم <strong>الكود جوّه الخدمة الواحدة</strong>: الطبقات، الاعتماديات، حدود الوحدات.
+          زي <span class="term term--v">Clean Architecture</span> و<span class="term term--v">Hexagonal Architecture</span>
+          و<span class="term term--v">Vertical Slice Architecture</span> و<span class="term term--v">DDD</span>.
+        </div>
+        <div class="tblock tblock--analogy">
+          <span class="tblock__label">تشبيه</span>
+          تصميم <strong>مبنى واحد</strong> جوّه المدينة: الأدوار، الغرف، السباكة الداخلية.
+        </div>
+        <div class="tblock tblock--win">
+          <span class="tblock__label">📚 الموديول الجاي كله عن ده</span>
+          الأربع مصطلحات دول (<span class="term term--v">Clean</span>،
+          <span class="term term--v">Hexagonal</span>،
+          <span class="term term--v">Vertical Slice</span>،
+          <span class="term term--v">DDD</span>) هناخدهم بالتفصيل الممل في
+          <strong>الموديول 02</strong> — بأمثلة كود كاملة ومقارنة بينهم.
+        </div>
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">الخلاصة في سطر</span>
+      <strong>System Design</strong> بيرسم الخطوط بين الخدمات · <strong>Software Architecture</strong> بيملأ كل خدمة من جوّه.
+      لو الخطوط اتحطت غلط، أنضف كود في الدنيا مش هينقذك.
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 4 — DIVIDER ═════ -->
+<section class="slide slide--center" data-title="الجزء 1: المتطلبات" data-divider>
+  <div class="divider">
+    <div class="divider__num">01</div>
+    <h2 class="divider__title">المتطلبات <span class="term" style="font-size:.55em">Requirements</span></h2>
+    <p class="divider__sub">أي تصميم بيبدأ من هنا. لو المتطلبات غامضة، التصميم كله هيبقى تخمين.</p>
+  </div>
+</section>
+
+<!-- ═════ 5 ═════ -->
+<section class="slide" data-title="Functional Requirements">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 02</span>
+    <h2 class="slide__title">Functional Requirements</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard">
+      <div class="termcard__head">
+        <span class="termcard__en">Functional Requirements</span>
+        <span class="termcard__ar">المتطلبات الوظيفية</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف الدقيق</span>
+          <strong>«النظام بيعمل إيه؟»</strong> — الأفعال اللي المستخدم بيشوفها ويتفاعل معاها.
+          بتتكتب دايمًا في صيغة: <em>مين + بيعمل إيه + على إيه</em>.
+        </div>
+        <div class="tblock tblock--win">
+          <span class="tblock__label">أمثلة صحيحة (نظام كاشير)</span>
+          <ul class="clean sm mb0">
+            <li>الكاشير يقدر يفتح <span class="term">Shift</span> ويقفله في آخر اليوم.</li>
+            <li>النظام يعمل <span class="term">Invoice</span> ويطبعه.</li>
+            <li>الفرع يقدر يشتغل <span class="term">Offline</span> ويزامن لما النت يرجع.</li>
+          </ul>
+        </div>
+        <div class="tblock tblock--trap">
+          <span class="tblock__label">فخ شائع ⚠️</span>
+          «النظام يكون سريع» أو «النظام يكون آمن» — <strong>دول مش Functional Requirements</strong>.
+          <br>الاختبار البسيط: لو مقدرتش تكتب اختبار نتيجته <em>نجح</em> أو <em>فشل</em> بوضوح، يبقى مش FR.
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 1 — فرّق بينهم<span class="exercise__level">سهل</span></div>
+      <div class="exercise__body">
+        <p>أي من الجمل دي <span class="term">Functional Requirement</span> وأيها لأ؟</p>
+        <ol class="sm" style="color:var(--text-dim)">
+          <li>المستخدم يقدر يضيف منتج للسلة.</li>
+          <li>الصفحة تفتح في أقل من ثانيتين.</li>
+          <li>المدير يقدر يصدّر تقرير المبيعات <span class="ltr">Excel</span>.</li>
+          <li>النظام يشتغل على متصفحات <span class="ltr">Chrome</span> و<span class="ltr">Safari</span>.</li>
+        </ol>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <ul class="pc pc--pro sm">
+              <li><strong>1 و 3 = Functional</strong> — دول أفعال المستخدم بيعملها، وتقدر تكتبلهم اختبار واضح.</li>
+            </ul>
+            <ul class="pc pc--con sm">
+              <li><strong>2 = Non-Functional</strong> (أداء) — بتوصف <em>إزاي</em> مش <em>إيه</em>.</li>
+              <li><strong>4 = Non-Functional</strong> (توافقية) — قيد على البيئة، مش فعل للمستخدم.</li>
+            </ul>
+            <div class="plain mt">
+              <span class="plain__label">الطريقة اللي تفرّق بيها دايمًا</span>
+              اسأل: هل الجملة بتوصف <strong>حاجة المستخدم بيعملها</strong> (فعل)؟ ⇒ Functional.
+              ولا بتوصف <strong>صفة في النظام</strong> (سريع، آمن، متاح)؟ ⇒ Non-Functional.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 6 ═════ -->
+<section class="slide" data-title="Non-Functional Requirements">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 03</span>
+    <h2 class="slide__title">Non-Functional Requirements</h2>
+    <p class="slide__sub">دي اللي بتحدّد شكل المعمارية فعليًا. الـ FR بتقول «إيه»، والـ NFR بتقول «إزاي وبكام».</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard termcard--v">
+      <div class="termcard__head">
+        <span class="termcard__en">Non-Functional Requirements</span>
+        <span class="termcard__ar">المتطلبات غير الوظيفية</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف الدقيق</span>
+          <strong>«النظام بيعمل ده إزاي وبكام؟»</strong> — صفات الجودة: السرعة، التحمّل، الاعتمادية، الأمان، التكلفة.
+        </div>
+        <div class="tblock tblock--trap">
+          <span class="tblock__label">القاعدة الحديدية 🔒</span>
+          <span class="term term--r">NFR without a number is not a requirement</span>
+          <br><span class="mute sm">(متطلَّب غير وظيفي من غير رقم = مش متطلَّب أصلاً)</span>
+          <br><br>
+          ❌ «النظام يكون سريع» — <em>سريع قد إيه؟ لمين؟ تحت أي حمل؟</em>
+          <br>✅ «<span class="ltr">p99 latency &lt; 200ms</span> لقراءة الفاتورة تحت حمل <span class="ltr">5000 RPS</span>»
+        </div>
+        <div class="tblock tblock--net">
+          <span class="tblock__label">ليه دي اللي بتشكّل المعمارية؟</span>
+          لو قلتلي «عايز <span class="ltr">99.99%</span> توافر» ⇒ أنا مجبر أعمل نسخ متعددة، وتوزيع على مناطق،
+          وفحص صحة، وتبديل تلقائي عند الفشل.
+          <br>لو قلتلي «<span class="ltr">99%</span> كفاية» ⇒ سيرفر واحد ونسخة احتياطية يومية وخلاص.
+          <br><strong>نفس الميزة بالظبط — معماريتين مختلفتين تمامًا، وفرق تكلفة 20 ضعف.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 7 — DECODE 1 ═════ -->
+<section class="slide" data-title="نفكّك: 10M DAU, 500K peak concurrent">
+  <div class="slide__head">
+    <span class="eyebrow">نقف ونفكّك 🔍</span>
+    <h2 class="slide__title">السطر ده معناه إيه بالظبط؟</h2>
+    <p class="slide__sub">السطر ده بتلاقيه في أول أي وثيقة تصميم. خلينا نفكّه كلمة كلمة.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="decode">
+      <div class="decode__raw">10M DAU, 500K peak concurrent</div>
+      <div class="decode__hint">اضغط على أي جزء عشان تسمع نطقه</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">10M</span>
+          <div class="decode__exp">
+            <b>10 مليون</b>. الحرف <code>M</code> اختصار كلمة <span class="term">Million</span>.
+            وبنفس المنطق: <code>K</code> = ألف (<span class="term">Thousand</span>)، و<code>B</code> = مليار (<span class="term">Billion</span>).
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">DAU</span>
+          <div class="decode__exp">
+            اختصار <span class="term">Daily Active Users</span> = <b>المستخدمون النشطون يوميًا</b>.
+            عدد الأشخاص <em>المختلفين</em> اللي فتحوا التطبيق وعملوا أي نشاط خلال 24 ساعة.
+            <br><strong>مهم جدًا:</strong> اللي دخل 10 مرات في اليوم بيتحسب <b>واحد</b> مش 10.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">500K</span>
+          <div class="decode__exp"><b>500 ألف</b> مستخدم.</div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">peak</span>
+          <div class="decode__exp">
+            <b>الذروة</b>. أعلى نقطة في المنحنى. يعني اللحظة اللي الضغط فيها أكبر ما يمكن —
+            زي الساعة 9 بالليل لتطبيق توصيل أكل.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">concurrent</span>
+          <div class="decode__exp">
+            <b>متزامن</b> — أي «موجودين في نفس اللحظة». مش خلال اليوم كله، لأ:
+            <em>في نفس الثانية دي بالظبط</em>.
+          </div>
+        </div>
+      </div>
+      <div class="decode__sum">
+        عندنا <b>10 مليون شخص مختلف</b> بيستخدموا التطبيق كل يوم، ومن ضمنهم <b>500 ألف</b>
+        بيبقوا موجودين على النظام <b>في نفس اللحظة</b> وقت أعلى ضغط.
+      </div>
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">🧠</div>
+      <div class="callout__body">
+        <span class="callout__title">ليه بنكتب الرقمين مع بعض؟ لأن كل واحد بيقيس حاجة مختلفة</span>
+        <strong><span class="ltr">10M DAU</span></strong> بيقولّي حجم <em>البيانات</em>: كام مستخدم هخزّنله بيانات، وكام صف هيتكتب في اليوم.
+        <br>
+        <strong><span class="ltr">500K concurrent</span></strong> بيقولّي حجم <em>البنية التحتية دلوقتي</em>: كام سيرفر شغّال في نفس اللحظة،
+        وكام اتصال مفتوح، وكام <span class="term">RAM</span>.
+        <br><br>
+        ممكن يبقى عندك 10 مليون مستخدم بس موزّعين على 24 ساعة فمحتاج 20 سيرفر —
+        وممكن يبقى عندك مليون بس كلهم بيدخلوا الساعة 8 بالظبط (مباراة مثلاً) فتحتاج 200 سيرفر.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 8 — DECODE 2 ═════ -->
+<section class="slide" data-title="نفكّك: p99 latency < 200ms عند 5000 RPS">
+  <div class="slide__head">
+    <span class="eyebrow">نقف ونفكّك 🔍</span>
+    <h2 class="slide__title">و السطر ده كمان — كل حرف فيه له معنى</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="decode">
+      <div class="decode__raw">p99 latency &lt; 200ms @ 5000 RPS</div>
+      <div class="decode__hint">ده شكل الـ NFR الصحيح — أربع معلومات في سطر واحد</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">p99</span>
+          <div class="decode__exp">
+            <b>المئين التاسع والتسعون</b> (<span class="term">99th Percentile</span>).
+            <br>لو رتّبت زمن 100 طلب من الأسرع للأبطأ، الـ p99 هو زمن الطلب رقم 99.
+            يعني <b>99% من الطلبات كانت أسرع من الرقم ده</b>، وواحد بس كان أبطأ.
+            <br><span class="mute sm">تُنطق: «بي ناينتي ناين».</span>
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">latency</span>
+          <div class="decode__exp">
+            <b>زمن الاستجابة</b>. الوقت من لحظة ما الطلب يتبعت لحد ما الرد يوصل كامل.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">&lt; 200ms</span>
+          <div class="decode__exp">
+            <b>أقل من 200 مللي ثانية</b>. الرمز <code>ms</code> اختصار
+            <span class="term">Millisecond</span> = جزء من ألف من الثانية.
+            <br>يعني <span class="ltr">200ms</span> = خُمس الثانية تقريبًا.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">@</span>
+          <div class="decode__exp">
+            بتُقرأ <b>«عند»</b> أو <b>«تحت حمل»</b>. الجزء ده هو اللي بيخلّي الجملة ذات معنى —
+            من غيره الرقم بلا قيمة، لأن أي نظام سريع لما يبقى فاضي.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">5000 RPS</span>
+          <div class="decode__exp">
+            <b>5000 طلب في الثانية</b>. <span class="term">RPS</span> اختصار
+            <span class="term">Requests Per Second</span>.
+          </div>
+        </div>
+      </div>
+      <div class="decode__sum">
+        «لما يكون فيه <b>5 آلاف طلب بيوصلوا كل ثانية</b>، لازم <b>99 طلب من كل 100</b>
+        يخلصوا ويرجعوا الرد في <b>أقل من خُمس ثانية</b>.»
+      </div>
+    </div>
+
+    <div class="grid g2 fragment">
+      <div class="card card--r">
+        <h4 class="card__title">❌ ليه «النظام يكون سريع» جملة فاضية؟</h4>
+        <p class="card__body sm">
+          لأنها ما بتقولش: سريع <em>لمين</em>؟ (كل المستخدمين ولا الأغلبية؟)
+          ولا <em>قد إيه</em>؟ (ثانية؟ عشر ثواني؟)
+          ولا <em>تحت أي ظرف</em>؟ (النظام فاضي ولا في الذروة؟)
+          <br>ثلاث معلومات ناقصة ⇒ مستحيل تبني عليها قرار.
+        </p>
+      </div>
+      <div class="card card--e">
+        <h4 class="card__title">✅ أي NFR سليم فيه 3 أجزاء</h4>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li><strong>المقياس</strong> — إيه اللي بنقيسه؟ (latency)</li>
+          <li><strong>الهدف بالرقم</strong> — كام؟ (p99 &lt; 200ms)</li>
+          <li><strong>الظرف</strong> — تحت أي حمل؟ (@ 5000 RPS)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 2 — صلّح الـ NFR<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__body">
+        <p>الجمل دي كلها ناقصة. أعد صياغتها كـ NFR سليم فيه الأجزاء التلاتة:</p>
+        <ol class="sm" style="color:var(--text-dim)">
+          <li>«رفع الصورة يكون سريع».</li>
+          <li>«النظام يكون متاح دايمًا».</li>
+        </ol>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <ul class="pc pc--pro sm">
+              <li>«<span class="ltr">p95</span> لرفع صورة حجمها <span class="ltr">≤ 5MB</span> أقل من
+                <span class="ltr">3 ثواني</span> عند <span class="ltr">200 رفع/ثانية</span>».</li>
+              <li>«<span class="term">Availability</span> لخدمة الدفع
+                <span class="ltr">99.95%</span> مقاسة شهريًا، بحد أقصى <span class="ltr">22 دقيقة</span> توقف في الشهر».</li>
+            </ul>
+            <div class="plain mt">
+              <span class="plain__label">لاحظ</span>
+              في المثال التاني ما كتبناش «حمل» لأن الـ Availability بتتقاس على فترة زمنية مش على حمل لحظي —
+              فبدل الظرف كتبنا <strong>فترة القياس</strong>. المهم إن كل رقم يبقى واضح إزاي هيتقاس.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 9 ═════ -->
+<section class="slide" data-title="مثال محلول: نظام كاشير">
+  <div class="slide__head">
+    <span class="eyebrow">مثال محلول</span>
+    <h2 class="slide__title">نطبّق على نظام حقيقي: كاشير لسلسلة فروع</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="example">
+      <div class="example__head">نظام <span class="term">POS</span> لـ 200 فرع — استخراج المتطلبات</div>
+      <div class="example__body">
+        <div class="grid g2">
+          <div class="card card--c card--flat">
+            <h4 class="card__title">📋 Functional Requirements</h4>
+            <ol class="sm mb0" style="color:var(--text-dim)">
+              <li>الكاشير يعمل فاتورة بيع ويطبعها.</li>
+              <li>النظام يخصم من المخزون فورًا.</li>
+              <li>الفرع يشتغل بدون إنترنت ويزامن بعدين.</li>
+              <li>المدير يشوف تقرير موحّد لكل الفروع.</li>
+            </ol>
+          </div>
+          <div class="card card--v card--flat">
+            <h4 class="card__title">📐 Non-Functional Requirements</h4>
+            <ul class="clean sm mb0" style="color:var(--text-dim)">
+              <li>200 فرع × 4 كاشير = <strong class="ltr">800</strong> نقطة بيع.</li>
+              <li>الذروة: 3 فواتير/ثانية للفرع ⇒ <strong class="ltr">~600 RPS</strong>.</li>
+              <li>طباعة الفاتورة <strong class="ltr">p99 &lt; 800ms</strong>.</li>
+              <li>توافر <strong class="ltr">99.99%</strong> (التوقف = خسارة مبيعات مباشرة).</li>
+              <li><strong>صفر</strong> فقدان لأي فاتورة مدفوعة.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout callout--danger mt">
+          <div class="callout__icon">💥</div>
+          <div class="callout__body">
+            <span class="callout__title">شوف إزاي سطر واحد غيّر المعمارية كلها</span>
+            «الفرع يشتغل بدون إنترنت» + «صفر فقدان لفاتورة» — سطرين بس.
+            <br>بس دول بيفرضوا عليّ أضيف: <span class="term term--r">Local Database</span> في كل فرع،
+            و<span class="term term--r">Outbox Pattern</span> للمزامنة،
+            و<span class="term term--r">Idempotent Sync</span> عشان ما يتكررش الإرسال،
+            و<span class="term term--r">Conflict Resolution</span> لو نفس المنتج اتباع في مكانين،
+            و<span class="term term--r">Offline ID Generation</span> عشان أرقام الفواتير ما تتعارضش.
+            <br><br><strong>سطرين متطلبات = 5 مكوّنات معمارية إضافية وشهور شغل.</strong>
+            عشان كده بنقول إن الـ NFRs هي اللي بتحكم التصميم مش الـ FRs.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 10 ═════ -->
+<section class="slide" data-title="راجع نفسك: المتطلبات">
+  <div class="slide__head">
+    <span class="eyebrow">مراجعة</span>
+    <h2 class="slide__title">قبل ما تكمل — راجع نفسك</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="checkpoint">
+      <div class="checkpoint__title">لازم تقدر تجاوب على دول من غير ما ترجع للسلايدات</div>
+      <ul>
+        <li>إيه الفرق بين <span class="term">Functional Requirement</span> و<span class="term">Non-Functional Requirement</span>؟</li>
+        <li>ليه بنقول إن NFR من غير رقم مش متطلَّب؟</li>
+        <li>إيه الأجزاء التلاتة اللي لازم تكون في أي NFR سليم؟</li>
+        <li>إيه الفرق بين <span class="term">DAU</span> و<span class="term">peak concurrent</span>؟</li>
+        <li>ليه الـ NFRs بتأثر على المعمارية أكتر من الـ FRs؟</li>
+      </ul>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 3 — على نظامك انت<span class="exercise__level">تطبيقي</span></div>
+      <div class="exercise__body">
+        <p>
+          خُد أي نظام شغّال عندك دلوقتي. اكتب على ورقة:
+        </p>
+        <ol class="sm" style="color:var(--text-dim)">
+          <li>أهم <strong>3 Functional Requirements</strong> فيه.</li>
+          <li>أهم <strong>3 Non-Functional Requirements</strong> — <em>بالأرقام</em>.</li>
+        </ol>
+        <details class="solution">
+          <summary>مش عارف الأرقام؟ اقرا ده</summary>
+          <div class="solution__body">
+            <p>
+              لو مقدرتش تكتب الأرقام، فدي <strong>مش مشكلة</strong> — دي اكتشاف مهم.
+              معظم الأنظمة الشغالة مفيهاش NFRs مكتوبة، وبيتصرّفوا بالإحساس.
+            </p>
+            <p>إزاي تجيب الأرقام دي فعليًا:</p>
+            <ul class="clean sm">
+              <li><strong>عدد المستخدمين:</strong> من قاعدة البيانات مباشرة — عدّ المستخدمين اللي عملوا نشاط في آخر 24 ساعة.</li>
+              <li><strong>الـ RPS:</strong> من لوجات السيرفر (<span class="ltr">IIS logs</span> أو <span class="ltr">nginx access log</span>) — عدد الأسطر في ساعة ÷ 3600.</li>
+              <li><strong>الـ Latency:</strong> من <span class="term">Application Insights</span> أو أي أداة مراقبة، ودوّر على الـ <span class="term">p95</span> مش المتوسط.</li>
+            </ul>
+            <div class="plain mt">
+              <span class="plain__label">الفكرة</span>
+              الكورس ده مش هدفه تحفظ مصطلحات — هدفه إنك تبص لنظامك بعيون مختلفة.
+              أول خطوة إنك <strong>تقيس</strong> بدل ما تخمّن.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 11 — DIVIDER ═════ -->
+<section class="slide slide--center" data-title="الجزء 2: أبعاد الجودة" data-divider>
+  <div class="divider" style="--accent:var(--violet)">
+    <div class="divider__num">02</div>
+    <h2 class="divider__title">أبعاد الجودة <span class="term term--v" style="font-size:.5em">Quality Attributes</span></h2>
+    <p class="divider__sub">المصطلحات اللي هتتكرر في كل موديول جاي. هنقف على كل واحد فيهم.</p>
+  </div>
+</section>
+
+<!-- ═════ 12 ═════ -->
+<section class="slide" data-title="خريطة أبعاد الجودة">
+  <div class="slide__head">
+    <span class="eyebrow">نظرة عامة</span>
+    <h2 class="slide__title">الأبعاد الثمانية</h2>
+    <p class="slide__sub">شوفهم كلهم الأول، وبعدين هنقف على كل واحد بالتفصيل.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g4">
+      <div class="card card--c"><span class="card__num">01</span><div class="card__icon">📈</div>
+        <h4 class="card__title">Scalability</h4><p class="card__body sm">يستوعب حمل أكبر بإضافة موارد.</p></div>
+      <div class="card card--e"><span class="card__num">02</span><div class="card__icon">🟢</div>
+        <h4 class="card__title">Availability</h4><p class="card__body sm">نسبة الوقت اللي بيرد فيها.</p></div>
+      <div class="card card--b"><span class="card__num">03</span><div class="card__icon">🛡️</div>
+        <h4 class="card__title">Reliability</h4><p class="card__body sm">بيرد <em>صح</em>، مش بس بيرد.</p></div>
+      <div class="card card--a"><span class="card__num">04</span><div class="card__icon">⚡</div>
+        <h4 class="card__title">Latency</h4><p class="card__body sm">زمن الطلب الواحد.</p></div>
+      <div class="card card--v"><span class="card__num">05</span><div class="card__icon">🚚</div>
+        <h4 class="card__title">Throughput</h4><p class="card__body sm">كمية الشغل في وحدة زمن.</p></div>
+      <div class="card card--r"><span class="card__num">06</span><div class="card__icon">🔄</div>
+        <h4 class="card__title">Consistency</h4><p class="card__body sm">كل القرّاء بيشوفوا نفس البيانات؟</p></div>
+      <div class="card card--e"><span class="card__num">07</span><div class="card__icon">💾</div>
+        <h4 class="card__title">Durability</h4><p class="card__body sm">المكتوب ما يضيعش أبدًا.</p></div>
+      <div class="card card--a"><span class="card__num">08</span><div class="card__icon">🔧</div>
+        <h4 class="card__title">Maintainability</h4><p class="card__body sm">سهولة الفهم والتعديل بعدين.</p></div>
+    </div>
+
+    <div class="callout callout--warn fragment">
+      <div class="callout__icon">⚖️</div>
+      <div class="callout__body">
+        <strong>مفيش نظام بيحقق التمانية على الآخر.</strong> كل واحد بيتحسّن على حساب واحد تاني —
+        وده بالظبط اللي اسمه <span class="term term--a">Trade-off</span>.
+        شغلك إنك <em>تختار بوعي</em>، مش إنك تحاول تجمعهم كلهم.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 13 ═════ -->
+<section class="slide" data-title="Scalability">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 04</span>
+    <h2 class="slide__title">Scalability — قابلية التوسّع</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard">
+      <div class="termcard__head">
+        <span class="termcard__en">Scalability</span>
+        <span class="termcard__ar">قابلية التوسّع</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف الدقيق</span>
+          قدرة النظام على التعامل مع <strong>حمل أكبر</strong> عن طريق إضافة موارد —
+          <em>مع الحفاظ على نفس مستوى الأداء</em>.
+          <br>الجزء الأخير ده هو اللي الناس بتنساه: لو ضاعفت المستخدمين وضاعفت السيرفرات
+          بس النظام بقى أبطأ، يبقى نظامك <strong>مش scalable</strong>.
+        </div>
+        <div class="tblock tblock--analogy">
+          <span class="tblock__label">تشبيه 🍔</span>
+          مطعم فيه شيف واحد بيعمل 20 وجبة في الساعة. الزباين بقوا محتاجين 200 وجبة:
+          <br>• <strong>تجيب شيف أسطورة</strong> بيعمل 60 وجبة/ساعة ⇒ حل سريع لكن فيه سقف بشري، ولو مرض المطعم قفل.
+          <br>• <strong>تجيب 10 شيفات عاديين</strong> ⇒ مفيش سقف، بس دلوقتي محتاج مدير يوزّع الطلبات،
+          ومطبخ منظّم، وطريقة تعرف بيها مين اللي بيغلط.
+          <br><span class="mute sm">الحلين دول ليهم أسماء — هناخدهم بالتفصيل في الموديول 03.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fragment">
+      <h4 class="mt">التوسّع مش دايمًا بيدّي نتيجة متناسبة — شوف الأرقام</h4>
+      <div class="flow">
+        <div class="node node--c">1 سيرفر<span class="node__sub">1,000 RPS</span></div>
+        <span class="arrow">←</span>
+        <div class="node node--e">2 سيرفر<span class="node__sub">~1,900 RPS</span></div>
+        <span class="arrow">←</span>
+        <div class="node node--a">4 سيرفر<span class="node__sub">~3,400 RPS</span></div>
+        <span class="arrow">←</span>
+        <div class="node node--r">8 سيرفر<span class="node__sub">~4,100 RPS ⚠️</span></div>
+      </div>
+      <div class="plain mt">
+        <span class="plain__label">اقرا الأرقام دي كده</span>
+        من 1 لـ 2 سيرفر: كسبنا 900 طلب (كويس). من 4 لـ 8: ضاعفنا السيرفرات وكسبنا 700 بس!
+        <br>ليه؟ لأن <strong>عنق الزجاجة اتنقل لمكان تاني</strong> — غالبًا قاعدة البيانات،
+        اللي كل السيرفرات الـ 8 بتكلّمها. زوّدت الشيفات بس الفرن فضل واحد.
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 4 — فكّر<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__body">
+        <p>موقعك بيتحمّل <span class="ltr">1,000 RPS</span> بسيرفرين. المدير قال «زوّد لـ 20 سيرفر عشان نوصل <span class="ltr">10,000 RPS</span>». إيه رأيك؟</p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <p>الرد مش «تمام» ولا «مستحيل» — الرد هو <strong>«محتاج أعرف فين عنق الزجاجة الأول»</strong>.</p>
+            <ul class="pc pc--neutral sm">
+              <li>لو الـ <span class="term">CPU</span> على السيرفرات هو المشغول ⇒ زيادة السيرفرات هتنفع فعلاً.</li>
+              <li>لو قاعدة البيانات هي المشغولة ⇒ الـ 20 سيرفر هيزوّدوا الضغط عليها و<strong>الأداء ممكن يقل</strong>.</li>
+              <li>لو فيه <span class="term term--r">Lock</span> أو مورد مشترك ⇒ الزيادة هتزوّد التنافس والانتظار.</li>
+            </ul>
+            <div class="plain mt">
+              <span class="plain__label">الدرس</span>
+              التوسّع مش «زوّد سيرفرات». التوسّع هو <strong>اعرف مين المشغول، وحرّره</strong>.
+              من غير قياس، زيادة السيرفرات ممكن تكون مجرد زيادة في الفاتورة.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 14 ═════ -->
+<section class="slide" data-title="Availability والـ Nines">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 05</span>
+    <h2 class="slide__title">Availability — والـ «Nines»</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g-1-2">
+      <div class="card card--e">
+        <div class="card__icon">🟢</div>
+        <h3 class="card__title">Availability — التوافر</h3>
+        <div class="math" style="border-color:var(--emerald)">
+<span class="lbl">Availability</span> <span class="eq">=</span> <span class="var">Uptime</span> / (<span class="var">Uptime</span> <span class="eq">+</span> <span class="var">Downtime</span>)
+        </div>
+        <p class="card__body sm mt">
+          <span class="term term--e">Uptime</span> = الوقت اللي النظام شغّال فيه ·
+          <span class="term term--e">Downtime</span> = الوقت اللي واقع فيه.
+          <br>النتيجة بتتحوّل لنسبة مئوية، وبنسمّيها بعدد الـ <span class="term term--e">Nines</span>
+          (عدد التساعات بعد العلامة العشرية).
+        </p>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>الاسم</th><th class="ltr">النسبة</th><th>توقف/سنة</th><th>توقف/شهر</th><th>بيُستخدم في</th></tr></thead>
+          <tbody>
+            <tr><td>Two nines</td><td class="ltr">99%</td><td class="td-bad ltr">3.65 يوم</td><td class="ltr">7.2 ساعة</td><td>أدوات داخلية</td></tr>
+            <tr><td>Three nines</td><td class="ltr">99.9%</td><td class="td-mid ltr">8.76 ساعة</td><td class="ltr">43 دقيقة</td><td>SaaS عادي</td></tr>
+            <tr><td>Four nines</td><td class="ltr">99.99%</td><td class="td-ok ltr">52.6 دقيقة</td><td class="ltr">4.3 دقيقة</td><td>متاجر، كاشير</td></tr>
+            <tr><td>Five nines</td><td class="ltr">99.999%</td><td class="td-ok ltr">5.26 دقيقة</td><td class="ltr">26 ثانية</td><td>اتصالات، مدفوعات</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="decode fragment">
+      <div class="decode__raw">99.99% availability</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">99.99%</span>
+          <div class="decode__exp">
+            «أربع تساعات» — <span class="term">four nines</span>.
+            <br>الحساب: السنة فيها <span class="ltr">525,600</span> دقيقة.
+            <span class="ltr">0.01%</span> منها = <span class="ltr">52.6</span> دقيقة.
+          </div>
+        </div>
+      </div>
+      <div class="decode__sum">
+        مسموح للنظام يقع <b>52 دقيقة في السنة كلها</b> — يعني أقل من دقيقة واحدة في الأسبوع.
+        وده بيشمل وقت التحديثات والصيانة، مش بس الأعطال المفاجئة.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 15 ═════ -->
+<section class="slide" data-title="حساب التوافر: الضرب مش الجمع">
+  <div class="slide__head">
+    <span class="eyebrow">قاعدة مهمة جدًا</span>
+    <h2 class="slide__title">التوافر بيتضرب — مش بيتجمع</h2>
+    <p class="slide__sub">دي أكتر قاعدة الناس بتتفاجئ بيها، وبتفسّر ليه الأنظمة الموزّعة بتقع كتير.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g2">
+      <div class="callout callout--danger">
+        <div class="callout__icon">🔗</div>
+        <div class="callout__body">
+          <span class="callout__title">لو المكوّنات على التوالي (كلها لازم تشتغل)</span>
+          طلب بيمر على 4 خدمات، كل واحدة توافرها <span class="ltr">99.9%</span>:
+          <div class="math sm mt" style="border-color:var(--rose)">
+<span class="lbl">Total</span> <span class="eq">=</span> <span class="n">0.999</span> × <span class="n">0.999</span> × <span class="n">0.999</span> × <span class="n">0.999</span>
+<span class="lbl">     </span> <span class="eq">=</span> <span class="res">0.996  →  99.6%</span>
+          </div>
+          <p class="sm mb0 mt">
+            <strong>من <span class="ltr">8.7</span> ساعة توقف في السنة ⇒ بقت <span class="ltr">35</span> ساعة!</strong>
+            كل خدمة بتضيفها في المسار بتنزّل التوافر الكلي.
+          </p>
+        </div>
+      </div>
+
+      <div class="callout callout--tip">
+        <div class="callout__icon">⚡</div>
+        <div class="callout__body">
+          <span class="callout__title">لو المكوّنات على التوازي (واحدة تكفي)</span>
+          نفس الخدمة مكرّرة مرتين بشكل مستقل. عشان النظام يقع، لازم <em>الاتنين</em> يقعوا:
+          <div class="math sm mt" style="border-color:var(--emerald)">
+<span class="cmt">// احتمال فشل الواحدة = 0.001</span>
+<span class="lbl">Both fail</span> <span class="eq">=</span> <span class="n">0.001</span> × <span class="n">0.001</span> <span class="eq">=</span> <span class="n">0.000001</span>
+<span class="lbl">Available</span> <span class="eq">=</span> <span class="n">1</span> <span class="eq">−</span> <span class="n">0.000001</span> <span class="eq">=</span> <span class="res">99.9999%</span>
+          </div>
+          <p class="sm mb0 mt">
+            <strong>من 3 تساعات لـ 6 تساعات — بمجرد نسخة تانية.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">القاعدة في جملة</span>
+      <strong>التسلسل بيقلّل التوافر · التوازي بيزوّده.</strong>
+      عشان كده الأنظمة الكبيرة بتحاول تقلّل عدد الخدمات في مسار الطلب الواحد،
+      وفي نفس الوقت تكرّر كل خدمة أكتر من مرة.
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 5 — احسب<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__body">
+        <p>
+          عندك: <span class="term">Load Balancer</span> (<span class="ltr">99.99%</span>) →
+          <span class="term">API</span> (<span class="ltr">99.95%</span>) →
+          <span class="term">Database</span> (<span class="ltr">99.9%</span>).
+          <br>إيه التوافر الكلي؟ وكام ساعة توقف في السنة؟
+        </p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="math">
+<span class="lbl">Total</span> <span class="eq">=</span> <span class="n">0.9999</span> × <span class="n">0.9995</span> × <span class="n">0.999</span>
+<span class="lbl">     </span> <span class="eq">=</span> <span class="res">0.99840  →  99.84%</span>
+
+<span class="cmt">// ساعات التوقف في السنة</span>
+<span class="lbl">Downtime</span> <span class="eq">=</span> (<span class="n">1</span> <span class="eq">−</span> <span class="n">0.9984</span>) × <span class="n">8,760</span> <span class="cmt">ساعة/سنة</span>
+<span class="lbl">        </span> <span class="eq">=</span> <span class="n">0.0016</span> × <span class="n">8,760</span> <span class="eq">=</span> <span class="res">~14 ساعة/سنة</span>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">اللي المفروض تلاحظه</span>
+              التوافر الكلي (<span class="ltr">99.84%</span>) <strong>أقل من أضعف مكوّن</strong> (<span class="ltr">99.9%</span>).
+              ده دايمًا هيحصل في التسلسل.
+              <br>وكمان: الـ Database هي أضعف حلقة — فلو عايز تحسّن، ابدأ منها.
+              تحسين الـ Load Balancer من <span class="ltr">99.99%</span> لـ <span class="ltr">99.999%</span> مش هيغيّر حاجة تقريبًا.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 16 ═════ -->
+<section class="slide" data-title="Reliability مقابل Availability">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 06</span>
+    <h2 class="slide__title">Reliability مقابل Availability</h2>
+    <p class="slide__sub">شبه بعض في الاسم، مختلفين تمامًا في المعنى.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="vs">
+      <div class="card card--e">
+        <div class="card__icon">🟢</div>
+        <h3 class="card__title"><span class="term term--e">Availability</span></h3>
+        <p class="card__body">النظام <strong>بيرد</strong>. حتى لو رد بحاجة غلط — فهو Available.</p>
+        <div class="math sm mb0" style="border-color:var(--emerald)"><span class="lbl">السؤال:</span> <span class="eq">هل بيرد؟</span></div>
+      </div>
+      <div class="vs__mid">≠</div>
+      <div class="card card--b">
+        <div class="card__icon">🛡️</div>
+        <h3 class="card__title"><span class="term">Reliability</span></h3>
+        <p class="card__body">النظام بيرد <strong>بالإجابة الصحيحة</strong> باستمرار.</p>
+        <div class="math sm mb0" style="border-color:var(--blue)"><span class="lbl">السؤال:</span> <span class="eq">هل بيرد صح؟</span></div>
+      </div>
+    </div>
+
+    <div class="callout callout--warn fragment">
+      <div class="callout__icon">🏧</div>
+      <div class="callout__body">
+        <span class="callout__title">المثال اللي بيثبّت الفرق للأبد — ماكينة الـ ATM</span>
+        ماكينة شغالة <span class="ltr">24/7</span> من غير ما تقف أبدًا ⇒ <strong>Availability عالي جدًا</strong>.
+        <br>بس لو بتخصم من حسابك <span class="ltr">1000</span> جنيه وتطلّعلك <span class="ltr">900</span> ⇒
+        <strong>Reliability = صفر</strong>.
+        <br><br>والعكس صحيح: ماكينة دقيقة 100% بس واقفة نص اليوم = Reliable بس مش Available.
+      </div>
+    </div>
+
+    <div class="grid g3 fragment">
+      <div class="card card--flat card--a">
+        <h4 class="card__title"><span class="term term--a">MTBF</span></h4>
+        <p class="card__body sm">
+          <span class="say">Mean Time Between Failures</span><br>
+          <strong>متوسط الوقت بين عطل والعطل اللي بعده.</strong> كل ما زاد = اعتمادية أعلى.
+        </p>
+      </div>
+      <div class="card card--flat card--r">
+        <h4 class="card__title"><span class="term term--r">MTTR</span></h4>
+        <p class="card__body sm">
+          <span class="say">Mean Time To Recovery</span><br>
+          <strong>متوسط الوقت اللي بتاخده عشان تصلّح.</strong> كل ما قلّ = توافر أعلى.
+        </p>
+      </div>
+      <div class="card card--flat card--e">
+        <h4 class="card__title">العلاقة بينهم</h4>
+        <div class="math sm mb0" style="border-color:var(--emerald)"><span class="lbl">A</span> <span class="eq">=</span> <span class="var">MTBF</span> / (<span class="var">MTBF</span> <span class="eq">+</span> <span class="var">MTTR</span>)</div>
+      </div>
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">💡</div>
+      <div class="callout__body">
+        <span class="callout__title">حكمة عملية تنفعك في شغلك</span>
+        تقليل <span class="term term--r">MTTR</span> (تصلّح أسرع) عادةً
+        <strong>أرخص وأسرع بكتير</strong> من زيادة <span class="term term--a">MTBF</span> (تمنع الأعطال).
+        <br>عشان كده الشركات الكبيرة بتستثمر في المراقبة والتنبيه والرجوع التلقائي للنسخة القديمة،
+        أكتر من محاولة بناء نظام «ما بيقعش» — لأن ده مستحيل.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 17 ═════ -->
+<section class="slide" data-title="Latency مقابل Throughput">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 07 و 08</span>
+    <h2 class="slide__title">Latency مقابل Throughput</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="vs">
+      <div class="card card--a">
+        <div class="card__icon">⚡</div>
+        <h3 class="card__title"><span class="term term--a">Latency</span> — زمن الاستجابة</h3>
+        <p class="card__body">الوقت اللي بياخده <strong>طلب واحد</strong> من إرساله لاستلام الرد.
+        <br>الوحدة: <span class="ltr">ms</span> (مللي ثانية).</p>
+      </div>
+      <div class="vs__mid">VS</div>
+      <div class="card card--v">
+        <div class="card__icon">🚚</div>
+        <h3 class="card__title"><span class="term term--v">Throughput</span> — الإنتاجية</h3>
+        <p class="card__body">عدد الطلبات اللي النظام بينجزها في <strong>وحدة زمن</strong>.
+        <br>الوحدة: <span class="ltr">RPS</span> (طلب/ثانية).</p>
+      </div>
+    </div>
+
+    <div class="callout callout--info fragment">
+      <div class="callout__icon">🛣️</div>
+      <div class="callout__body">
+        <span class="callout__title">التشبيه اللي هيثبّتهم في دماغك — الطريق السريع</span>
+        <strong>Latency</strong> = الوقت اللي عربية واحدة تاخده من القاهرة للإسكندرية.
+        <br><strong>Throughput</strong> = عدد العربيات اللي بتوصل الإسكندرية في الساعة.
+        <br><br>
+        دلوقتي شوف:
+        <br>• زوّدت <em>الحارات</em> (سيرفرات أكتر) ⇒ Throughput زاد، بس العربية الواحدة لسه بتاخد نفس الوقت.
+        <br>• رفعت <em>السرعة القصوى</em> (معالج أسرع) ⇒ Latency قلّ، وThroughput زاد كمان.
+        <br>• الطريق زحمة أوي ⇒ Throughput وصل السقف، و<strong>Latency بدأ يزيد بشكل انفجاري</strong> 💥
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">النقطة المهمة</span>
+      دول <strong>مش عكس بعض</strong>، وتحسين واحد مش بالضرورة بيحسّن التاني.
+      ممكن يكون عندك Throughput عالي جدًا وLatency فظيع (طابور طويل بيتحرك بسرعة).
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 18 ═════ -->
+<section class="slide" data-title="ليه المتوسط كذّاب — الـ Percentiles">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 09</span>
+    <h2 class="slide__title">ليه المتوسط بيكذب عليك؟</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="example">
+      <div class="example__head">مثال يوضّح المشكلة</div>
+      <div class="example__body">
+        <p>عندك 100 طلب. 99 منهم خدوا <span class="ltr">10ms</span>، وواحد خد <span class="ltr">5000ms</span> (5 ثواني).</p>
+        <div class="math">
+<span class="lbl">Average</span> <span class="eq">=</span> (<span class="n">99</span> × <span class="n">10</span> <span class="eq">+</span> <span class="n">5000</span>) / <span class="n">100</span> <span class="eq">=</span> <span class="res">59.9 ms</span>
+<span class="cmt">// الرقم ده بيقول «كله تمام» — وهو مضلّل تمامًا!</span>
+
+<span class="lbl">p50</span> <span class="eq">=</span> <span class="res">10 ms</span>    <span class="cmt">// نص المستخدمين شافوا كده أو أسرع</span>
+<span class="lbl">p99</span> <span class="eq">=</span> <span class="res">10 ms</span>    <span class="cmt">// 99% شافوا كده أو أسرع</span>
+<span class="lbl">p99.9</span> <span class="eq">=</span> <span class="res">5000 ms</span> <span class="cmt">// ← هنا بس بتظهر المشكلة الحقيقية</span>
+        </div>
+        <div class="plain mt">
+          <span class="plain__label">الدرس</span>
+          المتوسط بيدمج الحالات السيئة في الحالات الكويسة فبيخفيها.
+          الـ <span class="term">Percentiles</span> بتوريك <strong>توزيع</strong> التجربة الحقيقية.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g4 fragment">
+      <div class="card card--flat card--e"><h4 class="card__title"><span class="term term--e">p50</span></h4>
+        <p class="card__body sm">الوسيط. نص المستخدمين. <strong>«التجربة العادية»</strong>.</p></div>
+      <div class="card card--flat card--a"><h4 class="card__title"><span class="term term--a">p95</span></h4>
+        <p class="card__body sm">95%. هدف عملي واقعي لمعظم الأنظمة.</p></div>
+      <div class="card card--flat card--r"><h4 class="card__title"><span class="term term--r">p99</span></h4>
+        <p class="card__body sm"><strong>ده اللي بيوجع.</strong> 1% بس — لكن دول غالبًا أنشط عملائك.</p></div>
+      <div class="card card--flat card--v"><h4 class="card__title"><span class="term term--v">p99.9</span></h4>
+        <p class="card__body sm">الحالات المتطرفة. بتُسمى <span class="term term--v">Tail Latency</span>.</p></div>
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">📊</div>
+      <div class="callout__body">
+        <span class="callout__title">ليه نهتم بـ 1% أصلاً؟</span>
+        لو عندك <span class="ltr">100</span> مليون طلب في اليوم، الـ <span class="ltr">1%</span> ده =
+        <strong>مليون تجربة سيئة كل يوم</strong>.
+        <br>وكمان: المستخدم النشط بيعمل طلبات كتير، فاحتمال إنه يقع في الـ 1% ده أعلى بكتير من المستخدم العادي.
+        <strong>يعني أسوأ تجربة بتحصل لأهم عملائك.</strong>
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 6 — اقرا الأرقام<span class="exercise__level">سهل</span></div>
+      <div class="exercise__body">
+        <p>خدمة عندها: <span class="ltr">avg = 80ms</span> · <span class="ltr">p50 = 40ms</span> ·
+          <span class="ltr">p95 = 120ms</span> · <span class="ltr">p99 = 2400ms</span>.
+          <br>إيه اللي الأرقام دي بتقوله؟</p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <ul class="clean sm">
+              <li><strong>المتوسط أعلى من الوسيط بالضعف</strong> (<span class="ltr">80</span> مقابل <span class="ltr">40</span>) ⇒
+                علامة أكيدة إن فيه طلبات بطيئة جدًا بتجرّ المتوسط لفوق.</li>
+              <li><strong>الفجوة بين p95 و p99 ضخمة</strong> (<span class="ltr">120</span> ⟵ <span class="ltr">2400</span>) ⇒
+                مش بطء عام، ده <em>مشكلة محدّدة</em> بتحصل في حالات معيّنة.</li>
+            </ul>
+            <p class="sm">الأسباب المحتملة اللي تدوّر عليها:</p>
+            <ul class="pc pc--neutral sm mb0">
+              <li>استعلام مش مفهرس بيتنفّذ في حالات معيّنة بس.</li>
+              <li><span class="term term--r">Cache Miss</span> بيرجّع الطلب للـ Database.</li>
+              <li>توقف الـ <span class="term term--r">Garbage Collector</span> في .NET.</li>
+              <li>نفاد الاتصالات في <span class="term term--r">Connection Pool</span> وانتظار في الطابور.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 19 ═════ -->
+<section class="slide" data-title="أرقام Latency لازم تعرفها">
+  <div class="slide__head">
+    <span class="eyebrow">مرجع أساسي</span>
+    <h2 class="slide__title">أرقام الزمن اللي بتحكم كل قرار</h2>
+    <p class="slide__sub">مش لازم تحفظهم بالظبط — المهم تحفظ <strong>الفروق النسبية</strong> بينهم.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>العملية</th><th class="ltr">الزمن</th><th class="ltr">أبطأ من الـ L1 بـ</th><th>يعني إيه لك</th></tr></thead>
+        <tbody>
+          <tr><td class="ltr">L1 cache</td><td class="ltr td-ok">0.5 ns</td><td class="ltr">1×</td><td>مجاني عمليًا</td></tr>
+          <tr><td class="ltr">Main memory (RAM)</td><td class="ltr td-ok">100 ns</td><td class="ltr">200×</td><td>الوصول للذاكرة</td></tr>
+          <tr><td class="ltr">SSD random read</td><td class="ltr td-mid">150 μs</td><td class="ltr">300,000×</td><td>قاعدة البيانات على قرص</td></tr>
+          <tr><td class="ltr">Round trip in same DC</td><td class="ltr td-mid">500 μs</td><td class="ltr">1,000,000×</td><td><strong>كل استدعاء بين خدمتين</strong></td></tr>
+          <tr><td class="ltr">Read 1MB from SSD</td><td class="ltr td-bad">1 ms</td><td class="ltr">2,000,000×</td><td>—</td></tr>
+          <tr><td class="ltr">Disk seek (HDD)</td><td class="ltr td-bad">10 ms</td><td class="ltr">20,000,000×</td><td>ابعد عن الأقراص الميكانيكية</td></tr>
+          <tr><td class="ltr">Packet: أوروبا ← أمريكا</td><td class="ltr td-bad">150 ms</td><td class="ltr">300,000,000×</td><td><strong>سرعة الضوء — قانون فيزيائي</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g3 fragment mt">
+      <div class="callout callout--key">
+        <div class="callout__icon">1️⃣</div>
+        <div class="callout__body sm">
+          <strong>الذاكرة أسرع من القرص بـ ~1000 مرة</strong>
+          <br>⇒ عشان كده الـ <span class="term term--v">Cache</span> مش رفاهية. ده أهم سبب معماري في الكورس كله.
+        </div>
+      </div>
+      <div class="callout callout--warn">
+        <div class="callout__icon">2️⃣</div>
+        <div class="callout__body sm">
+          <strong>كل استدعاء شبكة داخلي = <span class="ltr">0.5ms</span></strong>
+          <br>⇒ لو خدمة بتنادي 20 خدمة بالترتيب، ضاع <span class="ltr">10ms</span> في الشبكة لوحدها من غير أي شغل.
+        </div>
+      </div>
+      <div class="callout callout--danger">
+        <div class="callout__icon">3️⃣</div>
+        <div class="callout__body sm">
+          <strong>عبور القارات = <span class="ltr">150ms</span></strong>
+          <br>⇒ مفيش كود هيصلّح ده. الحل الوحيد إنك تقرّب البيانات من المستخدم — وده اسمه
+          <span class="term term--r">CDN</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 20 ═════ -->
+<section class="slide" data-title="SLA و SLO و SLI">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 10</span>
+    <h2 class="slide__title">SLA &nbsp;/&nbsp; SLO &nbsp;/&nbsp; SLI</h2>
+    <p class="slide__sub">تلات اختصارات بيتلخبطوا دايمًا. الفرق بينهم بسيط جدًا لما تشوف الترتيب.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g3">
+      <div class="card card--c">
+        <span class="card__num">📏</span>
+        <h3 class="card__title"><span class="term">SLI</span></h3>
+        <p class="card__body sm">
+          <span class="say">Service Level Indicator</span><br>
+          <strong>الرقم اللي بتقيسه فعليًا.</strong>
+          <br><br>مثال: «نسبة الطلبات اللي رجعت ناجحة في أقل من <span class="ltr">300ms</span>».
+          <br><span class="mute xs">= القياس الخام</span>
+        </p>
+      </div>
+      <div class="card card--v">
+        <span class="card__num">🎯</span>
+        <h3 class="card__title"><span class="term term--v">SLO</span></h3>
+        <p class="card__body sm">
+          <span class="say">Service Level Objective</span><br>
+          <strong>الهدف الداخلي اللي فريقك ملتزم بيه.</strong>
+          <br><br>مثال: «الرقم ده لازم يفضل <span class="ltr">≥ 99.9%</span> على مدار 30 يوم».
+          <br><span class="mute xs">= الهدف</span>
+        </p>
+      </div>
+      <div class="card card--r">
+        <span class="card__num">📜</span>
+        <h3 class="card__title"><span class="term term--r">SLA</span></h3>
+        <p class="card__body sm">
+          <span class="say">Service Level Agreement</span><br>
+          <strong>عقد قانوني مع العميل + غرامة مالية.</strong>
+          <br><br>مثال: «لو نزلنا تحت <span class="ltr">99.5%</span>، العميل ياخد <span class="ltr">10%</span> من فاتورة الشهر».
+          <br><span class="mute xs">= الالتزام القانوني</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flow fragment">
+      <div class="node node--c">SLI<span class="node__sub">measure</span></div>
+      <span class="arrow">←</span>
+      <div class="node node--v">SLO<span class="node__sub">target</span></div>
+      <span class="arrow">←</span>
+      <div class="node node--r">SLA<span class="node__sub">contract</span></div>
+    </div>
+    <p class="xs mute center fragment">بتقيس (SLI) ⟵ عشان توصل لهدف (SLO) ⟵ عشان تحترم عقد (SLA)</p>
+
+    <div class="grid g2 fragment">
+      <div class="callout callout--tip">
+        <div class="callout__icon">🧠</div>
+        <div class="callout__body sm">
+          <span class="callout__title">قاعدة ذهبية</span>
+          خلّي الـ <strong>SLO أصعب من الـ SLA</strong> دايمًا.
+          لو وعدت العميل بـ <span class="ltr">99.5%</span>، خلي هدفك الداخلي <span class="ltr">99.9%</span> —
+          عشان يبقى عندك هامش أمان قبل ما تدفع غرامة.
+        </div>
+      </div>
+      <div class="callout callout--key">
+        <div class="callout__icon">💰</div>
+        <div class="callout__body sm">
+          <span class="callout__title">Error Budget — مفهوم عملي جدًا</span>
+          لو الـ SLO = <span class="ltr">99.9%</span>، يبقى عندك <span class="ltr">0.1%</span> «مسموح تفشل فيها»
+          = <span class="ltr">43</span> دقيقة شهريًا.
+          <br>طول ما ما استهلكتهاش ⇒ <em>انشر مميزات بسرعة</em>.
+          <br>استهلكتها ⇒ <em>قف واشتغل على الاستقرار</em>.
+          <br>ده بيحوّل الخلاف بين فريق التطوير وفريق التشغيل من جدل لـ <strong>قرار برقم</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 21 ═════ -->
+<section class="slide" data-title="Consistency و Durability">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 11 و 12</span>
+    <h2 class="slide__title">Consistency و Durability</h2>
+    <p class="slide__sub">تعريف سريع هنا — وهنغوص فيهم بعمق في موديول قواعد البيانات.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard termcard--r">
+      <div class="termcard__head">
+        <span class="termcard__en">Consistency</span>
+        <span class="termcard__ar">الاتساق</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف</span>
+          هل كل القرّاء بيشوفوا <strong>نفس النسخة</strong> من البيانات في نفس اللحظة، بعد أي عملية كتابة؟
+        </div>
+        <div class="tblock tblock--analogy">
+          <span class="tblock__label">تشبيه</span>
+          حوّلت فلوس لصاحبك:
+          <br>• <span class="term term--r">Strong Consistency</span>: هو يشوف الفلوس <strong>دلوقتي حالاً</strong>.
+          <br>• <span class="term term--r">Eventual Consistency</span>: هيشوفها خلال ثانيتين، ولحد ما تظهر بيشوف رصيد قديم.
+          <br><br>
+          في التحويلات البنكية ⇒ <em>Strong إجباري</em>.
+          <br>في عدد اللايكات على بوست ⇒ <em>Eventual كفاية</em>، ومحدش هيلاحظ أصلاً.
+        </div>
+      </div>
+    </div>
+
+    <div class="termcard termcard--e fragment">
+      <div class="termcard__head">
+        <span class="termcard__en">Durability</span>
+        <span class="termcard__ar">المتانة / بقاء البيانات</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف</span>
+          لما النظام يقولك «تم الحفظ ✅» ⇒ البيانات دي <strong>مش هتضيع أبدًا</strong>،
+          حتى لو الكهربا قطعت في نفس الثانية.
+        </div>
+        <div class="tblock tblock--trap">
+          <span class="tblock__label">فخ خطير ⚠️</span>
+          كتير من قواعد البيانات بترجعلك تأكيد الحفظ والبيانات لسه في ذاكرة نظام التشغيل
+          مش على القرص فعليًا. لو الكهربا قطعت في اللحظة دي ⇒ <strong>ضاعت</strong>.
+          <br>عشان كده فيه <span class="term term--r">fsync</span> و<span class="term term--r">Write-Ahead Log</span>.
+        </div>
+        <div class="tblock tblock--net">
+          <span class="tblock__label">تطبيق .NET</span>
+          في <span class="term term--v">SQL Server</span> فيه إعداد اسمه
+          <span class="term term--v">Delayed Durability</span> بيخلّي الحفظ أسرع بكتير،
+          لكنه بيضحّي بآخر عمليات لو حصل انهيار.
+          <br>✅ استخدمه للسجلات والتحليلات.
+          <br>❌ <strong>ما تستخدمهوش أبدًا</strong> لجدول الفواتير أو المدفوعات.
+        </div>
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">الفرق في جملة</span>
+      <strong>Consistency</strong> بتسأل: «هل النسخ متطابقة؟» ·
+      <strong>Durability</strong> بتسأل: «هل البيانات موجودة أصلاً؟»
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 22 ═════ -->
+<section class="slide" data-title="راجع نفسك: أبعاد الجودة">
+  <div class="slide__head">
+    <span class="eyebrow">مراجعة</span>
+    <h2 class="slide__title">قبل ما تكمل — راجع نفسك</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="checkpoint">
+      <div class="checkpoint__title">لازم تقدر تشرح دول لحد تاني</div>
+      <ul>
+        <li>ليه التوافر بيتضرب في المسار المتسلسل بدل ما يتجمع؟</li>
+        <li>إزاي نظام يكون <span class="term">Available</span> ومش <span class="term">Reliable</span>؟</li>
+        <li>إيه الفرق بين <span class="term">Latency</span> و<span class="term">Throughput</span> — وإمتى يتحسّن واحد ويسوء التاني؟</li>
+        <li>ليه المتوسط مضلّل؟ وإيه الفرق بين <span class="term">p50</span> و<span class="term">p99</span>؟</li>
+        <li>رتّب: <span class="term">SLI</span>، <span class="term">SLO</span>، <span class="term">SLA</span> — ومين الأصعب؟</li>
+        <li>إمتى الـ <span class="term">Eventual Consistency</span> مقبول وإمتى ممنوع؟</li>
+      </ul>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 7 — قرار معماري<span class="exercise__level">صعب</span></div>
+      <div class="exercise__body">
+        <p>
+          عندك شاشة بتعرض <strong>عدد المشاهدات</strong> لفيديو، و<strong>رصيد محفظة</strong> المستخدم.
+          <br>أي واحدة فيهم تقبل <span class="term">Eventual Consistency</span>؟ وليه؟ وإيه اللي بتكسبه؟
+        </p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="grid g2">
+              <div class="card card--e card--flat">
+                <h4 class="card__title">👁️ عدد المشاهدات → Eventual ✅</h4>
+                <p class="card__body sm">
+                  لو العدد <span class="ltr">1,204,331</span> وظهر <span class="ltr">1,204,298</span>،
+                  <strong>محدش هيلاحظ ولا هيتضرر</strong>.
+                  <br><br><strong>المكسب:</strong> أقدر أعدّ في الذاكرة وأكتب في قاعدة البيانات كل 10 ثواني
+                  بدل كل مشاهدة ⇒ تقليل ضغط الكتابة بآلاف المرات.
+                </p>
+              </div>
+              <div class="card card--r card--flat">
+                <h4 class="card__title">💰 رصيد المحفظة → Strong ✅</h4>
+                <p class="card__body sm">
+                  لو المستخدم شاف <span class="ltr">100</span> جنيه وهو فعليًا <span class="ltr">0</span>،
+                  هيحاول يشتري وهيفشل ⇒ <strong>مشكلة ثقة وشكوى ومحتمل مشكلة قانونية</strong>.
+                  <br><br><strong>التمن:</strong> كل قراءة لازم تروح للمصدر الأساسي ⇒ أبطأ وأغلى.
+                  وده تمن مقبول هنا.
+                </p>
+              </div>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">القاعدة اللي تمشي عليها</span>
+              اسأل: <strong>«لو المستخدم شاف رقم قديم بثانيتين، إيه أسوأ حاجة ممكن تحصل؟»</strong>
+              <br>لو الإجابة «مفيش» ⇒ Eventual، واستمتع بالسرعة والرخص.
+              <br>لو الإجابة «هياخد قرار غلط بفلوس» ⇒ Strong، وادفع التمن.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 23 — DIVIDER ═════ -->
+<section class="slide slide--center" data-title="الجزء 3: تقدير القدرات" data-divider>
+  <div class="divider" style="--accent:var(--amber)">
+    <div class="divider__num">03</div>
+    <h2 class="divider__title">تقدير القدرات</h2>
+    <p class="divider__sub">إزاي تحوّل «كتير» و«شوية» إلى <strong>أرقام</strong> تقدر تبني عليها قرار.</p>
+  </div>
+</section>
+
+<!-- ═════ 24 ═════ -->
+<section class="slide" data-title="ليه نعمل حسابات تقريبية">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 13</span>
+    <h2 class="slide__title">Back-of-the-Envelope Estimation</h2>
+    <p class="slide__sub">الاسم حرفيًا معناه «حسابات على ضهر ظرف» — يعني حسابات سريعة تقريبية.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g2">
+      <div class="card card--a">
+        <div class="card__icon">🧭</div>
+        <h3 class="card__title">التقدير هو اللي بيحدّد المعمارية</h3>
+        <p class="card__body">
+          <strong class="ltr">100 GB</strong> بيانات ⇒ سيرفر قاعدة بيانات واحد كفاية جدًا.
+          <br><strong class="ltr">100 TB</strong> بيانات ⇒ محتاج تقسيم على أكتر من قاعدة (إجباري).
+          <br><br>نفس السؤال — وقرارين مختلفين تمامًا. والفرق اتحدد <em>بالرقم</em> مش بالرأي.
+        </p>
+      </div>
+      <div class="card card--e">
+        <div class="card__icon">🎯</div>
+        <h3 class="card__title">الهدف: رتبة المقدار مش الدقة</h3>
+        <p class="card__body">
+          محدش بيطلب رقم مضبوط. المطلوب تعرف: إحنا في نطاق <span class="ltr">الآلاف</span>
+          ولا <span class="ltr">الملايين</span> ولا <span class="ltr">المليارات</span>؟
+          <br><br><strong>خطأ ضعفين مقبول. خطأ ألف ضعف كارثة.</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="callout callout--tip fragment">
+      <div class="callout__icon">🔢</div>
+      <div class="callout__body">
+        <span class="callout__title">قرّب الأرقام دايمًا عشان تحسب في دماغك</span>
+        استخدم <span class="ltr">100,000</span> ثانية في اليوم بدل <span class="ltr">86,400</span>.
+        <br>استخدم <span class="ltr">1,000</span> بدل <span class="ltr">1,024</span>.
+        <br>الفرق في النتيجة النهائية أقل من <span class="ltr">20%</span> — وده مقبول تمامًا في التقدير،
+        والمكسب إنك تقدر تحسب بسرعة من غير آلة حاسبة.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 25 ═════ -->
+<section class="slide" data-title="جدول الوحدات">
+  <div class="slide__head">
+    <span class="eyebrow">مرجع</span>
+    <h2 class="slide__title">الأرقام اللي هتستخدمها في كل حسبة</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g2">
+      <div class="card card--a">
+        <div class="card__icon">⏱️</div>
+        <h3 class="card__title">الزمن</h3>
+        <div class="math mb0">
+<span class="lbl">ثواني/يوم</span>  <span class="eq">=</span> <span class="n">86,400</span>  <span class="cmt">≈ 100,000 (نقرّبها)</span>
+<span class="lbl">ثواني/شهر</span>  <span class="eq">≈</span> <span class="n">2.5</span> <span class="var">مليون</span>
+<span class="lbl">ثواني/سنة</span>  <span class="eq">≈</span> <span class="n">31.5</span> <span class="var">مليون</span>
+<span class="lbl">ساعات/سنة</span>  <span class="eq">=</span> <span class="n">8,760</span>
+        </div>
+      </div>
+      <div class="card card--v">
+        <div class="card__icon">📦</div>
+        <h3 class="card__title">أحجام البيانات</h3>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li>حرف إنجليزي = <strong class="ltr">1 byte</strong> · حرف عربي = <strong class="ltr">2 bytes</strong></li>
+          <li><span class="term">GUID</span> = <strong class="ltr">16 bytes</strong> · <code>long</code> = <strong class="ltr">8 bytes</strong></li>
+          <li>رابط عادي ≈ <strong class="ltr">100 bytes</strong></li>
+          <li>تعليق/تغريدة ≈ <strong class="ltr">300 bytes</strong></li>
+          <li>صف عادي في جدول ≈ <strong class="ltr">1 KB</strong></li>
+          <li>صورة مضغوطة ≈ <strong class="ltr">200 KB</strong></li>
+          <li>دقيقة فيديو <span class="ltr">1080p</span> ≈ <strong class="ltr">50 MB</strong></li>
+        </ul>
+      </div>
+      <div class="card card--e full">
+        <div class="card__icon">🖥️</div>
+        <h3 class="card__title">قدرات سيرفر واحد (تقريبية — للاستئناس)</h3>
+        <div class="grid g3">
+          <ul class="clean sm mb0" style="color:var(--text-dim)">
+            <li>سيرفر تطبيقات: <strong class="ltr">1,000 – 5,000 RPS</strong></li>
+            <li>قراءة من SQL: <strong class="ltr">~10,000 QPS</strong></li>
+          </ul>
+          <ul class="clean sm mb0" style="color:var(--text-dim)">
+            <li>كتابة في SQL: <strong class="ltr">~1,000 – 5,000 QPS</strong></li>
+            <li>Redis: <strong class="ltr">50,000 – 100,000+ ops/s</strong></li>
+          </ul>
+          <ul class="clean sm mb0" style="color:var(--text-dim)">
+            <li>ذاكرة سيرفر عادي: <strong class="ltr">64 – 256 GB</strong></li>
+            <li>قرص NVMe: <strong class="ltr">2 – 8 TB</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 26 ═════ -->
+<section class="slide" data-title="حساب الـ QPS خطوة بخطوة">
+  <div class="slide__head">
+    <span class="eyebrow">الحسبة 01</span>
+    <h2 class="slide__title">إزاي تحسب الـ <span class="term term--a">QPS</span>؟</h2>
+    <p class="slide__sub">دايمًا أول رقم بتحسبه — لأن كل حاجة تانية بتتبني عليه.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="math">
+<span class="cmt">// ═══ الخطوة 1: الافتراضات (نعلنها بوضوح) ═══</span>
+<span class="lbl">DAU</span>             <span class="eq">=</span> <span class="n">100</span> <span class="var">مليون</span>
+<span class="lbl">قراءات/مستخدم/يوم</span> <span class="eq">=</span> <span class="n">20</span>
+<span class="lbl">كتابات/مستخدم/يوم</span> <span class="eq">=</span> <span class="n">2</span>
+
+<span class="cmt">// ═══ الخطوة 2: المتوسط في الثانية ═══</span>
+<span class="lbl">Read QPS</span>  <span class="eq">=</span> (<span class="n">100M</span> × <span class="n">20</span>) / <span class="n">100,000</span> <span class="eq">=</span> <span class="res">20,000</span>
+<span class="lbl">Write QPS</span> <span class="eq">=</span> (<span class="n">100M</span> × <span class="n">2</span>)  / <span class="n">100,000</span> <span class="eq">=</span> <span class="res">2,000</span>
+
+<span class="cmt">// ═══ الخطوة 3: النسبة بينهم ═══</span>
+<span class="lbl">Read : Write</span> <span class="eq">=</span> <span class="res">10 : 1</span>
+
+<span class="cmt">// ═══ الخطوة 4: الذروة = 2 إلى 3 أضعاف المتوسط ═══</span>
+<span class="lbl">Peak Read</span>  <span class="eq">=</span> <span class="n">20,000</span> × <span class="n">3</span> <span class="eq">=</span> <span class="res">60,000 QPS</span>
+    </div>
+
+    <div class="decode fragment">
+      <div class="decode__raw">(100M × 20) / 100,000 = 20,000</div>
+      <div class="decode__hint">إزاي طلعت الحسبة دي بالظبط</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">100M × 20</span>
+          <div class="decode__exp">100 مليون مستخدم، كل واحد بيعمل 20 قراءة ⇒ <b>2 مليار قراءة في اليوم</b>.</div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">÷ 100,000</span>
+          <div class="decode__exp">عايزين نعرف كام في <b>الثانية</b>، فبنقسّم على عدد الثواني في اليوم (قرّبناها من 86,400 لـ 100,000).</div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">= 20,000</span>
+          <div class="decode__exp">يعني <b>20 ألف قراءة كل ثانية</b> في المتوسط على مدار اليوم.</div>
+        </div>
+      </div>
+      <div class="decode__sum">في المتوسط بيوصل السيرفر 20 ألف طلب قراءة و2000 طلب كتابة كل ثانية.</div>
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">🔑</div>
+      <div class="callout__body">
+        <span class="callout__title">نسبة القراءة للكتابة هي مفتاح التصميم كله</span>
+        <strong class="ltr">10:1</strong> أو أعلى ⇒ نظام <span class="term term--v">Read-Heavy</span> ⇒
+        الحل: <span class="term term--v">Cache</span> + <span class="term term--v">Read Replicas</span> + <span class="term term--v">CDN</span>.
+        <br><strong class="ltr">1:1</strong> أو الكتابة أعلى ⇒ نظام <span class="term term--r">Write-Heavy</span> ⇒
+        الحل: <span class="term term--r">Sharding</span> + <span class="term term--r">Message Queue</span>.
+        <br><br><em>يعني الرقم ده لوحده بيحدّدلك نص المعمارية.</em>
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 8 — احسب بنفسك<span class="exercise__level">سهل</span></div>
+      <div class="exercise__body">
+        <p>
+          تطبيق توصيل أكل: <span class="ltr">2</span> مليون <span class="term">DAU</span>.
+          كل مستخدم بيفتح التطبيق ويتصفّح <span class="ltr">30</span> مرة، وبيعمل <span class="ltr">0.5</span> طلب في اليوم.
+          <br>احسب: Read QPS · Write QPS · النسبة · الذروة (× 3).
+        </p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="math">
+<span class="lbl">Read QPS</span>  <span class="eq">=</span> (<span class="n">2,000,000</span> × <span class="n">30</span>) / <span class="n">100,000</span> <span class="eq">=</span> <span class="res">600</span>
+<span class="lbl">Write QPS</span> <span class="eq">=</span> (<span class="n">2,000,000</span> × <span class="n">0.5</span>) / <span class="n">100,000</span> <span class="eq">=</span> <span class="res">10</span>
+<span class="lbl">Ratio</span>     <span class="eq">=</span> <span class="res">60 : 1</span>
+<span class="lbl">Peak Read</span> <span class="eq">=</span> <span class="n">600</span> × <span class="n">3</span> <span class="eq">=</span> <span class="res">1,800 QPS</span>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">إيه اللي الأرقام دي بتقوله؟</span>
+              <strong>1.</strong> النسبة <span class="ltr">60:1</span> ⇒ النظام ده قراءة بحتة تقريبًا.
+              الاستثمار الصح هنا في الـ Cache مش في تقوية الكتابة.
+              <br><strong>2.</strong> <span class="ltr">10</span> عمليات كتابة في الثانية بس! ⇒
+              قاعدة بيانات واحدة عادية هتستحمل الكتابة من غير أي تعقيد.
+              <br><strong>3.</strong> ذروة <span class="ltr">1,800 QPS</span> ⇒ سيرفرين تلاتة كفاية.
+              <br><br><em>لاحظ إن التطبيق ده — رغم إن عنده 2 مليون مستخدم — مش محتاج معمارية معقدة أصلاً.
+              وده اكتشاف مهم: الأرقام بتمنعك من المبالغة في التصميم.</em>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 27 ═════ -->
+<section class="slide" data-title="حساب التخزين">
+  <div class="slide__head">
+    <span class="eyebrow">الحسبة 02</span>
+    <h2 class="slide__title">حساب حجم التخزين</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="math">
+<span class="cmt">// ═══ الحساب الخام ═══</span>
+<span class="lbl">كتابات/يوم</span>   <span class="eq">=</span> <span class="n">2,000</span> <span class="var">QPS</span> × <span class="n">100,000</span> <span class="eq">=</span> <span class="n">200</span> <span class="var">مليون</span>
+<span class="lbl">حجم الصف</span>     <span class="eq">=</span> <span class="n">500</span> <span class="var">bytes</span>
+<span class="lbl">يوميًا</span>       <span class="eq">=</span> <span class="n">200M</span> × <span class="n">500B</span> <span class="eq">=</span> <span class="n">100 GB</span>/<span class="cmt">يوم</span>
+<span class="lbl">سنويًا</span>       <span class="eq">=</span> <span class="n">100 GB</span> × <span class="n">365</span> <span class="eq">=</span> <span class="res">36.5 TB</span>
+<span class="lbl">5 سنين</span>       <span class="eq">=</span> <span class="res">~183 TB</span>
+
+<span class="cmt">// ═══ ⚠️ لكن ده مش الرقم الحقيقي! ═══</span>
+<span class="lbl">× النسخ المتماثل</span> (<span class="n">3</span> <span class="cmt">نسخ</span>) <span class="eq">→</span> <span class="n">549 TB</span>
+<span class="lbl">× الفهارس</span>      (<span class="cmt">+30%</span>)     <span class="eq">→</span> <span class="n">714 TB</span>
+<span class="lbl">× النسخ الاحتياطي</span>              <span class="eq">→</span> <span class="res">~1 PB</span>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">أهم درس في السلايد دي</span>
+      الرقم الخام (<span class="ltr">183 TB</span>) اتضاعف لحوالي <strong>5 أضعاف</strong> (<span class="ltr">1 PB</span>)
+      لما ضفنا الحاجات اللي الناس بتنساها.
+      <br>لو خططت على الرقم الخام، هتلاقي نفسك محتاج تشتري تخزين طارئ بعد سنة.
+    </div>
+
+    <div class="grid g3 fragment">
+      <div class="callout callout--danger">
+        <div class="callout__icon">📑</div>
+        <div class="callout__body sm">
+          <strong>النسخ المتماثل (Replication)</strong><br>
+          أي قاعدة بيانات إنتاجية بتحتفظ بـ 3 نسخ على الأقل عشان لو سيرفر وقع.
+          ده بيضرب رقمك في 3 على طول.
+        </div>
+      </div>
+      <div class="callout callout--warn">
+        <div class="callout__icon">📇</div>
+        <div class="callout__body sm">
+          <strong>الفهارس (Indexes)</strong><br>
+          كل فهرس بياخد مساحة. جدول عليه 5 فهارس ممكن الفهارس تبقى أكبر من البيانات نفسها.
+        </div>
+      </div>
+      <div class="callout callout--tip">
+        <div class="callout__icon">🗄️</div>
+        <div class="callout__body sm">
+          <strong>الحل: التخزين المتدرّج</strong><br>
+          بيانات آخر 30 يوم على قرص سريع وغالي، والأقدم على تخزين بطيء أرخص بـ 10 أضعاف.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 28 ═════ -->
+<section class="slide" data-title="حساب الـ Bandwidth والتكلفة">
+  <div class="slide__head">
+    <span class="eyebrow">الحسبة 03</span>
+    <h2 class="slide__title">حساب عرض النطاق — ودي أغلى حسبة</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="math">
+<span class="cmt">// ═══ منصة صور ═══</span>
+<span class="lbl">Upload QPS</span> <span class="eq">=</span> <span class="n">1,000</span>   <span class="lbl">حجم الصورة</span> <span class="eq">=</span> <span class="n">2 MB</span>
+<span class="lbl">View QPS</span>   <span class="eq">=</span> <span class="n">50,000</span>  <span class="lbl">الحجم المعروض</span> <span class="eq">=</span> <span class="n">300 KB</span>
+
+<span class="lbl">Ingress</span> <span class="eq">=</span> <span class="n">1,000</span> × <span class="n">2 MB</span>   <span class="eq">=</span> <span class="res">2 GB/s</span>
+<span class="lbl">Egress</span>  <span class="eq">=</span> <span class="n">50,000</span> × <span class="n">300 KB</span> <span class="eq">=</span> <span class="res">15 GB/s</span>
+
+<span class="cmt">// ═══ التكلفة الشهرية (~$0.09 لكل GB خارج) ═══</span>
+<span class="lbl">شهريًا</span> <span class="eq">=</span> <span class="n">15 GB/s</span> × <span class="n">2.5M</span> <span class="cmt">ثانية</span> <span class="eq">=</span> <span class="n">37.5 PB</span>
+<span class="lbl">التكلفة</span> <span class="eq">=</span> <span class="n">37.5M GB</span> × <span class="n">$0.09</span> <span class="eq">=</span> <span class="res">$3.4 مليون/شهر</span> 😱
+
+<span class="cmt">// ═══ مع CDN بيخدم 90% من الطلبات ═══</span>
+<span class="lbl">من المصدر</span> <span class="eq">=</span> <span class="n">10%</span> <span class="cmt">بس</span> <span class="eq">→</span> <span class="res">~$340K + تكلفة الـ CDN (أرخص بكتير)</span>
+    </div>
+
+    <div class="decode fragment">
+      <div class="decode__raw">Ingress vs Egress</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">Ingress</span>
+          <div class="decode__exp">
+            <b>البيانات الداخلة</b> لمركز البيانات (الرفع من المستخدمين).
+            <br>عند معظم مزوّدي السحابة <strong>مجانية أو رخيصة جدًا</strong>.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">Egress</span>
+          <div class="decode__exp">
+            <b>البيانات الخارجة</b> للمستخدمين (التحميل).
+            <br><strong>دي اللي بتدفع فيها فلوس</strong> — وغالبًا أكبر بند في فاتورة السحابة كلها.
+          </div>
+        </div>
+      </div>
+      <div class="decode__sum">
+        عشان كده بنقول: صمّم عشان تقلّل الـ Egress. وأقوى أداة لده هي الـ <b>CDN</b>.
+      </div>
+    </div>
+
+    <div class="callout callout--key fragment">
+      <div class="callout__icon">💸</div>
+      <div class="callout__body">
+        <span class="callout__title">هنا بالظبط بيتولد قرار الـ CDN</span>
+        احنا ما اخترناش الـ <span class="term term--v">CDN</span> لأنه «أفضل ممارسة» —
+        اخترناه لأن <strong>الحسبة قالت إن من غيره الفاتورة 3.4 مليون دولار شهريًا</strong>.
+        <br><em>دي بالظبط طريقة التفكير المطلوبة: القرار بيطلع من الرقم، مش من الموضة.</em>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 29 ═════ -->
+<section class="slide" data-title="حساب عدد السيرفرات">
+  <div class="slide__head">
+    <span class="eyebrow">الحسبة 04</span>
+    <h2 class="slide__title">كام سيرفر أحتاج؟</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="math">
+<span class="lbl">Peak RPS</span>       <span class="eq">=</span> <span class="n">60,000</span>
+<span class="lbl">RPS/سيرفر</span>      <span class="eq">=</span> <span class="n">2,000</span>
+
+<span class="lbl">الحساب الخام</span>   <span class="eq">=</span> <span class="n">60,000</span> / <span class="n">2,000</span> <span class="eq">=</span> <span class="n">30</span> <span class="cmt">سيرفر</span>
+
+<span class="cmt">// ⚠️ ما تشغّلش على 100% — فيه قواعد</span>
+<span class="lbl">نسبة الاستغلال</span> <span class="eq">=</span> <span class="n">60%</span>
+<span class="lbl">العدد</span>          <span class="eq">=</span> <span class="n">30</span> / <span class="n">0.6</span> <span class="eq">=</span> <span class="n">50</span> <span class="cmt">سيرفر</span>
+<span class="lbl">+ N+2</span>          <span class="eq">=</span> <span class="n">52</span>
+<span class="lbl">× توزيع على 3 مناطق</span> <span class="eq">=</span> <span class="res">54 سيرفر</span>
+    </div>
+
+    <div class="grid g3 fragment">
+      <div class="card card--flat card--a">
+        <h4 class="card__title">🎚️ ليه 60% مش 100%؟</h4>
+        <p class="card__body sm">
+          عند حوالي <span class="ltr">70%</span> استغلال، الـ Latency بيبدأ يزيد <strong>بشكل أسّي</strong> —
+          دي ظاهرة معروفة في نظرية الطوابير.
+          <br>وكمان محتاج مساحة لـ: توقفات جامع القمامة في .NET، والنشر، وموجات الحمل المفاجئة.
+        </p>
+      </div>
+      <div class="card card--flat card--e">
+        <h4 class="card__title">🔁 يعني إيه N+2؟</h4>
+        <p class="card__body sm">
+          <span class="term term--e">N</span> = العدد المطلوب فعليًا.
+          <br><span class="term term--e">N+1</span> = يتحمّل فشل سيرفر واحد.
+          <br><span class="term term--e">N+2</span> = يتحمّل اتنين — مثلاً سيرفر واقع + سيرفر بيتعمله تحديث في نفس الوقت.
+        </p>
+      </div>
+      <div class="card card--flat card--v">
+        <h4 class="card__title">🌍 ليه نوزّع على مناطق؟</h4>
+        <p class="card__body sm">
+          لو <span class="term term--v">Availability Zone</span> كاملة وقعت (وده بيحصل فعلاً كل سنة تقريبًا)،
+          لازم الـ 2 الباقيين يستحملوا الحمل كله. فبنوزّع بالتساوي ونحسب على أساس فقدان واحدة.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 30 ═════ -->
+<section class="slide" data-title="مثال متكامل: تقدير كامل">
+  <div class="slide__head">
+    <span class="eyebrow">مثال محلول شامل</span>
+    <h2 class="slide__title">نجمّع كل الحسابات في مثال واحد</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="example">
+      <div class="example__head">منصة مشاركة صور — التقدير الكامل</div>
+      <div class="example__body">
+        <div class="grid g2">
+          <div class="math">
+<span class="cmt">// ═══ 1. المستخدمون والحمل ═══</span>
+<span class="lbl">DAU</span> <span class="eq">=</span> <span class="n">50M</span>
+<span class="lbl">صور/مستخدم/يوم</span> <span class="eq">=</span> <span class="n">0.2</span>
+<span class="lbl">مشاهدات/مستخدم/يوم</span> <span class="eq">=</span> <span class="n">50</span>
+
+<span class="lbl">Write QPS</span> <span class="eq">=</span> <span class="res">100</span>
+<span class="lbl">Read QPS</span>  <span class="eq">=</span> <span class="res">25,000</span>
+<span class="lbl">Peak</span>      <span class="eq">=</span> <span class="res">75,000</span>
+<span class="lbl">النسبة</span>    <span class="eq">=</span> <span class="res">250 : 1</span>
+
+<span class="cmt">// ═══ 2. التخزين ═══</span>
+<span class="lbl">صور/يوم</span> <span class="eq">=</span> <span class="n">10M</span>
+<span class="lbl">الحجم مع النسخ المصغّرة</span> <span class="eq">=</span> <span class="n">2.5 MB</span>
+<span class="lbl">سنويًا</span> <span class="eq">=</span> <span class="res">~9 PB</span>
+          </div>
+
+          <div class="stack">
+            <div class="math" style="border-color:var(--violet)">
+<span class="cmt">// ═══ 3. الشبكة ═══</span>
+<span class="lbl">Egress</span> <span class="eq">=</span> <span class="res">22 GB/s</span>
+
+<span class="cmt">// ═══ 4. الكاش ═══</span>
+<span class="lbl">Redis</span> <span class="eq">=</span> <span class="res">~150 GB</span>
+
+<span class="cmt">// ═══ 5. السيرفرات ═══</span>
+<span class="lbl">App</span> <span class="eq">=</span> <span class="res">~63</span>
+<span class="lbl">DB</span>  <span class="eq">=</span> <span class="res">1 رئيسية + 5 نسخ قراءة</span>
+            </div>
+
+            <div class="callout callout--key">
+              <div class="callout__icon">🧠</div>
+              <div class="callout__body sm">
+                <span class="callout__title">القرارات اللي طلعت من الأرقام</span>
+                <strong class="ltr">250:1</strong> ⇒ نسخ قراءة + كاش قوي.<br>
+                <strong class="ltr">22 GB/s</strong> ⇒ CDN إجباري.<br>
+                <strong class="ltr">9 PB/سنة</strong> ⇒ تخزين كائنات مش قاعدة بيانات.<br>
+                <strong class="ltr">100 كتابة/ثانية بس</strong> ⇒ قاعدة بيانات واحدة كفاية للكتابة!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plain mt">
+          <span class="plain__label">لاحظ حاجة مهمة</span>
+          رغم إن النظام ضخم (50 مليون مستخدم)، الكتابة <strong>100 عملية في الثانية بس</strong> —
+          يعني ماحناش محتاجين أي تعقيد في جهة الكتابة.
+          <br>كل التعقيد المطلوب في جهة <em>القراءة والتوصيل</em>. الأرقام هي اللي قالتلنا نركّز فين.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 31 ═════ -->
+<section class="slide" data-title="راجع نفسك: التقدير">
+  <div class="slide__head">
+    <span class="eyebrow">مراجعة</span>
+    <h2 class="slide__title">تمارين التقدير</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="exercise">
+      <div class="exercise__head">تمرين 9 — نظام دردشة<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__body">
+        <p>
+          <span class="ltr">10</span> مليون <span class="term">DAU</span>، كل مستخدم بيبعت
+          <span class="ltr">40</span> رسالة في اليوم، متوسط حجم الرسالة <span class="ltr">200 bytes</span>.
+          <br>احسب: Write QPS · التخزين السنوي الخام · التخزين الفعلي بعد النسخ (×3) والفهارس (+30%).
+        </p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="math">
+<span class="lbl">رسائل/يوم</span> <span class="eq">=</span> <span class="n">10M</span> × <span class="n">40</span> <span class="eq">=</span> <span class="n">400</span> <span class="var">مليون</span>
+<span class="lbl">Write QPS</span> <span class="eq">=</span> <span class="n">400M</span> / <span class="n">100,000</span> <span class="eq">=</span> <span class="res">4,000</span>
+
+<span class="lbl">حجم/يوم</span> <span class="eq">=</span> <span class="n">400M</span> × <span class="n">200B</span> <span class="eq">=</span> <span class="n">80 GB</span>
+<span class="lbl">خام/سنة</span> <span class="eq">=</span> <span class="n">80</span> × <span class="n">365</span> <span class="eq">=</span> <span class="res">29 TB</span>
+
+<span class="lbl">× 3 نسخ</span>  <span class="eq">=</span> <span class="n">87 TB</span>
+<span class="lbl">× 1.3 فهارس</span> <span class="eq">=</span> <span class="res">~113 TB/سنة</span>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">التحليل</span>
+              <strong class="ltr">4,000 Write QPS</strong> ده رقم كبير للكتابة —
+              قاعدة بيانات SQL واحدة هتلهث. ⇒ ده نظام <span class="term term--r">Write-Heavy</span>،
+              والحل هيبقى تقسيم البيانات وطابور رسائل.
+              <br><strong class="ltr">113 TB/سنة</strong> ⇒ لازم خطة أرشفة: الرسائل الأقدم من سنة تتنقل لتخزين رخيص.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 10 — قرار التكلفة<span class="exercise__level">صعب</span></div>
+      <div class="exercise__body">
+        <p>
+          موقعك بيخدم <span class="ltr">5,000</span> طلب/ثانية، ومتوسط حجم الرد <span class="ltr">150 KB</span>.
+          <br>احسب تكلفة الـ <span class="term">Egress</span> الشهرية بسعر <span class="ltr">$0.09/GB</span>.
+          <br>لو الـ CDN هيخدم <span class="ltr">85%</span> من الطلبات بسعر <span class="ltr">$0.02/GB</span>، هتوفّر كام؟
+        </p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="math">
+<span class="cmt">// من غير CDN</span>
+<span class="lbl">Egress</span> <span class="eq">=</span> <span class="n">5,000</span> × <span class="n">150 KB</span> <span class="eq">=</span> <span class="n">750 MB/s</span>
+<span class="lbl">شهريًا</span> <span class="eq">=</span> <span class="n">0.75 GB/s</span> × <span class="n">2.5M</span> <span class="eq">=</span> <span class="n">1,875,000 GB</span>
+<span class="lbl">التكلفة</span> <span class="eq">=</span> <span class="n">1,875,000</span> × <span class="n">$0.09</span> <span class="eq">=</span> <span class="res">$168,750</span>
+
+<span class="cmt">// مع CDN (85% من الحافة، 15% من المصدر)</span>
+<span class="lbl">من المصدر</span> <span class="eq">=</span> <span class="n">15%</span> × <span class="n">1,875,000</span> × <span class="n">$0.09</span> <span class="eq">=</span> <span class="n">$25,312</span>
+<span class="lbl">من الـ CDN</span> <span class="eq">=</span> <span class="n">85%</span> × <span class="n">1,875,000</span> × <span class="n">$0.02</span> <span class="eq">=</span> <span class="n">$31,875</span>
+<span class="lbl">الإجمالي</span> <span class="eq">=</span> <span class="res">$57,187</span>
+
+<span class="lbl">التوفير</span> <span class="eq">=</span> <span class="res">$111,563/شهر  (66%)</span>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">الدرس</span>
+              التوفير <strong>1.3 مليون دولار في السنة</strong> — من قرار معماري واحد.
+              <br>ولاحظ إن الحسبة دي هي اللي بتبرّر القرار قدام الإدارة، مش «الـ CDN حاجة كويسة».
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 31b ═════ -->
+<section class="slide" data-title="نفكّك: 60% utilization و N+2">
+  <div class="slide__head">
+    <span class="eyebrow">نقف ونفكّك 🔍</span>
+    <h2 class="slide__title">اللي مكتوب في حسبة السيرفرات معناه إيه؟</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="decode">
+      <div class="decode__raw">30 / 0.6 = 50 servers, then N+2, across 3 AZs</div>
+      <div class="decode__rows">
+        <div class="decode__row">
+          <span class="decode__tok">/ 0.6</span>
+          <div class="decode__exp">
+            القسمة على <b>0.6</b> معناها إننا عايزين السيرفرات تشتغل على <b>60%</b> من طاقتها بس.
+            <br>ليه؟ لأن الأداء بيسوء بشدة بعد <span class="ltr">~70%</span> استغلال — نفس ظاهرة الطريق:
+            الطريق بيمشي كويس لحد ما يوصل لـ 70% امتلاء، وبعدين بيقف فجأة.
+            <br>القسمة على <span class="ltr">0.6</span> = الضرب في <span class="ltr">1.67</span> ⇒ بنزوّد العدد 67%.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">N+2</span>
+          <div class="decode__exp">
+            <b>N</b> = العدد اللي محتاجه فعلاً. <b>+2</b> = سيرفرين زيادة.
+            <br>ليه اتنين مش واحد؟ عشان السيناريو الواقعي: سيرفر واقع فجأة
+            <b>+</b> سيرفر تاني مقفول عشان بيتعمله تحديث في نفس اللحظة.
+          </div>
+        </div>
+        <div class="decode__row">
+          <span class="decode__tok">3 AZs</span>
+          <div class="decode__exp">
+            <b>3 مناطق توافر</b> — <span class="term">Availability Zones</span>.
+            مراكز بيانات منفصلة (كهربا وشبكة مستقلة) جوّه نفس المدينة تقريبًا.
+            <br>بنوزّع السيرفرات عليهم بالتساوي، عشان لو منطقة كاملة وقعت،
+            الـ 2 الباقيين يقدروا يشيلوا الحمل.
+          </div>
+        </div>
+      </div>
+      <div class="decode__sum">
+        محتاج 30 سيرفر نظريًا ⟵ بس بنشغّلهم على 60% فبقوا 50 ⟵ بنزوّد 2 احتياطي فبقوا 52
+        ⟵ بنقرّبهم لرقم يتقسم على 3 مناطق فبقوا <b>54 سيرفر</b>، يعني 18 في كل منطقة.
+      </div>
+    </div>
+
+    <div class="example fragment">
+      <div class="example__head">مثال محلول: ليه 70% هي نقطة الانهيار؟</div>
+      <div class="example__body">
+        <p>
+          دي مش قاعدة عشوائية — دي نتيجة رياضية من <strong>نظرية الطوابير</strong>.
+          زمن الانتظار في أي طابور بيتناسب مع:
+        </p>
+        <div class="math">
+<span class="lbl">Wait</span> <span class="eq">∝</span> <span class="var">ρ</span> / (<span class="n">1</span> <span class="eq">−</span> <span class="var">ρ</span>)   <span class="cmt">// ρ = نسبة الاستغلال</span>
+
+<span class="lbl">عند ρ = 0.5</span>  <span class="eq">→</span> <span class="n">0.5</span> / <span class="n">0.5</span> <span class="eq">=</span> <span class="res">1</span>     <span class="cmt">// الانتظار = وحدة واحدة</span>
+<span class="lbl">عند ρ = 0.7</span>  <span class="eq">→</span> <span class="n">0.7</span> / <span class="n">0.3</span> <span class="eq">=</span> <span class="res">2.3</span>   <span class="cmt">// اتضاعف أكتر من مرتين</span>
+<span class="lbl">عند ρ = 0.9</span>  <span class="eq">→</span> <span class="n">0.9</span> / <span class="n">0.1</span> <span class="eq">=</span> <span class="res">9</span>     <span class="cmt">// 9 أضعاف!</span>
+<span class="lbl">عند ρ = 0.95</span> <span class="eq">→</span> <span class="n">0.95</span> / <span class="n">0.05</span> <span class="eq">=</span> <span class="res">19</span>   <span class="cmt">// كارثة</span>
+        </div>
+        <div class="plain mt">
+          <span class="plain__label">يعني إيه بالبلدي؟</span>
+          من <span class="ltr">50%</span> لـ <span class="ltr">70%</span> استغلال، زوّدت الحمل <span class="ltr">40%</span> بس —
+          والانتظار زاد <strong>130%</strong>.
+          <br>من <span class="ltr">90%</span> لـ <span class="ltr">95%</span>، زوّدت <span class="ltr">5%</span> —
+          والانتظار زاد <strong>110%</strong> تاني!
+          <br><br>عشان كده سيرفر «شغّال على 95%» مش سيرفر مستغَل كويس — ده سيرفر على حافة الانهيار.
+        </div>
+      </div>
+    </div>
+
+    <div class="checkpoint fragment">
+      <div class="checkpoint__title">قبل ما تكمل</div>
+      <ul>
+        <li>ليه بنقسّم على <span class="ltr">0.6</span> بدل ما نستخدم العدد الخام؟</li>
+        <li>إيه الفرق بين <span class="term">N+1</span> و<span class="term">N+2</span>؟ وإمتى تحتاج كل واحد؟</li>
+        <li>لو عندك 3 مناطق وواحدة وقعت، كل منطقة باقية لازم تستحمل كام % من الحمل؟</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 32 — DIVIDER ═════ -->
+<section class="slide slide--center" data-title="الجزء 4: منهجية التصميم" data-divider>
+  <div class="divider" style="--accent:var(--emerald)">
+    <div class="divider__num">04</div>
+    <h2 class="divider__title">منهجية التصميم</h2>
+    <p class="divider__sub">ترتيب ثابت تمشي عليه في أي نظام هتصمّمه — سواء لشغلك أو لمشروعك.</p>
+  </div>
+</section>
+
+<!-- ═════ 33 ═════ -->
+<section class="slide" data-title="الأربع خطوات">
+  <div class="slide__head">
+    <span class="eyebrow">المنهجية</span>
+    <h2 class="slide__title">أربع خطوات تمشي عليها كل مرة</h2>
+    <p class="slide__sub">الترتيب مش عشوائي — كل خطوة بتوفّر مدخلات للخطوة اللي بعدها.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <ol class="steps">
+      <li style="--accent:var(--cyan)">
+        <h4>افهم المشكلة</h4>
+        <p>
+          حدّد الـ <span class="term">Functional Requirements</span> (3–5 أساسيين بس)،
+          والـ <span class="term">NFRs</span> بالأرقام، واعمل الحسابات التقريبية.
+          واكتب بوضوح إيه اللي <span class="term">Out of Scope</span>.
+          <br><em>أكبر خطأ: تبدأ ترسم قبل ما تعرف بتحل إيه.</em>
+        </p>
+      </li>
+      <li style="--accent:var(--violet)">
+        <h4>ارسم الصورة الكبيرة</h4>
+        <p>
+          المكوّنات الرئيسية والأسهم بينها: العميل ← موزّع الأحمال ← الخدمات ← الكاش ← قاعدة البيانات.
+          عرّف الـ <span class="term term--v">API</span> الأساسي، وارسم نموذج البيانات المبدئي.
+          <br><em>خلّيه بسيط. مش وقت التفاصيل.</em>
+        </p>
+      </li>
+      <li style="--accent:var(--amber)">
+        <h4>اغوص في التفاصيل</h4>
+        <p>
+          خُد مكوّن أو اتنين واشتغل عليهم بعمق: إزاي هتقسّم البيانات؟
+          إيه استراتيجية الكاش؟ إيه الفهارس؟ إيه نموذج الاتساق؟
+        </p>
+      </li>
+      <li style="--accent:var(--rose)">
+        <h4>اكسر التصميم عمدًا</h4>
+        <p>
+          دوّر على <span class="term term--r">SPOF</span>. اسأل: «لو ده وقع، إيه اللي يحصل؟»
+          و«لو الحمل اتضاعف 10 مرات فين هينكسر؟».
+          <br><em>ده الجزء اللي بيحوّل رسمة جميلة لتصميم حقيقي.</em>
+        </p>
+      </li>
+    </ol>
+
+    <div class="plain fragment">
+      <span class="plain__label">ليه الترتيب ده بالذات؟</span>
+      لأن كل خطوة بتحتاج نتيجة اللي قبلها. مينفعش تختار قاعدة بيانات (خطوة 3)
+      قبل ما تعرف نسبة القراءة للكتابة (خطوة 1). ومينفعش تكتشف نقاط الفشل (خطوة 4)
+      قبل ما ترسم المكوّنات (خطوة 2).
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 34 ═════ -->
+<section class="slide" data-title="الأسئلة اللي تسألها في الخطوة الأولى">
+  <div class="slide__head">
+    <span class="eyebrow">أداة عملية</span>
+    <h2 class="slide__title">قائمة الأسئلة — احتفظ بيها</h2>
+    <p class="slide__sub">الأسئلة دي بتشتغل سواء بتصمّم نظام جديد أو بتحاول تفهم نظام قايم.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g2">
+      <div class="card card--c">
+        <div class="card__icon">👥</div>
+        <h3 class="card__title">عن المستخدمين والحجم</h3>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li>مين المستخدمين وكام واحد؟</li>
+          <li>عالمي ولا منطقة واحدة؟</li>
+          <li>معدل النمو المتوقع؟</li>
+          <li>فيه أوقات ذروة معروفة؟</li>
+        </ul>
+      </div>
+      <div class="card card--v">
+        <div class="card__icon">⚙️</div>
+        <h3 class="card__title">عن السلوك</h3>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li>قراءة أكتر ولا كتابة أكتر؟</li>
+          <li>حجم البيانات المتوقع؟</li>
+          <li>محتاج فوري ولا التأخير مقبول؟</li>
+          <li>إزاي المستخدمين بيوصلوا للبيانات؟</li>
+        </ul>
+      </div>
+      <div class="card card--a">
+        <div class="card__icon">🎚️</div>
+        <h3 class="card__title">عن الجودة والقيود</h3>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li>إيه التوافر المطلوب؟</li>
+          <li>الـ Latency المقبول كام؟</li>
+          <li>محتاج اتساق قوي ولا نهائي كفاية؟</li>
+          <li>فيه متطلبات أمان أو امتثال؟</li>
+          <li>فيه سقف للميزانية؟</li>
+        </ul>
+      </div>
+      <div class="card card--e">
+        <div class="card__icon">✂️</div>
+        <h3 class="card__title">عن حدود النطاق</h3>
+        <ul class="clean sm mb0" style="color:var(--text-dim)">
+          <li>إيه اللي مش هنعمله دلوقتي؟</li>
+          <li>فيه أنظمة قايمة لازم نتكامل معاها؟</li>
+          <li>فيه قيود على التقنيات المسموحة؟</li>
+          <li>الفريق حجمه وخبرته إيه؟</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--tip fragment">
+      <div class="callout__icon">💡</div>
+      <div class="callout__body">
+        <strong>السؤال الأخير أهم مما تتخيّل.</strong> معمارية ممتازة تقنيًا لكن فريقك مش قادر يشغّلها
+        = معمارية فاشلة. <span class="term">Microservices</span> بفريق من 3 أفراد
+        قرار سيء مهما كان صح «نظريًا».
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 35 ═════ -->
+<section class="slide" data-title="الصورة الكبيرة النموذجية">
+  <div class="slide__head">
+    <span class="eyebrow">قالب جاهز</span>
+    <h2 class="slide__title">الشكل اللي بيصلح كبداية لمعظم الأنظمة</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="flow flow--col">
+      <div class="flow__tier">
+        <div class="node node--b"><span class="node__ico">📱</span>موبايل</div>
+        <div class="node node--b"><span class="node__ico">💻</span>ويب</div>
+      </div>
+      <div class="flow__vert">↓</div>
+      <div class="flow__tier">
+        <div class="node node--c"><span class="node__ico">🌐</span>CDN<span class="node__sub">ملفات ثابتة</span></div>
+        <div class="node node--c"><span class="node__ico">⚖️</span>Load Balancer</div>
+      </div>
+      <div class="flow__vert">↓</div>
+      <div class="flow__tier">
+        <div class="node node--v"><span class="node__ico">🚪</span>API Gateway<span class="node__sub">مصادقة · حدود</span></div>
+      </div>
+      <div class="flow__vert">↓</div>
+      <div class="flow__tier">
+        <div class="node node--e"><span class="node__ico">⚙️</span>خدمة A</div>
+        <div class="node node--e"><span class="node__ico">⚙️</span>خدمة B</div>
+        <div class="node node--e"><span class="node__ico">⚙️</span>خدمة C</div>
+      </div>
+      <div class="flow__vert">↓</div>
+      <div class="flow__tier">
+        <div class="node node--a"><span class="node__ico">⚡</span>Redis<span class="node__sub">كاش</span></div>
+        <div class="node node--r"><span class="node__ico">🗄️</span>DB رئيسية<span class="node__sub">كتابة</span></div>
+        <div class="node node--r"><span class="node__ico">🗄️</span>نسخ قراءة</div>
+        <div class="node node--v"><span class="node__ico">📨</span>طابور رسائل</div>
+        <div class="node node--c"><span class="node__ico">🪣</span>تخزين ملفات</div>
+      </div>
+    </div>
+
+    <div class="plain fragment">
+      <span class="plain__label">تتبّع طلب واحد من أوله لآخره</span>
+      المستخدم يفتح صفحة ⟵ الملفات الثابتة تيجي من الـ <strong>CDN</strong> (من غير ما توصل لسيرفرك أصلاً)
+      ⟵ طلب البيانات يروح للـ <strong>Load Balancer</strong> ⟵ يوجّهه لسيرفر متاح
+      ⟵ الـ <strong>Gateway</strong> يتحقق من هوية المستخدم ⟵ الخدمة تدوّر في الـ <strong>Redis</strong> الأول
+      ⟵ لو ملقتش، تروح لنسخة القراءة ⟵ وتحط النتيجة في الكاش للمرة الجاية.
+      <br><br><em>جرّب تعمل التتبّع ده بنفسك على أي رسمة معمارية — هيكشفلك الثغرات فورًا.</em>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 36 ═════ -->
+<section class="slide" data-title="التفكير بمنطق الـ Trade-offs">
+  <div class="slide__head">
+    <span class="eyebrow">المفهوم 14</span>
+    <h2 class="slide__title">مفيش تصميم مثالي — فيه بس <span class="term term--r">Trade-offs</span></h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="termcard termcard--r">
+      <div class="termcard__head">
+        <span class="termcard__en">Trade-off</span>
+        <span class="termcard__ar">مقايضة</span>
+      </div>
+      <div class="termcard__body">
+        <div class="tblock">
+          <span class="tblock__label">التعريف</span>
+          إنك <strong>تكسب حاجة وتخسر حاجة تانية</strong>. مفيش قرار معماري بيكسب في كل الاتجاهات —
+          لو لقيت قرار مفيهوش أي خسارة، غالبًا انت لسه ما اكتشفتش التمن.
+        </div>
+        <div class="tblock tblock--win">
+          <span class="tblock__label">إزاي تعبّر عنه صح</span>
+          «هختار كذا، <strong>لأن</strong> كذا، <strong>والتمن</strong> هو كذا، <strong>وده مقبول عندنا لأن</strong> كذا».
+          <br><br>مثال: «هستخدم <span class="term term--e">Eventual Consistency</span> لعدد المشاهدات
+          لأن ده هينزّل زمن القراءة من <span class="ltr">200ms</span> لـ <span class="ltr">20ms</span>،
+          والتمن إن الرقم ممكن يتأخر ثانيتين — وده مقبول لأن محدش بياخد قرار بناءً على عدد المشاهدات».
+        </div>
+      </div>
+    </div>
+
+    <div class="tablewrap fragment">
+      <table>
+        <thead><tr><th>لو عايز تكسب…</th><th>هتدفع تمن في…</th><th>مثال ملموس</th></tr></thead>
+        <tbody>
+          <tr><td>Consistency</td><td class="td-bad">Availability / Latency</td><td>النسخ المتزامن ⇒ الكتابة أبطأ لكن مفيش بيانات قديمة</td></tr>
+          <tr><td>Latency</td><td class="td-bad">Consistency / Cost</td><td>الكاش والـ CDN ⇒ أسرع بمراحل لكن ممكن تخدم بيانات قديمة</td></tr>
+          <tr><td>Availability</td><td class="td-bad">Cost / Complexity</td><td>توزيع على مناطق ⇒ تكلفة ×3 وتعقيد ×5</td></tr>
+          <tr><td>Scalability</td><td class="td-bad">Simplicity</td><td>Microservices ⇒ توسّع مستقل لكن تتبّع الأخطاء بقى صعب</td></tr>
+          <tr><td>Write Throughput</td><td class="td-bad">Read Performance</td><td>Denormalization مقابل Normalization</td></tr>
+          <tr><td>Developer Velocity</td><td class="td-bad">Runtime Performance</td><td>ORM بدل SQL مكتوب بإيدك</td></tr>
+          <tr><td>Security</td><td class="td-bad">Latency / UX</td><td>تشفير + مصادقة ثنائية + سجلات تدقيق</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="exercise fragment">
+      <div class="exercise__head">تمرين 11 — حدّد الـ Trade-off<span class="exercise__level">متوسط</span></div>
+      <div class="exercise__body">
+        <p>قرّرت تضيف <span class="term">Cache</span> قدام قاعدة البيانات. إيه اللي كسبته وإيه اللي دفعته؟</p>
+        <details class="solution">
+          <summary>شوف الحل</summary>
+          <div class="solution__body">
+            <div class="grid g2">
+              <div><h4 style="color:var(--emerald)">✅ اللي كسبته</h4>
+                <ul class="pc pc--pro sm mb0">
+                  <li>القراءة أسرع 10–100 مرة.</li>
+                  <li>ضغط أقل بكتير على قاعدة البيانات.</li>
+                  <li>تكلفة أقل (سيرفرات DB أقل).</li>
+                </ul></div>
+              <div><h4 style="color:var(--rose)">❌ اللي دفعته</h4>
+                <ul class="pc pc--con sm mb0">
+                  <li><strong>بيانات قديمة</strong> ممكن تتعرض للمستخدم.</li>
+                  <li>مكوّن جديد ممكن يقع (تعقيد + نقطة فشل).</li>
+                  <li>مشكلة <span class="term term--r">Cache Invalidation</span> — إمتى أمسح؟</li>
+                  <li>تكلفة ذاكرة إضافية.</li>
+                  <li>صعوبة في تتبّع الأخطاء: «ليه المستخدم شايف رقم قديم؟»</li>
+                </ul></div>
+            </div>
+            <div class="plain mt">
+              <span class="plain__label">الخلاصة</span>
+              الـ Cache <strong>مش مجاني</strong>. هو قرار بتمن.
+              وده مش معناه ما تستخدمهوش — معناه إنك تستخدمه <em>وانت عارف بتدفع إيه</em>،
+              وتحط خطة للتعامل مع التمن ده. وهناخده كله بالتفصيل في الموديول 06.
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 37 ═════ -->
+<section class="slide" data-title="تطبيق على .NET">
+  <div class="slide__head">
+    <span class="eyebrow">تطبيق عملي</span>
+    <h2 class="slide__title">إزاي المفاهيم دي بتترجم لكود <span class="term term--v">ASP.NET Core</span></h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="code">
+      <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>Program.cs</span><span class="code__lang">C# / .NET 9</span></div>
+<pre><code><span class="c">// ═══ 1) قياس الـ Latency فعليًا (عشان تعرف الـ p99 بتاعك) ═══</span>
+builder.Services.<span class="f">AddOpenTelemetry</span>()
+    .<span class="f">WithMetrics</span>(m <span class="p">=&gt;</span> m
+        .<span class="f">AddAspNetCoreInstrumentation</span>()   <span class="c">// زمن كل طلب</span>
+        .<span class="f">AddRuntimeInstrumentation</span>()      <span class="c">// توقفات الـ GC</span>
+        .<span class="f">AddOtlpExporter</span>());
+
+<span class="c">// ═══ 2) رفع الـ Availability: إعادة محاولة + قاطع دائرة ═══</span>
+builder.Services.<span class="f">AddHttpClient</span>&lt;<span class="t">InventoryClient</span>&gt;()
+    .<span class="f">AddStandardResilienceHandler</span>(o <span class="p">=&gt;</span>
+    {
+        o.Retry.MaxRetryAttempts <span class="p">=</span> <span class="n">3</span>;
+        o.Retry.UseJitter <span class="p">=</span> <span class="k">true</span>;            <span class="c">// يمنع كل العملاء يعيدوا في نفس اللحظة</span>
+        o.CircuitBreaker.FailureRatio <span class="p">=</span> <span class="n">0.5</span>;  <span class="c">// افتح الدائرة عند 50% فشل</span>
+        o.AttemptTimeout.Timeout <span class="p">=</span> <span class="t">TimeSpan</span>.<span class="f">FromSeconds</span>(<span class="n">2</span>);
+    });
+
+<span class="c">// ═══ 3) خلّي الخدمة Stateless (شرط التوسّع الأفقي) ═══</span>
+<span class="c">// ❌ ما تخزّنش حالة مشتركة في ذاكرة السيرفر</span>
+builder.Services.<span class="f">AddStackExchangeRedisCache</span>(o <span class="p">=&gt;</span> o.Configuration <span class="p">=</span> redisConn);
+builder.Services.<span class="f">AddDataProtection</span>()
+    .<span class="f">PersistKeysToStackExchangeRedis</span>(mux);  <span class="c">// أي سيرفر يقدر يفك أي Cookie</span>
+
+<span class="c">// ═══ 4) رفع الـ Throughput: افصل القراءة عن الكتابة ═══</span>
+builder.Services.<span class="f">AddDbContext</span>&lt;<span class="t">WriteDbContext</span>&gt;(o <span class="p">=&gt;</span> o.<span class="f">UseSqlServer</span>(primaryConn));
+builder.Services.<span class="f">AddDbContext</span>&lt;<span class="t">ReadDbContext</span>&gt;(o <span class="p">=&gt;</span> o
+    .<span class="f">UseSqlServer</span>(replicaConn)
+    .<span class="f">UseQueryTrackingBehavior</span>(<span class="t">QueryTrackingBehavior</span>.NoTracking));</code></pre>
+    </div>
+
+    <div class="code fragment">
+      <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>HealthChecks.cs</span><span class="code__lang">C# / .NET 9</span></div>
+<pre><code><span class="c">// ═══ الـ SLI عمليًا: إزاي النظام يقول عن نفسه إنه صحّي؟ ═══</span>
+builder.Services.<span class="f">AddHealthChecks</span>()
+    .<span class="f">AddSqlServer</span>(connectionString, name<span class="p">:</span> <span class="s">"sql"</span>,   tags<span class="p">:</span> [<span class="s">"ready"</span>])
+    .<span class="f">AddRedis</span>(redisConnection,     name<span class="p">:</span> <span class="s">"redis"</span>, tags<span class="p">:</span> [<span class="s">"ready"</span>]);
+
+<span class="c">// Liveness = هل العملية عايشة أصلاً؟</span>
+<span class="c">//   لو فشلت → أعد تشغيل الـ Pod. ماتفحصش فيها أي حاجة خارجية!</span>
+app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/live"</span>,  <span class="k">new</span>() { Predicate <span class="p">=</span> _ <span class="p">=&gt;</span> <span class="k">false</span> });
+
+<span class="c">// Readiness = هل جاهز يستقبل طلبات؟</span>
+<span class="c">//   لو فشلت → شيله من الـ Load Balancer مؤقتًا (من غير ما تعيد تشغيله)</span>
+app.<span class="f">MapHealthChecks</span>(<span class="s">"/health/ready"</span>, <span class="k">new</span>() { Predicate <span class="p">=</span> h <span class="p">=&gt;</span> h.Tags.<span class="f">Contains</span>(<span class="s">"ready"</span>) });</code></pre>
+    </div>
+    <div class="plain fragment">
+      <span class="plain__label">الفخ اللي بيوقّع أنظمة كاملة ⚠️</span>
+      لو حطيت فحص قاعدة البيانات في <code>/health/live</code> بدل <code>/health/ready</code>:
+      أول ما قاعدة البيانات تتأخر شوية، <strong>كل سيرفراتك هتتعاد تشغيلها في نفس الوقت</strong> —
+      وده بيحوّل بطء مؤقت لانقطاع كامل.
+      <br><strong>القاعدة:</strong> <span class="term">Liveness</span> يفحص العملية نفسها بس ·
+      <span class="term">Readiness</span> يفحص الاعتماديات الخارجية.
+    </div>
+
+    <div class="grid g4 fragment">
+      <div class="card card--flat card--c"><h4 class="card__title">📊 قياس</h4>
+        <p class="card__body xs">من غير قياس، أي كلام عن الأداء تخمين. ده أول سطر تكتبه في أي مشروع.</p></div>
+      <div class="card card--flat card--e"><h4 class="card__title">🛡️ صمود</h4>
+        <p class="card__body xs">الإعادة + قاطع الدائرة بيحوّلوا عطل مؤقت في خدمة لحاجة المستخدم ما يلاحظهاش.</p></div>
+      <div class="card card--flat card--a"><h4 class="card__title">📈 توسّع</h4>
+        <p class="card__body xs">لحظة ما تخزّن حالة في ذاكرة السيرفر، التوسّع الأفقي بيموت.</p></div>
+      <div class="card card--flat card--v"><h4 class="card__title">⚡ إنتاجية</h4>
+        <p class="card__body xs"><code>NoTracking</code> لوحده بيوفّر ذاكرة ووقت كبير في مسارات القراءة.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 37b ═════ -->
+<section class="slide" data-title="قيس أرقام نظامك بنفسك">
+  <div class="slide__head">
+    <span class="eyebrow">تطبيق عملي</span>
+    <h2 class="slide__title">إزاي تجيب أرقام نظامك الحقيقية؟</h2>
+    <p class="slide__sub">الكلام النظري خلص. دي الأدوات اللي تشغّلها النهاردة على نظامك.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="example">
+      <div class="example__head">1) اطلع الـ DAU الحقيقي من قاعدة البيانات</div>
+      <div class="example__body">
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>metrics.sql</span><span class="code__lang">SQL Server</span></div>
+<pre><code><span class="c">-- المستخدمون النشطون يوميًا آخر 14 يوم</span>
+<span class="k">SELECT</span> <span class="f">CAST</span>(OccurredAt <span class="k">AS</span> <span class="t">date</span>) <span class="k">AS</span> [Day],
+       <span class="f">COUNT</span>(<span class="k">DISTINCT</span> UserId)   <span class="k">AS</span> DAU,
+       <span class="f">COUNT</span>(*)                    <span class="k">AS</span> Events,
+       <span class="f">COUNT</span>(*) <span class="p">/</span> <span class="f">NULLIF</span>(<span class="f">COUNT</span>(<span class="k">DISTINCT</span> UserId), <span class="n">0</span>) <span class="k">AS</span> EventsPerUser
+<span class="k">FROM</span>   ActivityLog
+<span class="k">WHERE</span>  OccurredAt <span class="p">&gt;=</span> <span class="f">DATEADD</span>(<span class="k">day</span>, <span class="p">-</span><span class="n">14</span>, <span class="f">SYSUTCDATETIME</span>())
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="f">CAST</span>(OccurredAt <span class="k">AS</span> <span class="t">date</span>)
+<span class="k">ORDER</span> <span class="k">BY</span> [Day];
+
+<span class="c">-- ساعة الذروة: امتى الضغط بيبقى أعلى حاجة؟</span>
+<span class="k">SELECT</span> <span class="f">DATEPART</span>(<span class="k">hour</span>, OccurredAt) <span class="k">AS</span> [Hour], <span class="f">COUNT</span>(*) <span class="k">AS</span> Events
+<span class="k">FROM</span>   ActivityLog
+<span class="k">WHERE</span>  OccurredAt <span class="p">&gt;=</span> <span class="f">DATEADD</span>(<span class="k">day</span>, <span class="p">-</span><span class="n">7</span>, <span class="f">SYSUTCDATETIME</span>())
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="f">DATEPART</span>(<span class="k">hour</span>, OccurredAt)
+<span class="k">ORDER</span> <span class="k">BY</span> Events <span class="k">DESC</span>;</code></pre>
+        </div>
+        <div class="plain mt">
+          <span class="plain__label">إيه اللي هتطلع بيه</span>
+          <strong>DAU</strong> الحقيقي · <strong>EventsPerUser</strong> (ده اللي بتضربه في الـ DAU عشان تجيب الـ QPS)
+          · و<strong>ساعة الذروة</strong> اللي منها تحسب معامل الذروة بدل ما تفترض 3×.
+        </div>
+      </div>
+    </div>
+
+    <div class="example fragment">
+      <div class="example__head">2) اطلع الـ p99 الحقيقي من الكود</div>
+      <div class="example__body">
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>LatencyMetrics.cs</span><span class="code__lang">C# / .NET 9</span></div>
+<pre><code><span class="c">// Histogram هو النوع الوحيد اللي بيسمحلك تحسب p50/p95/p99 بعدين.</span>
+<span class="c">// لو استخدمت Counter أو Gauge، المعلومة دي بتضيع للأبد.</span>
+<span class="k">public sealed class</span> <span class="t">OrderMetrics</span>
+{
+    <span class="k">private readonly</span> <span class="t">Histogram</span>&lt;<span class="t">double</span>&gt; _duration;
+
+    <span class="k">public</span> <span class="f">OrderMetrics</span>(<span class="t">IMeterFactory</span> factory)
+    {
+        <span class="k">var</span> meter <span class="p">=</span> factory.<span class="f">Create</span>(<span class="s">"Shop.Orders"</span>);
+        _duration <span class="p">=</span> meter.<span class="f">CreateHistogram</span>&lt;<span class="t">double</span>&gt;(
+            <span class="s">"order.create.duration"</span>, unit<span class="p">:</span> <span class="s">"ms"</span>);
+    }
+
+    <span class="k">public</span> <span class="t">IDisposable</span> <span class="f">Measure</span>(<span class="t">string</span> channel)
+        <span class="p">=&gt;</span> <span class="k">new</span> <span class="t">Timer</span>(_duration, channel);
+
+    <span class="k">private sealed class</span> <span class="t">Timer</span>(<span class="t">Histogram</span>&lt;<span class="t">double</span>&gt; h, <span class="t">string</span> channel) <span class="p">:</span> <span class="t">IDisposable</span>
+    {
+        <span class="k">private readonly</span> <span class="k">long</span> _start <span class="p">=</span> <span class="t">Stopwatch</span>.<span class="f">GetTimestamp</span>();
+        <span class="k">public void</span> <span class="f">Dispose</span>() <span class="p">=&gt;</span> h.<span class="f">Record</span>(
+            <span class="t">Stopwatch</span>.<span class="f">GetElapsedTime</span>(_start).TotalMilliseconds,
+            <span class="k">new</span> <span class="t">KeyValuePair</span>&lt;<span class="t">string</span>, <span class="k">object</span>?&gt;(<span class="s">"channel"</span>, channel));
+        <span class="c">// ⚠️ channel قيمه محدودة (web/mobile/pos) — ده تصنيف آمن.</span>
+        <span class="c">//    لو حطيت UserId هنا، هتولّد ملايين السلاسل الزمنية وتفلّس. </span>
+    }
+}
+
+<span class="c">// الاستخدام: السطر ده بس</span>
+<span class="k">using</span> (metrics.<span class="f">Measure</span>(<span class="s">"pos"</span>))
+    <span class="k">await</span> _orders.<span class="f">CreateAsync</span>(cmd, ct);</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="example fragment">
+      <div class="example__head">3) اكشف الـ SPOF: هل خدمتك بتقع لو الكاش وقع؟</div>
+      <div class="example__body">
+        <div class="code">
+          <div class="code__bar"><span class="code__dots"><i></i><i></i><i></i></span><span>ResilientCache.cs</span><span class="code__lang">C# / .NET 9</span></div>
+<pre><code><span class="c">// ❌ الغلط الشائع: الكاش بقى نقطة فشل وحيدة من غير ما تحس</span>
+<span class="k">var</span> cached <span class="p">=</span> <span class="k">await</span> _cache.<span class="f">GetStringAsync</span>(key);   <span class="c">// Redis وقع → استثناء → 500</span>
+
+<span class="c">// ✅ الصح: الكاش تحسين، مش مصدر حقيقة. لو وقع، كمّل من الـ DB.</span>
+<span class="k">public async</span> <span class="t">Task</span>&lt;<span class="t">Product</span>?&gt; <span class="f">GetAsync</span>(<span class="t">int</span> id, <span class="t">CancellationToken</span> ct)
+{
+    <span class="k">try</span>
+    {
+        <span class="k">var</span> hit <span class="p">=</span> <span class="k">await</span> _cache.<span class="f">GetStringAsync</span>(<span class="s">$"product:{id}"</span>, ct);
+        <span class="k">if</span> (hit <span class="k">is not null</span>) <span class="k">return</span> <span class="t">JsonSerializer</span>.<span class="f">Deserialize</span>&lt;<span class="t">Product</span>&gt;(hit);
+    }
+    <span class="k">catch</span> (<span class="t">Exception</span> ex)
+    {
+        <span class="c">// سجّل وكمّل — ماتوقعش الطلب عشان الكاش تعبان</span>
+        _log.<span class="f">CacheUnavailable</span>(ex);
+    }
+
+    <span class="k">return</span> <span class="k">await</span> _db.Products.<span class="f">FindAsync</span>([id], ct);   <span class="c">// المصدر الحقيقي</span>
+}</code></pre>
+        </div>
+        <div class="plain mt">
+          <span class="plain__label">الدرس</span>
+          كل مكوّن تضيفه في المسار بيقلّل التوافر (فاكر قاعدة الضرب؟).
+          <br>إلا لو خلّيته <strong>اختياري</strong> — ساعتها بيضيف سرعة من غير ما يضيف خطر.
+          <br><em>ده الفرق بين «حطيت كاش» و«حطيت كاش صح».</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="checkpoint fragment">
+      <div class="checkpoint__title">تكليف عملي — اعمله النهاردة</div>
+      <ul>
+        <li>شغّل الاستعلام الأول على قاعدة بياناتك واكتب الـ <span class="term">DAU</span> الحقيقي.</li>
+        <li>احسب معامل الذروة الحقيقي عندك (ذروة ÷ متوسط) — هل هو فعلاً 3×؟</li>
+        <li>دوّر في كودك على أي <span class="term">Cache</span> أو خدمة خارجية <strong>من غير</strong> <code>try/catch</code> — دي نقطة فشل وحيدة مخفية.</li>
+        <li>اسأل نفسك: لو أبطأ <span class="ltr">1%</span> من الطلبات بتاخد 5 ثواني، هل حد عندك هيلاحظ أصلاً؟</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 38 ═════ -->
+<section class="slide" data-title="أخطاء شائعة">
+  <div class="slide__head">
+    <span class="eyebrow">تجنّبها</span>
+    <h2 class="slide__title">6 أخطاء بتتكرر في التصميم</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g3">
+      <div class="card card--r"><span class="card__num">01</span>
+        <h4 class="card__title">التصميم قبل الفهم</h4>
+        <p class="card__body sm">بترسم معمارية لنظام ما حدّدتش متطلباته. النتيجة: تصميم صح لمشكلة غلط.</p></div>
+      <div class="card card--r"><span class="card__num">02</span>
+        <h4 class="card__title">المبالغة في التصميم</h4>
+        <p class="card__body sm">12 خدمة مصغّرة وطابور رسائل لنظام فيه 1000 مستخدم. <strong>التعقيد نفسه مصدر أعطال.</strong></p></div>
+      <div class="card card--r"><span class="card__num">03</span>
+        <h4 class="card__title">تجاهل حالات الفشل</h4>
+        <p class="card__body sm">التصميم شغّال في «الحالة السعيدة» بس. أول سؤال «لو ده وقع؟» بيهدّه.</p></div>
+      <div class="card card--r"><span class="card__num">04</span>
+        <h4 class="card__title">أرقام من غير مصدر</h4>
+        <p class="card__body sm">«هحتاج 50 سيرفر» — جبتها منين؟ كل رقم لازم يبقى وراه حسبة تقدر تعيدها.</p></div>
+      <div class="card card--r"><span class="card__num">05</span>
+        <h4 class="card__title">تجاهل التكلفة</h4>
+        <p class="card__body sm">تصميم رائع تقنيًا بيكلّف مليون شهريًا لشركة دخلها 100 ألف = تصميم فاشل.</p></div>
+      <div class="card card--r"><span class="card__num">06</span>
+        <h4 class="card__title">قرار من غير تمن معلوم</h4>
+        <p class="card__body sm">لو ماتعرفش إيه اللي بتخسره من قرارك، يبقى انت ما اخدتش قرار — انت بس نفّذت عادة.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 39 ═════ -->
+<section class="slide" data-title="ملخص الموديول">
+  <div class="slide__head">
+    <span class="eyebrow">الخلاصة</span>
+    <h2 class="slide__title">اللي لازم يفضل معاك من الموديول ده</h2>
+    <div class="rule"></div>
+  </div>
+
+  <div class="slide__body">
+    <div class="grid g2">
+      <div class="card card--c">
+        <div class="card__icon">📋</div>
+        <h3 class="card__title">المتطلبات</h3>
+        <ul class="pc pc--pro sm mb0">
+          <li><span class="term">FR</span> = بيعمل إيه · <span class="term">NFR</span> = إزاي وبكام</li>
+          <li>الـ NFRs هي اللي بتشكّل المعمارية</li>
+          <li>أي NFR فيه 3 أجزاء: مقياس + رقم + ظرف</li>
+        </ul>
+      </div>
+      <div class="card card--v">
+        <div class="card__icon">📐</div>
+        <h3 class="card__title">أبعاد الجودة</h3>
+        <ul class="pc pc--pro sm mb0">
+          <li>التوافر بيتضرب في التسلسل ويتحسّن بالتوازي</li>
+          <li>Available ≠ Reliable (مثال الـ ATM)</li>
+          <li>اقرا <span class="term term--v">p99</span> مش المتوسط</li>
+          <li>SLI ⟵ SLO ⟵ SLA + Error Budget</li>
+        </ul>
+      </div>
+      <div class="card card--a">
+        <div class="card__icon">🧮</div>
+        <h3 class="card__title">التقدير</h3>
+        <ul class="pc pc--pro sm mb0">
+          <li>اليوم ≈ <span class="ltr">100,000</span> ثانية</li>
+          <li>الذروة = <span class="ltr">2–3×</span> المتوسط</li>
+          <li>نسبة القراءة:الكتابة بتحدّد نص المعمارية</li>
+          <li>التخزين × نسخ × فهارس × نسخ احتياطي</li>
+          <li>الـ Egress أغلى بند في الفاتورة</li>
+        </ul>
+      </div>
+      <div class="card card--e">
+        <div class="card__icon">🎯</div>
+        <h3 class="card__title">المنهجية</h3>
+        <ul class="pc pc--pro sm mb0">
+          <li>افهم ⟵ ارسم ⟵ اغوص ⟵ اكسر</li>
+          <li>كل قرار له تمن — اعرفه واكتبه</li>
+          <li>الأرقام بتمنعك من المبالغة زي ما بتمنعك من التقصير</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 40 ═════ -->
+<section class="slide slide--center" data-title="الموديول القادم">
+  <div class="divider">
+    <span class="eyebrow">اللي جاي</span>
+    <h2 class="divider__title">الموديول 02 — معمارية البرمجيات</h2>
+    <p class="divider__sub">
+      <span class="term term--v">Layered</span> ·
+      <span class="term term--v">Clean Architecture</span> ·
+      <span class="term term--v">Hexagonal (Ports &amp; Adapters)</span> ·
+      <span class="term term--v">Onion</span> ·
+      <span class="term term--v">Vertical Slice</span> ·
+      <span class="term term--v">DDD</span> ·
+      <span class="term term--v">CQRS</span>
+      <br><br>
+      الأربع مصطلحات اللي سمعت عنهم كتير — هنفكّكهم بالكامل بأمثلة كود C# ومقارنة عملية بينهم.
+    </p>
+    <div class="row row--center mt">
+      <a class="btn btn--primary btn--solo" href="02-architecture.html" style="text-decoration:none">ابدأ الموديول 02 ←</a>
+      <a class="btn btn--solo" href="../index.html" style="text-decoration:none">⌂ كل الموديولات</a>
+    </div>
+  </div>
+</section>
+
+</div>
+<script src="../assets/js/glossary.js"></script>
+<script src="../assets/js/deck.js"></script>
+</body>
+</html>
